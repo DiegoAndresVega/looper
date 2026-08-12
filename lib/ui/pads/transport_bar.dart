@@ -11,12 +11,20 @@ class TransportAction {
     this.active = false,
     this.recording = false,
     this.onLongPress,
+    this.onPressStart,
+    this.onPressEnd,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+
+  /// Held controls — the roll — fire on press and stop on release instead of
+  /// on a tap, so the rhythm follows the finger.
+  final VoidCallback? onPressStart;
+  final VoidCallback? onPressEnd;
+
   final bool active;
   final bool recording;
 }
@@ -61,6 +69,9 @@ class TransportBar extends StatelessWidget {
     return GestureDetector(
       onTap: action.onTap,
       onLongPress: action.onLongPress,
+      onTapDown: action.onPressStart == null ? null : (_) => action.onPressStart!(),
+      onTapUp: action.onPressEnd == null ? null : (_) => action.onPressEnd!(),
+      onTapCancel: action.onPressEnd,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

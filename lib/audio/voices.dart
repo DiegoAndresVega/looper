@@ -251,6 +251,11 @@ final Map<String, VoiceRenderer> kVoices = {
         _noise(sr, 0.5, filter: 'low', freq: 420, decay: 0.42, peak: 0.5),
       ])),
   'noiseWash': (sr) => finalise(_noise(sr, 1.4, filter: 'band', freq: 2200, q: 0.5, attack: 0.25, decay: 1.1)),
+
+  // Not on any pad: the metronome click. Short and high so it cuts through a
+  // busy grid without ever being mistaken for part of the music.
+  'metro': (sr) => finalise(_osc(sr, 0.05, wave: Wave.sine, freq: 1760,
+      attack: 0.001, decay: 0.035)),
 };
 
 /// Two stacked bandpass filters over a saw: a crude but recognisable vowel.

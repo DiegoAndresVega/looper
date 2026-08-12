@@ -78,6 +78,19 @@ class AudioEngine {
     if (rate != 1.0) {
       _soloud.setRelativePlaySpeed(handle, rate);
     }
+
+    // Trimming is non-destructive: the file keeps its tail, playback just
+    // skips in and bails out early. SoLoud only honours the loop points when
+    // looping, so a one-shot needs the seek and the stop spelled out.
+    if (sound.trimStartMs > 0) {
+      _soloud.seek(handle, start);
+    }
+    if (!looping && sound.trimEndMs != null) {
+      _soloud.scheduleStop(
+        handle,
+        Duration(milliseconds: (sound.trimmedDurationMs / rate).round()),
+      );
+    }
     return handle;
   }
 
@@ -110,4 +123,8 @@ class AudioEngine {
   }
 
   void stopTakeCapture() => _soloud.stopMixerOutputStream();
+
+  /// The real WAV header, only known once the capture has stopped: the one
+  /// that opened the stream carries placeholder sizes.
+  Uint8List takeWavHeader() => _soloud.getMixerOutputWavHeader();
 }

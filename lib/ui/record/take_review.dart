@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../library/family_picker.dart';
 import 'waveform_view.dart';
 
 /// What is offered once a take exists: hear it, name it, say what kind of
@@ -68,7 +69,7 @@ class TakeReview extends StatelessWidget {
         const SizedBox(height: 16),
         _nameField(),
         const SizedBox(height: 16),
-        _familyRow(),
+        FamilyPicker(selected: family, onChanged: onFamilyChanged),
         const SizedBox(height: 20),
         Row(
           children: [
@@ -136,42 +137,6 @@ class TakeReview extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Palette.accent),
-        ),
-      ),
-    );
-  }
-
-  Widget _familyRow() {
-    return Row(
-      children: [
-        for (final option in SoundFamily.values) ...[
-          Expanded(child: _familyChip(option)),
-          if (option != SoundFamily.values.last) const SizedBox(width: 8),
-        ],
-      ],
-    );
-  }
-
-  Widget _familyChip(SoundFamily option) {
-    final selected = option == family;
-    return GestureDetector(
-      onTap: () => onFamilyChanged(option),
-      child: Container(
-        height: 38,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? option.color.withValues(alpha: 0.18) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: selected ? option.color : Palette.line),
-        ),
-        child: Text(
-          option.label,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: selected ? option.color : Palette.inkDim,
-          ),
         ),
       ),
     );

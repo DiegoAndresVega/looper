@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../audio/voices.dart';
+import '../audio/wav_decoder.dart';
 import '../audio/wav_encoder.dart';
 import '../core/constants.dart';
 import '../domain/sound.dart';
@@ -41,6 +42,7 @@ class SoundLibrary extends ChangeNotifier {
 
   final Storage _storage;
   final Map<String, Sound> _byId = {};
+  final Map<String, Float32List> _peaks = {};
   int _sizeBytes = 0;
 
   List<Sound> get sounds => List.unmodifiable(_byId.values);
@@ -116,6 +118,7 @@ class SoundLibrary extends ChangeNotifier {
 
   Future<void> remove(String id) async {
     final sound = _byId.remove(id);
+    _peaks.remove(id);
     if (sound == null) return;
     final file = _storage.soundFile(sound.fileName);
     if (await file.exists()) {
@@ -127,6 +130,25 @@ class SoundLibrary extends ChangeNotifier {
   }
 
   String pathFor(Sound sound) => _storage.soundFile(sound.fileName).path;
+
+  /// The shape of a sound, for drawing. Read from disk once and kept, because
+  /// the editor asks for the same sound on every frame of a drag.
+  Future<Float32List> peaksFor(Sound sound) async {
+    final cached = _peaks[sound.id];
+    if (cached != null) return cached;
+
+    final file = _storage.soundFile(sound.fileName);
+    if (!await file.exists()) return Float32List(kWaveformBuckets);
+    try {
+      final decoded = decodeWav(await file.readAsBytes());
+      final peaks = peakEnvelope(decoded.samples, kWaveformBuckets);
+      _peaks[sound.id] = peaks;
+      return peaks;
+    } on WavFormatException catch (e) {
+      debugPrint('No se pudo dibujar ${sound.name}: $e');
+      return Float32List(kWaveformBuckets);
+    }
+  }
 
   Future<void> _persist() async {
     final data = _byId.values.map((s) => s.toJson()).toList();

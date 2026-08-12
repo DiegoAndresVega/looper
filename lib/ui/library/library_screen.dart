@@ -1,0 +1,220 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+
+import '../../core/palette.dart';
+import '../../data/sound_import.dart';
+import '../../data/sound_library.dart';
+import '../../data/storage.dart';
+import '../../domain/sound.dart';
+import 'sound_list.dart';
+import 'sound_sheet.dart';
+
+/// Everything the instrument can play: the factory kit, your takes and what
+/// you brought in. Tapping a sound opens its editor; the list itself is the
+/// same one the pad sheet uses.
+class LibraryScreen extends StatefulWidget {
+  const LibraryScreen({
+    super.key,
+    required this.library,
+    required this.storage,
+    required this.onPreview,
+    required this.onDelete,
+  });
+
+  final SoundLibrary library;
+  final Storage storage;
+
+  /// Plays a sound with its current edits applied.
+  final Future<void> Function(Sound sound) onPreview;
+
+  /// Removes the sound and empties any pad that was holding it.
+  final Future<void> Function(Sound sound) onDelete;
+
+  @override
+  State<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends State<LibraryScreen> {
+  String? _message;
+  bool _importing = false;
+
+  SoundLibrary get _library => widget.library;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Palette.ground,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(),
+              if (_message != null) ...[
+                const SizedBox(height: 12),
+                _messagePanel(_message!),
+              ],
+              Expanded(
+                child: SoundList(
+                  sounds: _library.sounds,
+                  selectedId: null,
+                  onPick: _openSound,
+                  trailing: _playButton,
+                  padding: const EdgeInsets.only(bottom: 12),
+                ),
+              ),
+              _importButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header() {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: Palette.line),
+            ),
+            child: const Icon(Icons.arrow_back, size: 16, color: Palette.inkDim),
+          ),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Text(
+            'Biblioteca',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Palette.ink,
+            ),
+          ),
+        ),
+        Text(
+          '${_library.count} · ${_formatSize(_library.sizeBytes)}',
+          style: const TextStyle(fontSize: 11, color: Palette.inkFaint),
+        ),
+      ],
+    );
+  }
+
+  Widget _playButton(Sound sound) {
+    return GestureDetector(
+      onTap: () => widget.onPreview(sound),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Palette.line),
+        ),
+        child: Icon(Icons.play_arrow, size: 16, color: sound.family.color),
+      ),
+    );
+  }
+
+  Widget _importButton() {
+    return GestureDetector(
+      onTap: _importing ? null : _import,
+      child: Container(
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Palette.line),
+        ),
+        child: Text(
+          _importing ? 'Importando…' : 'Importar un WAV',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Palette.inkDim,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _messagePanel(String message) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Palette.panel,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: Palette.line),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(fontSize: 11, height: 1.4, color: Palette.inkDim),
+      ),
+    );
+  }
+
+  Future<void> _openSound(Sound sound) async {
+    final peaks = await _library.peaksFor(sound);
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => SoundSheet(
+        sound: sound,
+        peaks: peaks,
+        onChanged: _library.update,
+        onPreview: widget.onPreview,
+        onDelete: () => _delete(sound),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _delete(Sound sound) async {
+    await widget.onDelete(sound);
+    if (!mounted) return;
+    setState(() => _message = '${sound.name} borrado.');
+  }
+
+  Future<void> _import() async {
+    setState(() {
+      _importing = true;
+      _message = null;
+    });
+
+    try {
+      final picked = await FilePicker.pickFiles(
+        dialogTitle: 'Elige un WAV',
+        type: FileType.custom,
+        allowedExtensions: ['wav'],
+      );
+      final files = picked?.files ?? const [];
+      final path = files.isEmpty ? null : files.first.path;
+      if (path == null) return;
+
+      final sound = await importWav(
+        library: _library,
+        storage: widget.storage,
+        sourcePath: path,
+      );
+      if (!mounted) return;
+      setState(() => _message = '${sound.name} está en la biblioteca.');
+    } on ImportRejected catch (e) {
+      if (mounted) setState(() => _message = e.message);
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).round()} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}

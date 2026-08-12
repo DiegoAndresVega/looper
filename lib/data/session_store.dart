@@ -103,11 +103,7 @@ Session buildStarterSession(SoundLibrary library, {String name = 'Sesión 1'}) {
       session = session.withPad(
         bankIndex,
         slot,
-        PadConfig(
-          soundId: sound.id,
-          mode: PadMode.oneShot,
-          loopSteps: definition.loopSteps,
-        ),
+        PadConfig(soundId: sound.id, loopSteps: definition.loopSteps),
       );
     }
   });

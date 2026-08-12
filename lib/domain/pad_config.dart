@@ -1,13 +1,13 @@
 import '../core/constants.dart';
 
-/// A pad either fires once while touched, or keeps repeating until switched off.
-enum PadMode { oneShot, loop }
-
 /// What one of the 64 pads holds. An empty pad has no [soundId].
+///
+/// There is no play mode stored here: the gesture decides. A tap fires the
+/// sound, a long press leaves it looping. What the pad remembers is only how
+/// the loop behaves once it is running.
 class PadConfig {
   const PadConfig({
     this.soundId,
-    this.mode = PadMode.oneShot,
     this.volume = 0.8,
     this.semitones = 0,
     this.loopSteps = kStepsPerBar,
@@ -18,7 +18,6 @@ class PadConfig {
   static const PadConfig empty = PadConfig();
 
   final String? soundId;
-  final PadMode mode;
   final double volume;
   final int semitones;
 
@@ -29,12 +28,10 @@ class PadConfig {
   final bool muted;
 
   bool get isEmpty => soundId == null;
-  bool get isLoop => mode == PadMode.loop;
 
   PadConfig copyWith({
     String? soundId,
     bool clearSound = false,
-    PadMode? mode,
     double? volume,
     int? semitones,
     int? loopSteps,
@@ -43,7 +40,6 @@ class PadConfig {
   }) {
     return PadConfig(
       soundId: clearSound ? null : (soundId ?? this.soundId),
-      mode: mode ?? this.mode,
       volume: volume ?? this.volume,
       semitones: semitones ?? this.semitones,
       loopSteps: loopSteps ?? this.loopSteps,
@@ -54,7 +50,6 @@ class PadConfig {
 
   Map<String, dynamic> toJson() => {
         'soundId': soundId,
-        'mode': mode.name,
         'volume': volume,
         'semitones': semitones,
         'loopSteps': loopSteps,
@@ -62,9 +57,10 @@ class PadConfig {
         'muted': muted,
       };
 
+  /// Sessions saved before the gesture rewrite carry a 'mode' key. It is
+  /// ignored on purpose: how a pad plays is no longer something it remembers.
   factory PadConfig.fromJson(Map<String, dynamic> json) => PadConfig(
         soundId: json['soundId'] as String?,
-        mode: PadMode.values.byName(json['mode'] as String? ?? 'oneShot'),
         volume: (json['volume'] as num?)?.toDouble() ?? 0.8,
         semitones: json['semitones'] as int? ?? 0,
         loopSteps: json['loopSteps'] as int? ?? kStepsPerBar,

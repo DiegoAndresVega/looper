@@ -67,6 +67,8 @@ class SessionStore extends ChangeNotifier {
       name: '${source.name} copia',
       bpm: source.bpm,
       banks: source.banks,
+      patterns: source.patterns,
+      activePattern: source.activePattern,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

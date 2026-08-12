@@ -4,6 +4,7 @@ import 'package:looper/audio/wav_encoder.dart';
 import 'package:looper/core/constants.dart';
 import 'package:looper/data/factory_kit.dart';
 import 'package:looper/domain/pad_config.dart';
+import 'package:looper/domain/pattern.dart';
 import 'package:looper/domain/session.dart';
 
 void main() {
@@ -112,7 +113,23 @@ void main() {
       expect(restored.padAt(1, 0).loopSteps, 32);
     });
 
-    test('una sesión vieja con «mode» se abre sin quejarse', () {
+    test('los patrones del secuenciador viajan con la sesión', () {
+      final original = Session.blank(id: 'x', name: 'Con patrón').copyWith(
+        patterns: [
+          Pattern.empty().withNote(0, '0:0').withNote(0, '1:3'),
+          ...List.generate(kPatternCount - 1, (_) => Pattern.empty()),
+        ],
+        activePattern: 3,
+      );
+
+      final restored = Session.fromJson(original.toJson());
+
+      expect(restored.patterns.length, kPatternCount);
+      expect(restored.patterns.first.at(0), {'0:0', '1:3'});
+      expect(restored.activePattern, 3);
+    });
+
+    test('una sesión sin patrones se abre con dieciséis vacíos', () {
       final legacy = {
         'id': 'x',
         'name': 'Antigua',
@@ -142,6 +159,8 @@ void main() {
       expect(restored.padAt(0, 0).soundId, 's1');
       expect(restored.padAt(0, 0).synced, isTrue);
       expect(restored.padAt(0, 0).volume, 0.7);
+      expect(restored.patterns.length, kPatternCount);
+      expect(restored.patterns.every((p) => p.isEmpty), isTrue);
     });
   });
 

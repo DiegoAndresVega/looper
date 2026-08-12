@@ -7,6 +7,23 @@ import '../../domain/sound.dart';
 /// The six states a pad can be in. Read by colour and movement, never by text.
 enum PadVisualState { empty, loaded, firing, looping, target, blocked }
 
+/// The second light, in the corner opposite the sound dot. With the sequencer
+/// on, the sixteen pads double as the sixteen steps: this is where the bar is
+/// read, without taking a single pixel away from the grid.
+enum StepLight {
+  /// Sequencer off, or a step with nothing written on it.
+  off,
+
+  /// This step carries notes.
+  written,
+
+  /// The head is on this step right now.
+  playing,
+
+  /// This step is the one being written into by hand.
+  editing,
+}
+
 /// One square of the grid. Everything it needs to say fits here: which sound,
 /// which mode, whether it is sounding, and how far the loop has run.
 class PadTile extends StatefulWidget {
@@ -19,11 +36,13 @@ class PadTile extends StatefulWidget {
     required this.selected,
     required this.onTap,
     required this.onLongPress,
+    this.stepLight = StepLight.off,
   });
 
   final PadConfig pad;
   final Sound? sound;
   final PadVisualState state;
+  final StepLight stepLight;
 
   /// 0..1 around the border while looping.
   final double progress;
@@ -93,6 +112,7 @@ class _PadTileState extends State<PadTile> {
                     ),
                   ),
                 if (!_isEmpty) _modeDot(color, looping),
+                if (widget.stepLight != StepLight.off) _stepDot(),
                 _label(),
                 if (widget.state == PadVisualState.blocked)
                   const Center(
@@ -126,6 +146,35 @@ class _PadTileState extends State<PadTile> {
           shape: BoxShape.circle,
           boxShadow: looping
               ? [BoxShadow(color: color.withValues(alpha: 0.32), spreadRadius: 3)]
+              : null,
+        ),
+      ),
+    );
+  }
+
+  /// The step light, top right. The head is a filled dot with a halo, a
+  /// written step is a quiet one, and the step being edited wears a ring so it
+  /// cannot be mistaken for the head.
+  Widget _stepDot() {
+    final playing = widget.stepLight == StepLight.playing;
+    final editing = widget.stepLight == StepLight.editing;
+    final color = editing ? Palette.ink : Palette.accent;
+
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 70),
+        width: playing ? 9 : 7,
+        height: playing ? 9 : 7,
+        decoration: BoxDecoration(
+          color: editing
+              ? Colors.transparent
+              : color.withValues(alpha: playing ? 1.0 : 0.4),
+          shape: BoxShape.circle,
+          border: editing ? Border.all(color: color, width: 1.5) : null,
+          boxShadow: playing
+              ? [BoxShadow(color: color.withValues(alpha: 0.45), spreadRadius: 3.5)]
               : null,
         ),
       ),

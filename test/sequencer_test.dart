@@ -278,6 +278,81 @@ void main() {
       expect(t.seq.pattern.at(0), {'0:0'});
     });
 
+    test('con cadena, el compás siguiente pasa al patrón siguiente', () {
+      final t = build();
+      t.seq.toggleOn();
+      t.seq.selectStep(0);
+      t.seq.tap('0:0'); // P1 marca el paso 1
+      t.seq.selectPattern(1);
+      t.seq.tap('1:1'); // el paso 0 sigue en edición al cambiar de patrón
+      t.seq.selectStep(null);
+      t.seq.chainLength = 2;
+      t.seq.togglePlay();
+
+      t.seq.tick();
+      expect(t.seq.patternIndex, 0);
+      expect(t.fired.last, {'0:0'});
+
+      for (var i = 0; i < kPatternSteps; i++) {
+        t.seq.tick();
+      }
+      expect(t.seq.patternIndex, 1);
+      expect(t.fired.last, {'1:1'});
+    });
+
+    test('la cadena da la vuelta al acabar el último patrón', () {
+      final t = build();
+      t.seq.toggleOn();
+      t.seq.chainLength = 2;
+      t.seq.togglePlay();
+
+      for (var i = 0; i < kPatternSteps * 2; i++) {
+        t.seq.tick();
+      }
+      t.seq.tick();
+
+      expect(t.seq.patternIndex, 0);
+    });
+
+    test('darle al play con cadena empieza por el primer patrón', () {
+      final t = build();
+      t.seq.toggleOn();
+      t.seq.selectPattern(5);
+      t.seq.chainLength = 4;
+
+      t.seq.togglePlay();
+
+      expect(t.seq.patternIndex, 0);
+    });
+
+    test('acortar la cadena en marcha recoloca el patrón dentro de ella', () {
+      final t = build();
+      t.seq.toggleOn();
+      t.seq.chainLength = 8;
+      t.seq.togglePlay();
+      for (var i = 0; i < kPatternSteps * 5; i++) {
+        t.seq.tick();
+      }
+      expect(t.seq.patternIndex, 4);
+
+      t.seq.chainLength = 2;
+
+      expect(t.seq.patternIndex, lessThan(2));
+    });
+
+    test('sin cadena nada cambia de patrón al dar la vuelta', () {
+      final t = build();
+      t.seq.toggleOn();
+      t.seq.selectPattern(3);
+      t.seq.togglePlay();
+
+      for (var i = 0; i < kPatternSteps + 2; i++) {
+        t.seq.tick();
+      }
+
+      expect(t.seq.patternIndex, 3);
+    });
+
     test('cargar los patrones de una sesión reemplaza los que había', () {
       final t = build();
       t.seq.toggleOn();

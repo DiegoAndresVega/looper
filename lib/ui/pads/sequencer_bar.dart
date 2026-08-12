@@ -15,11 +15,13 @@ class SequencerBar extends StatelessWidget {
     required this.editingStep,
     required this.patternIndex,
     required this.filledSteps,
+    required this.chainLength,
     required this.onPlay,
     required this.onRecord,
     required this.onRest,
     required this.onClear,
     required this.onPattern,
+    required this.onChain,
   });
 
   final bool isPlaying;
@@ -29,11 +31,18 @@ class SequencerBar extends StatelessWidget {
   final int patternIndex;
   final int filledSteps;
 
+  /// Bars in the chain: 1 loops one pattern, N plays P1..PN back to back.
+  final int chainLength;
+
   final VoidCallback onPlay;
   final VoidCallback onRecord;
   final VoidCallback onRest;
   final VoidCallback onClear;
   final ValueChanged<int> onPattern;
+  final ValueChanged<int> onChain;
+
+  /// The chain lengths a tap cycles through: the musical ones.
+  static const List<int> _chainChoices = [1, 2, 4, 8, 16];
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +60,8 @@ class SequencerBar extends StatelessWidget {
           Row(
             children: [
               _patternPicker(),
+              const SizedBox(width: 6),
+              _chainPill(),
               const SizedBox(width: 10),
               Expanded(child: _status()),
             ],
@@ -132,6 +143,39 @@ class SequencerBar extends StatelessWidget {
     );
   }
 
+  /// One tap moves to the next musical length: 1, 2, 4, 8, 16 bars and back
+  /// to 1. Lit while a real chain is on.
+  Widget _chainPill() {
+    final active = chainLength > 1;
+    return GestureDetector(
+      onTap: () {
+        final at = _chainChoices.indexOf(chainLength);
+        final next =
+            _chainChoices[(at + 1) % _chainChoices.length];
+        onChain(next);
+      },
+      child: Container(
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? Palette.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: active ? Palette.accent : Palette.line),
+        ),
+        child: Text(
+          '$chainLength ${chainLength == 1 ? 'compás' : 'compases'}',
+          style: TextStyle(
+            fontSize: 8.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+            color: active ? Palette.ground : Palette.inkDim,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _arrow(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -157,7 +201,9 @@ class SequencerBar extends StatelessWidget {
       text = 'Escribiendo el paso ${currentStep + 1} de $kPatternSteps';
       color = Palette.rec;
     } else if (isPlaying) {
-      text = 'Paso ${currentStep + 1} · $filledSteps con notas';
+      text = chainLength > 1
+          ? 'P${patternIndex + 1} de $chainLength · paso ${currentStep + 1}'
+          : 'Paso ${currentStep + 1} · $filledSteps con notas';
       color = Palette.accent;
     } else {
       text = filledSteps == 0

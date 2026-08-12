@@ -37,6 +37,7 @@ class Sequencer extends ChangeNotifier {
   List<Pattern> _patterns =
       List.generate(kPatternCount, (_) => Pattern.empty());
   int _index = 0;
+  int _chainLength = 1;
   bool _on = false;
   bool _playing = false;
   bool _recording = false;
@@ -59,15 +60,28 @@ class Sequencer extends ChangeNotifier {
   /// to know so they can show what they are doing.
   bool get isWriting => _recording || _editingStep != null;
 
+  /// How many patterns play back to back — the groovebox way of going past
+  /// one bar. 1 loops the pattern on screen; 8 walks P1 to P8, eight bars.
+  int get chainLength => _chainLength;
+
+  set chainLength(int value) {
+    _chainLength = value.clamp(1, kPatternCount);
+    if (_playing && _index >= _chainLength) {
+      _index = 0;
+    }
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------------ state
 
   /// Replaces every pattern, as when a session opens.
-  void load(List<Pattern> patterns, int index) {
+  void load(List<Pattern> patterns, int index, {int chainLength = 1}) {
     _patterns = [
       for (var i = 0; i < kPatternCount; i++)
         i < patterns.length ? patterns[i] : Pattern.empty(),
     ];
     _index = _isValidPattern(index) ? index : 0;
+    _chainLength = chainLength.clamp(1, kPatternCount);
     _step = 0;
     _editingStep = null;
     notifyListeners();
@@ -90,6 +104,8 @@ class Sequencer extends ChangeNotifier {
       _playing = true;
       _recording = false;
       _editingStep = null;
+      // A chain always tells its story from the first bar.
+      if (_chainLength > 1) _index = 0;
       // The first tick moves to zero, so step one is heard, not skipped.
       _step = -1;
     }
@@ -172,6 +188,12 @@ class Sequencer extends ChangeNotifier {
   /// the same grid as the synced loops.
   void tick() {
     if (!_playing) return;
+    final wrapped = _step == kPatternSteps - 1;
+    if (wrapped && _chainLength > 1) {
+      // End of the bar: the chain hands over to the next pattern, and the
+      // grid follows so the lights always show what is sounding.
+      _index = (_index + 1) % _chainLength;
+    }
     _advance();
     onNotes(pattern.at(_step));
     notifyListeners();

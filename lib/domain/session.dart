@@ -15,6 +15,7 @@ class Session {
     required this.updatedAt,
     required this.patterns,
     this.activePattern = 0,
+    this.chainLength = 1,
   });
 
   final String id;
@@ -28,6 +29,9 @@ class Session {
   /// the session because a pattern only means something next to its pads.
   final List<Pattern> patterns;
   final int activePattern;
+
+  /// How many patterns play back to back, 1..16 bars.
+  final int chainLength;
 
   factory Session.blank({required String id, required String name}) {
     final now = DateTime.now();
@@ -84,6 +88,7 @@ class Session {
     List<Bank>? banks,
     List<Pattern>? patterns,
     int? activePattern,
+    int? chainLength,
     DateTime? updatedAt,
   }) {
     return Session(
@@ -93,6 +98,7 @@ class Session {
       banks: banks ?? this.banks,
       patterns: patterns ?? this.patterns,
       activePattern: activePattern ?? this.activePattern,
+      chainLength: chainLength ?? this.chainLength,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -105,6 +111,7 @@ class Session {
         'banks': banks.map((b) => b.toJson()).toList(),
         'patterns': patterns.map((p) => p.toJson()).toList(),
         'activePattern': activePattern,
+        'chainLength': chainLength,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -120,6 +127,7 @@ class Session {
             .toList(),
         patterns: _patternsFrom(json['patterns'] as List<dynamic>?),
         activePattern: json['activePattern'] as int? ?? 0,
+        chainLength: json['chainLength'] as int? ?? 1,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );

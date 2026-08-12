@@ -94,6 +94,26 @@ class SessionController extends ChangeNotifier {
     }
   }
 
+  /// Loads every sound of the session into the engine again. Needed after the
+  /// engine has been released so the microphone could have the audio session.
+  Future<void> reloadSounds() => _preloadSession();
+
+  /// Puts a freshly captured sound on the first free pad — bank C first, as
+  /// promised — and brings that bank forward so it is obvious where it landed.
+  /// Returns null when all 64 pads are taken.
+  Future<({int bank, int slot})?> placeSound(Sound sound) async {
+    final session = _session;
+    if (session == null) return null;
+    final target = session.nextFreeSlot;
+    if (target == null) return null;
+
+    await updatePad(target.bank, target.slot, PadConfig(soundId: sound.id));
+    _activeBank = target.bank;
+    _selectedSlot = target.slot;
+    notifyListeners();
+    return target;
+  }
+
   void selectBank(int index) {
     if (index == _activeBank) return;
     _activeBank = index;

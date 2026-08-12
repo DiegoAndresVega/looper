@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'audio/audio_engine.dart';
+import 'core/constants.dart';
 import 'core/palette.dart';
 import 'data/session_store.dart';
 import 'data/sound_library.dart';
 import 'data/storage.dart';
+import 'domain/sound.dart';
 import 'state/session_controller.dart';
 import 'ui/pads/pads_screen.dart';
+import 'ui/record/record_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +53,9 @@ class Boot extends StatefulWidget {
 class _BootState extends State<Boot> {
   final AudioEngine _engine = AudioEngine();
   SessionController? _controller;
+  Storage? _storage;
+  SoundLibrary? _library;
+  SessionStore? _store;
   String _status = 'Afinando el instrumento…';
   String? _error;
 
@@ -78,7 +84,12 @@ class _BootState extends State<Boot> {
       await controller.open(session);
 
       if (!mounted) return;
-      setState(() => _controller = controller);
+      setState(() {
+        _storage = storage;
+        _library = library;
+        _store = store;
+        _controller = controller;
+      });
     } catch (e, stack) {
       debugPrint('Fallo al arrancar: $e\n$stack');
       if (mounted) setState(() => _error = '$e');
@@ -155,10 +166,65 @@ class _BootState extends State<Boot> {
 
     return PadsScreen(
       controller: controller,
-      onOpenRecorder: () {},
+      onOpenRecorder: _openRecorder,
       onOpenLibrary: () {},
       onOpenSessions: () {},
       onPadLongPress: (_) {},
+    );
+  }
+
+  /// Hands the audio session over to the microphone and takes it back when the
+  /// recording screen closes. A saved sound goes straight onto a free pad, so
+  /// it can be played the second it exists.
+  Future<void> _openRecorder() async {
+    final controller = _controller;
+    final library = _library;
+    final storage = _storage;
+    if (controller == null || library == null || storage == null) return;
+
+    await controller.stopAllLoops();
+    await _engine.release();
+
+    if (!mounted) return;
+    final sound = await Navigator.of(context).push<Sound>(
+      MaterialPageRoute(
+        builder: (_) => RecordScreen(
+          engine: _engine,
+          library: library,
+          storage: storage,
+        ),
+      ),
+    );
+
+    await _engine.init();
+    await controller.reloadSounds();
+    if (!mounted) return;
+    if (sound == null) {
+      setState(() {});
+      return;
+    }
+
+    final target = await controller.placeSound(sound);
+    final session = controller.session;
+    if (session != null) await _store?.save(session);
+    if (!mounted) return;
+
+    setState(() {});
+    _announce(
+      target == null
+          ? '${sound.name} está en la biblioteca: no queda ningún pad libre'
+          : '${sound.name} en el pad ${kBankIds[target.bank]} · '
+              '${(target.slot + 1).toString().padLeft(2, '0')}',
+    );
+  }
+
+  void _announce(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Palette.panelHigh,
+        duration: const Duration(milliseconds: 1800),
+      ),
     );
   }
 }

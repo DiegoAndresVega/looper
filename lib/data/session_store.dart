@@ -91,8 +91,8 @@ class SessionStore extends ChangeNotifier {
 
 /// Builds a session with banks A and B loaded from the factory kit, and C and
 /// D left empty on purpose: C fills with your recordings, D is yours.
-Session buildStarterSession(SoundLibrary library) {
-  final base = Session.blank(id: _uuid.v4(), name: 'Sesión 1');
+Session buildStarterSession(SoundLibrary library, {String name = 'Sesión 1'}) {
+  final base = Session.blank(id: _uuid.v4(), name: name);
   var session = base;
 
   kFactoryBanks.forEach((bankIndex, pads) {

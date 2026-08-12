@@ -32,6 +32,21 @@ capas en menos de un minuto.
 - **Se aprende tocando.** Cero onboarding: al abrir por primera vez los bancos A
   y B ya vienen cargados y suenan.
 
+## Los gestos de la grilla
+
+El gesto decide cómo suena un pad; el pad no guarda ningún «modo».
+
+| Gesto | Qué hace |
+|-------|----------|
+| Un toque | Dispara el sonido. Tocar al ritmo suena a ese ritmo: cada golpe corta el anterior del mismo pad |
+| Toque en un pad que está en loop | Lo apaga |
+| Mantener pulsado | Lo deja en loop, con una vibración corta al arrancar |
+| AJUSTAR y luego un pad | Abre la hoja del pad: cambiar sonido, sincronía, largo y vaciar |
+
+AJUSTAR es el único estado modal del instrumento y dura un solo toque: al
+encenderlo la grilla entera se enciende en ámbar para avisar de que el
+siguiente toque no va a sonar.
+
 ## Cuándo se graba
 
 Grabar significa capturar un sonido, frase o música de un máximo de diez
@@ -129,8 +144,8 @@ Funcionando:
 - Persistencia de sesiones y biblioteca
 - Grabar con el micrófono, escuchar la toma y guardarla: cae en el primer pad
   libre del banco C y ya suena
-- Pulsación larga en un pad: elegir sonido oyéndolo, modo, sincronía, largo y
-  vaciar
+- Gestos de la grilla: toque dispara, mantener deja en loop, AJUSTAR abre la
+  hoja del pad
 - Biblioteca con editor: recorte, tono, volumen, familia, borrar e importar WAV
 - Lista de sesiones: abrir, crear, renombrar, duplicar y borrar
 - Grabar la interpretación y compartir el WAV

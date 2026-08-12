@@ -100,25 +100,59 @@ void main() {
     test('la sesión sobrevive a un viaje por JSON', () {
       final original = Session.blank(id: 'x', name: 'Cocina 04')
           .copyWith(bpm: 148)
-          .withPad(1, 0, const PadConfig(soundId: 's9', mode: PadMode.loop));
+          .withPad(1, 0,
+              const PadConfig(soundId: 's9', synced: true, loopSteps: 32));
 
       final restored = Session.fromJson(original.toJson());
 
       expect(restored.name, 'Cocina 04');
       expect(restored.bpm, 148);
       expect(restored.padAt(1, 0).soundId, 's9');
-      expect(restored.padAt(1, 0).mode, PadMode.loop);
+      expect(restored.padAt(1, 0).synced, isTrue);
+      expect(restored.padAt(1, 0).loopSteps, 32);
+    });
+
+    test('una sesión vieja con «mode» se abre sin quejarse', () {
+      final legacy = {
+        'id': 'x',
+        'name': 'Antigua',
+        'bpm': 100,
+        'banks': [
+          {
+            'id': 'A',
+            'label': 'Kit',
+            'pads': [
+              {'soundId': 's1', 'mode': 'loop', 'volume': 0.7, 'synced': true},
+              for (var i = 1; i < kPadsPerBank; i++) {'soundId': null},
+            ],
+          },
+          for (final id in ['B', 'C', 'D'])
+            {
+              'id': id,
+              'label': id,
+              'pads': [for (var i = 0; i < kPadsPerBank; i++) {'soundId': null}],
+            },
+        ],
+        'createdAt': DateTime(2026, 1, 1).toIso8601String(),
+        'updatedAt': DateTime(2026, 1, 2).toIso8601String(),
+      };
+
+      final restored = Session.fromJson(legacy);
+
+      expect(restored.padAt(0, 0).soundId, 's1');
+      expect(restored.padAt(0, 0).synced, isTrue);
+      expect(restored.padAt(0, 0).volume, 0.7);
     });
   });
 
   group('pad', () {
     test('vaciar un pad borra el sonido pero conserva los ajustes', () {
-      const pad = PadConfig(soundId: 's1', mode: PadMode.loop, volume: 0.5);
+      const pad = PadConfig(soundId: 's1', synced: true, volume: 0.5);
 
       final cleared = pad.copyWith(clearSound: true);
 
       expect(cleared.isEmpty, isTrue);
-      expect(cleared.mode, PadMode.loop);
+      expect(cleared.synced, isTrue);
       expect(cleared.volume, 0.5);
     });
 

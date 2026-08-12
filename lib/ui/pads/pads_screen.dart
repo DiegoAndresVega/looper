@@ -14,6 +14,7 @@ import 'bank_tabs.dart';
 import 'control_surface.dart';
 import 'pad_sheet.dart';
 import 'pad_tile.dart';
+import 'sequencer_bar.dart';
 import 'tempo_stepper.dart';
 import 'transport_bar.dart';
 
@@ -23,13 +24,13 @@ class PadsScreen extends StatefulWidget {
   const PadsScreen({
     super.key,
     required this.controller,
-    required this.onOpenRecorder,
+    required this.onOpenSampler,
     required this.onOpenLibrary,
     required this.onOpenSessions,
   });
 
   final SessionController controller;
-  final VoidCallback onOpenRecorder;
+  final VoidCallback onOpenSampler;
   final VoidCallback onOpenLibrary;
   final VoidCallback onOpenSessions;
 
@@ -54,7 +55,9 @@ class _PadsScreenState extends State<PadsScreen> {
     // The loop rings need a steady repaint; the controller only notifies on
     // real state changes, which is not often enough for a moving ring.
     _ringTicker = Timer.periodic(const Duration(milliseconds: 33), (_) {
-      if (mounted && (c.loops.isNotEmpty || c.take.isRecording)) setState(() {});
+      final moving =
+          c.loops.isNotEmpty || c.mixdown.isRecording || c.sequencer.isPlaying;
+      if (mounted && moving) setState(() {});
     });
   }
 
@@ -102,8 +105,13 @@ class _PadsScreenState extends State<PadsScreen> {
               // wasted — on a tall phone the pads simply get taller.
               Expanded(child: _grid()),
               const SizedBox(height: 10),
-              _surface(),
-              const SizedBox(height: 10),
+              if (c.sequencer.isOn) ...[
+                _sequencer(),
+                const SizedBox(height: 8),
+              ] else ...[
+                _surface(),
+                const SizedBox(height: 10),
+              ],
               _transport(),
             ],
           ),
@@ -138,20 +146,20 @@ class _PadsScreenState extends State<PadsScreen> {
             ),
           ),
         ),
-        if (c.take.isRecording) ...[
-          _takeBadge(),
+        if (c.mixdown.isRecording) ...[
+          _mixdownBadge(),
           const SizedBox(width: 8),
         ],
         _iconButton(Icons.library_music_outlined, widget.onOpenLibrary),
         const SizedBox(width: 6),
-        _iconButton(Icons.mic_none, widget.onOpenRecorder),
+        _iconButton(Icons.mic_none, widget.onOpenSampler),
       ],
     );
   }
 
   /// While a take runs, the only new thing on screen is this counter: the
   /// recording is signalled, never in the way.
-  Widget _takeBadge() {
+  Widget _mixdownBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
@@ -171,7 +179,7 @@ class _PadsScreenState extends State<PadsScreen> {
           ),
           const SizedBox(width: 6),
           Text(
-            _formatElapsed(c.take.elapsed),
+            _formatElapsed(c.mixdown.elapsed),
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -227,6 +235,7 @@ class _PadsScreenState extends State<PadsScreen> {
           pad: pad,
           sound: sound,
           state: _stateFor(slot, pad),
+          stepLight: _stepLightFor(slot),
           progress: c.loopProgress(c.activeBank, slot),
           selected: c.selectedSlot == slot,
           onTap: () => _tapPad(slot),
@@ -281,6 +290,19 @@ class _PadsScreenState extends State<PadsScreen> {
       ),
     );
     if (mounted) setState(() {});
+  }
+
+  /// Pad number i is step number i. The corner light says what that step is
+  /// doing, which turns the grid into the pattern display without adding a
+  /// single row to the screen.
+  StepLight _stepLightFor(int slot) {
+    final seq = c.sequencer;
+    if (!seq.isOn) return StepLight.off;
+    if (seq.editingStep == slot) return StepLight.editing;
+    if ((seq.isPlaying || seq.isRecording) && seq.currentStep == slot) {
+      return StepLight.playing;
+    }
+    return seq.pattern.at(slot).isEmpty ? StepLight.off : StepLight.written;
   }
 
   PadVisualState _stateFor(int slot, PadConfig pad) {
@@ -378,6 +400,25 @@ class _PadsScreenState extends State<PadsScreen> {
     }
   }
 
+  /// The sequencer takes the control surface's place while it is on: the
+  /// screen never grows, and what is under the thumb is what is being used.
+  Widget _sequencer() {
+    final seq = c.sequencer;
+    return SequencerBar(
+      isPlaying: seq.isPlaying,
+      isRecording: seq.isRecording,
+      currentStep: seq.currentStep,
+      editingStep: seq.editingStep,
+      patternIndex: seq.patternIndex,
+      filledSteps: seq.pattern.filledSteps,
+      onPlay: () => setState(c.toggleSequencerPlay),
+      onRecord: () => setState(c.toggleSequencerRecord),
+      onRest: () => setState(seq.rest),
+      onClear: () => setState(seq.clearPattern),
+      onPattern: (index) => setState(() => c.selectPattern(index)),
+    );
+  }
+
   Widget _transport() {
     final slot = c.selectedSlot;
     final pad = slot == null ? null : c.padAt(slot);
@@ -403,6 +444,12 @@ class _PadsScreenState extends State<PadsScreen> {
           onPressEnd: slot == null ? null : () => setState(c.stopRoll),
         ),
         TransportAction(
+          icon: Icons.grid_view,
+          label: 'Seq',
+          active: c.sequencer.isOn,
+          onTap: () => setState(c.toggleSequencer),
+        ),
+        TransportAction(
           icon: Icons.tune,
           label: 'Ajustar',
           active: _editArmed,
@@ -426,37 +473,40 @@ class _PadsScreenState extends State<PadsScreen> {
               : () => setState(() => c.toggleMute(slot)),
           onLongPress: slot == null ? null : () => setState(() => c.toggleSolo(slot)),
         ),
+        // The red dot belongs to the sequencer and only to the sequencer.
+        // Rendering the performance out is an export, and wears the icon
+        // every phone already reads as "send this somewhere".
         TransportAction(
-          icon: Icons.fiber_manual_record,
-          label: 'Toma',
-          recording: c.take.isRecording,
-          active: false,
-          onTap: _toggleTake,
+          icon: Icons.ios_share,
+          label: 'Exportar',
+          recording: c.mixdown.isRecording,
+          onTap: _toggleMixdown,
         ),
       ],
     );
   }
 
-  /// The take button: start capturing the mixer, or stop and offer the file.
-  /// Recording never takes controls away — the grid keeps playing underneath.
-  Future<void> _toggleTake() async {
-    if (!c.take.isRecording) {
-      await c.startTake();
+  /// Export: renders what comes out of the mixer to a file while you keep
+  /// playing. It never takes a control away — that is the whole point of it
+  /// living next to the others instead of behind a screen.
+  Future<void> _toggleMixdown() async {
+    if (!c.mixdown.isRecording) {
+      await c.startMixdown();
       if (mounted) setState(() {});
       return;
     }
 
-    final file = await c.stopTake();
+    final file = await c.stopMixdown();
     if (!mounted) return;
     setState(() {});
     if (file == null) {
-      _notYet('La toma salió vacía');
+      _notYet('La mezcla salió vacía');
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Toma guardada: ${file.uri.pathSegments.last}'),
+        content: Text('Mezcla exportada: ${file.uri.pathSegments.last}'),
         backgroundColor: Palette.panelHigh,
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
@@ -465,7 +515,7 @@ class _PadsScreenState extends State<PadsScreen> {
           onPressed: () => SharePlus.instance.share(
             ShareParams(
               files: [XFile(file.path)],
-              text: 'Una toma de ${c.session?.name ?? 'Looper'}',
+              text: 'Una mezcla de ${c.session?.name ?? 'Looper'}',
             ),
           ),
         ),

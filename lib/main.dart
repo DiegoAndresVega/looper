@@ -12,7 +12,7 @@ import 'domain/sound.dart';
 import 'state/session_controller.dart';
 import 'ui/library/library_screen.dart';
 import 'ui/pads/pads_screen.dart';
-import 'ui/record/record_screen.dart';
+import 'ui/sampler/sampler_screen.dart';
 import 'ui/sessions/sessions_screen.dart';
 
 Future<void> main() async {
@@ -173,7 +173,7 @@ class _BootState extends State<Boot> {
 
     return PadsScreen(
       controller: controller,
-      onOpenRecorder: _openRecorder,
+      onOpenSampler: _openSampler,
       onOpenLibrary: _openLibrary,
       onOpenSessions: _openSessions,
     );
@@ -182,7 +182,7 @@ class _BootState extends State<Boot> {
   /// Hands the audio session over to the microphone and takes it back when the
   /// recording screen closes. A saved sound goes straight onto a free pad, so
   /// it can be played the second it exists.
-  Future<void> _openRecorder() async {
+  Future<void> _openSampler() async {
     final controller = _controller;
     final library = _library;
     final storage = _storage;
@@ -194,7 +194,7 @@ class _BootState extends State<Boot> {
     if (!mounted) return;
     final sound = await Navigator.of(context).push<Sound>(
       MaterialPageRoute(
-        builder: (_) => RecordScreen(
+        builder: (_) => SamplerScreen(
           engine: _engine,
           library: library,
           storage: storage,

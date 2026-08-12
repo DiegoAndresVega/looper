@@ -7,19 +7,34 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 import 'dart:io';
 
 import '../audio/audio_engine.dart';
-import '../audio/take_recorder.dart';
+import '../audio/mixdown_recorder.dart';
 import '../audio/tempo_clock.dart';
 import '../core/constants.dart';
 import '../data/metronome.dart';
 import '../data/session_store.dart';
 import '../data/sound_library.dart';
 import '../data/storage.dart';
+import 'sequencer.dart';
 import '../domain/pad_config.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
 
-/// Identifies one pad across the whole session.
+/// Identifies one pad across the whole session. Patterns are written in these,
+/// which is what lets one pattern pull pads from different banks.
 String padKey(int bank, int slot) => '$bank:$slot';
+
+/// Reads a pad key back, or null when it points nowhere — a pattern saved
+/// before a bank was emptied can carry keys that no longer mean anything.
+({int bank, int slot})? parsePadKey(String key) {
+  final parts = key.split(':');
+  if (parts.length != 2) return null;
+  final bank = int.tryParse(parts[0]);
+  final slot = int.tryParse(parts[1]);
+  if (bank == null || slot == null) return null;
+  if (bank < 0 || bank >= kBankCount) return null;
+  if (slot < 0 || slot >= kPadsPerBank) return null;
+  return (bank: bank, slot: slot);
+}
 
 /// A pad currently making noise on loop.
 class ActiveLoop {
@@ -42,7 +57,15 @@ class SessionController extends ChangeNotifier {
         _library = library,
         _store = store {
     _clock = TempoClock(onStep: _onSyncedStep);
+    sequencer = Sequencer(
+      onNotes: _fireNotes,
+      onPatternsChanged: _onPatternsChanged,
+    );
   }
+
+  /// The step sequencer. It rides the same 16th-note clock as the synced
+  /// loops, so a pattern and a loop never drift apart.
+  late final Sequencer sequencer;
 
   final AudioEngine _engine;
   final SoundLibrary _library;
@@ -55,8 +78,8 @@ class SessionController extends ChangeNotifier {
 
   /// Recording the performance — the mixer output, never the microphone — so
   /// it can run while the grid is being played.
-  late final TakeRecorder take =
-      TakeRecorder(engine: _engine, storage: Storage.instance);
+  late final MixdownRecorder mixdown =
+      MixdownRecorder(engine: _engine, storage: Storage.instance);
 
   Session? _session;
   int _activeBank = 0;
@@ -116,6 +139,7 @@ class SessionController extends ChangeNotifier {
     _clock.setBpm(session.bpm);
     _activeBank = 0;
     _selectedSlot = null;
+    sequencer.load(session.patterns, session.activePattern);
     await _preloadSession();
     notifyListeners();
   }
@@ -199,6 +223,16 @@ class SessionController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+
+    // While the sequencer is being written into, a tap is a note being placed
+    // — and it still sounds, so the pattern is built by ear.
+    if (sequencer.isWriting) {
+      sequencer.tap(padKey(_activeBank, slot));
+      _fireOnce(_activeBank, slot);
+      notifyListeners();
+      return;
+    }
+
     if (isLooping(_activeBank, slot)) {
       _stopLoop(padKey(_activeBank, slot));
     } else {
@@ -211,6 +245,15 @@ class SessionController extends ChangeNotifier {
   /// out is a tap, the same finger that started it.
   void holdPad(int slot) {
     _selectedSlot = slot;
+
+    // With the sequencer on, the grid doubles as the sixteen steps: holding a
+    // pad picks its step to write into by hand.
+    if (sequencer.isOn) {
+      sequencer.selectStep(slot);
+      notifyListeners();
+      return;
+    }
+
     final pad = padAt(slot);
     if (pad.isEmpty || isLooping(_activeBank, slot)) {
       notifyListeners();
@@ -277,9 +320,65 @@ class SessionController extends ChangeNotifier {
       _fireClick();
       return;
     }
+    if (key == kSequencerKey) {
+      sequencer.tick();
+      return;
+    }
     final loop = _loops[key];
     if (loop == null) return;
     _fireOnce(loop.bank, loop.slot);
+  }
+
+  // ------------------------------------------------------------ sequencer
+
+  /// Plays every note of a step at once. A rest arrives here as an empty set
+  /// and correctly does nothing.
+  void _fireNotes(Set<String> notes) {
+    for (final note in notes) {
+      final target = parsePadKey(note);
+      if (target == null) continue;
+      _fireOnce(target.bank, target.slot);
+    }
+  }
+
+  void _onPatternsChanged() {
+    final session = _session;
+    if (session == null) return;
+    _session = session.copyWith(
+      patterns: sequencer.patterns,
+      activePattern: sequencer.patternIndex,
+    );
+    _touch();
+  }
+
+  void toggleSequencer() {
+    sequencer.toggleOn();
+    if (!sequencer.isOn) _clock.remove(kSequencerKey);
+    notifyListeners();
+  }
+
+  /// Play and stop for the pattern. The clock entry is what makes it run, so
+  /// it is added and removed here rather than inside the sequencer.
+  void toggleSequencerPlay() {
+    sequencer.togglePlay();
+    if (sequencer.isPlaying) {
+      _clock.add(kSequencerKey, 1);
+    } else {
+      _clock.remove(kSequencerKey);
+    }
+    notifyListeners();
+  }
+
+  void toggleSequencerRecord() {
+    sequencer.toggleRecord();
+    if (!sequencer.isPlaying) _clock.remove(kSequencerKey);
+    notifyListeners();
+  }
+
+  void selectPattern(int index) {
+    sequencer.selectPattern(index);
+    _onPatternsChanged();
+    notifyListeners();
   }
 
   // ------------------------------------------------------------------- roll
@@ -362,20 +461,21 @@ class SessionController extends ChangeNotifier {
     _clock.clear();
     // Stopping the music does not stop the click: it is a tool, not a layer.
     if (_metronome) _clock.add(kMetronomeId, kStepsPerBeat);
+    if (sequencer.isPlaying) _clock.add(kSequencerKey, 1);
     notifyListeners();
   }
 
   // ------------------------------------------------------------------- take
 
-  Future<void> startTake() async {
-    await take.start();
+  Future<void> startMixdown() async {
+    await mixdown.start();
     notifyListeners();
   }
 
   /// Stops the performance capture and returns the finished file, or null
   /// when nothing was written.
-  Future<File?> stopTake() async {
-    final file = await take.stop();
+  Future<File?> stopMixdown() async {
+    final file = await mixdown.stop();
     notifyListeners();
     return file;
   }

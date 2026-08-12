@@ -1,0 +1,9 @@
+# Iconos de lanzador, generados desde el logo que produce tool/make_icon.py.
+# Regenerar: python3 tool/make_icon.py && dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#0B0F0E"
+  adaptive_icon_foreground: "assets/icon/icon_fg.png"
+  remove_alpha_ios: true

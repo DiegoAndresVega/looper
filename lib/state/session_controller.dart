@@ -1,12 +1,19 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
+import 'dart:io';
+
 import '../audio/audio_engine.dart';
+import '../audio/take_recorder.dart';
 import '../audio/tempo_clock.dart';
 import '../core/constants.dart';
+import '../data/metronome.dart';
+import '../data/session_store.dart';
 import '../data/sound_library.dart';
+import '../data/storage.dart';
 import '../domain/pad_config.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
@@ -27,21 +34,39 @@ class ActiveLoop {
 /// Owns the live state of a session: what is loaded, what is looping, the
 /// tempo and which pad the control surface points at.
 class SessionController extends ChangeNotifier {
-  SessionController({required AudioEngine engine, required SoundLibrary library})
-      : _engine = engine,
-        _library = library {
+  SessionController({
+    required AudioEngine engine,
+    required SoundLibrary library,
+    required SessionStore store,
+  })  : _engine = engine,
+        _library = library,
+        _store = store {
     _clock = TempoClock(onStep: _onSyncedStep);
   }
 
   final AudioEngine _engine;
   final SoundLibrary _library;
+  final SessionStore _store;
   late final TempoClock _clock;
+
+  /// Edits are written to disk on their own, a moment after the last one, so
+  /// dragging a knob does not hit the file on every frame.
+  Timer? _saveTimer;
+
+  /// Recording the performance — the mixer output, never the microphone — so
+  /// it can run while the grid is being played.
+  late final TakeRecorder take =
+      TakeRecorder(engine: _engine, storage: Storage.instance);
 
   Session? _session;
   int _activeBank = 0;
   int? _selectedSlot;
   bool _soloActive = false;
   final Map<String, ActiveLoop> _loops = {};
+
+  Timer? _rollTimer;
+  bool _metronome = false;
+  Sound? _click;
 
   Session? get session => _session;
   int get activeBank => _activeBank;
@@ -55,6 +80,17 @@ class SessionController extends ChangeNotifier {
   PadConfig padAt(int slot) => currentBank.pads[slot];
 
   Sound? soundFor(PadConfig pad) => _library.byId(pad.soundId);
+
+  /// Every sound available to drop on a pad.
+  List<Sound> get librarySounds => _library.sounds;
+
+  /// Plays a sound once to audition it, loading it if it never reached a pad.
+  Future<void> preview(Sound sound) async {
+    if (!_engine.isLoaded(sound.id)) {
+      await _engine.preload(sound, _library.pathFor(sound));
+    }
+    _engine.fire(sound, volume: sound.volume, rate: sound.playbackRate);
+  }
 
   bool isLooping(int bank, int slot) => _loops.containsKey(padKey(bank, slot));
 
@@ -94,6 +130,22 @@ class SessionController extends ChangeNotifier {
     }
   }
 
+  /// Marks the session as dirty. The write lands once the edits stop, so
+  /// dragging a knob does not touch the disk on every frame.
+  void _touch() {
+    final session = _session;
+    if (session == null) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(kSessionSaveDelay, () => _store.save(session));
+  }
+
+  /// Writes any pending edit right now, before leaving the instrument.
+  Future<void> flush() async {
+    _saveTimer?.cancel();
+    final session = _session;
+    if (session != null) await _store.save(session);
+  }
+
   /// Loads every sound of the session into the engine again. Needed after the
   /// engine has been released so the microphone could have the audio session.
   Future<void> reloadSounds() => _preloadSession();
@@ -128,6 +180,7 @@ class SessionController extends ChangeNotifier {
     if (clamped == session.bpm) return;
     _session = session.copyWith(bpm: clamped);
     _clock.setBpm(clamped);
+    _touch();
     notifyListeners();
   }
 
@@ -195,9 +248,68 @@ class SessionController extends ChangeNotifier {
   }
 
   void _onSyncedStep(String key) {
+    if (key == kMetronomeId) {
+      _fireClick();
+      return;
+    }
     final loop = _loops[key];
     if (loop == null) return;
     _fireOnce(loop.bank, loop.slot);
+  }
+
+  // ------------------------------------------------------------------- roll
+
+  bool get isRolling => _rollTimer != null;
+
+  /// Retriggers the selected pad while the ROLL button is held. The interval
+  /// comes from the tempo, so a roll lands on the grid instead of on the beat
+  /// the finger happened to find.
+  void startRoll({int stepsPerHit = 1}) {
+    final slot = _selectedSlot;
+    if (slot == null || isRolling || padAt(slot).isEmpty) return;
+
+    final interval = Duration(
+      microseconds: (60000000 / bpm / kStepsPerBeat * stepsPerHit).round(),
+    );
+    _fireOnce(_activeBank, slot);
+    _rollTimer = Timer.periodic(interval, (_) => _fireOnce(_activeBank, slot));
+    notifyListeners();
+  }
+
+  void stopRoll() {
+    if (!isRolling) return;
+    _rollTimer?.cancel();
+    _rollTimer = null;
+    notifyListeners();
+  }
+
+  // -------------------------------------------------------------- metronome
+
+  bool get isMetronomeOn => _metronome;
+
+  /// The click runs on the same clock as the synced loops, so it never drifts
+  /// away from them.
+  Future<void> toggleMetronome() async {
+    if (_metronome) {
+      _metronome = false;
+      _clock.remove(kMetronomeId);
+      notifyListeners();
+      return;
+    }
+
+    final click = _click ??= await ensureMetronomeSound(Storage.instance);
+    if (!_engine.isLoaded(click.id)) {
+      await _engine.preload(click, Storage.instance.soundFile(click.fileName).path);
+    }
+    _metronome = true;
+    _clock.add(kMetronomeId, kStepsPerBeat);
+    notifyListeners();
+  }
+
+  void _fireClick() {
+    final click = _click;
+    if (click == null) return;
+    _engine.fire(click, volume: kMetronomeVolume, rate: 1.0);
   }
 
   Future<void> _stopLoop(String key) async {
@@ -211,12 +323,30 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> stopAllLoops() async {
+    stopRoll();
     final keys = _loops.keys.toList();
     for (final key in keys) {
       await _stopLoop(key);
     }
     _clock.clear();
+    // Stopping the music does not stop the click: it is a tool, not a layer.
+    if (_metronome) _clock.add(kMetronomeId, kStepsPerBeat);
     notifyListeners();
+  }
+
+  // ------------------------------------------------------------------- take
+
+  Future<void> startTake() async {
+    await take.start();
+    notifyListeners();
+  }
+
+  /// Stops the performance capture and returns the finished file, or null
+  /// when nothing was written.
+  Future<File?> stopTake() async {
+    final file = await take.stop();
+    notifyListeners();
+    return file;
   }
 
   /// Long press target: replaces the pad wholesale.
@@ -231,6 +361,27 @@ class SessionController extends ChangeNotifier {
     if (sound != null && !_engine.isLoaded(sound.id)) {
       await _engine.preload(sound, _library.pathFor(sound));
     }
+    _touch();
+    notifyListeners();
+  }
+
+  /// Empties every pad holding [soundId]. Called when a sound is deleted from
+  /// the library, so no pad is left pointing at a file that no longer exists.
+  Future<void> clearPadsUsing(String soundId) async {
+    final session = _session;
+    if (session == null) return;
+
+    for (var bank = 0; bank < session.banks.length; bank++) {
+      final pads = session.banks[bank].pads;
+      for (var slot = 0; slot < pads.length; slot++) {
+        if (pads[slot].soundId != soundId) continue;
+        await _stopLoop(padKey(bank, slot));
+        _session = _session!
+            .withPad(bank, slot, pads[slot].copyWith(clearSound: true));
+      }
+    }
+    await _engine.unload(soundId);
+    _touch();
     notifyListeners();
   }
 
@@ -272,6 +423,7 @@ class SessionController extends ChangeNotifier {
         _isSilenced(pad) ? 0 : pad.volume * sound.volume,
       );
     }
+    _touch();
     if (!quiet) notifyListeners();
   }
 
@@ -297,6 +449,10 @@ class SessionController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _rollTimer?.cancel();
+    _saveTimer?.cancel();
+    final session = _session;
+    if (session != null) _store.save(session);
     _clock.dispose();
     super.dispose();
   }

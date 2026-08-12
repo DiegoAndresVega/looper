@@ -7,10 +7,13 @@ import 'core/palette.dart';
 import 'data/session_store.dart';
 import 'data/sound_library.dart';
 import 'data/storage.dart';
+import 'domain/session.dart';
 import 'domain/sound.dart';
 import 'state/session_controller.dart';
+import 'ui/library/library_screen.dart';
 import 'ui/pads/pads_screen.dart';
 import 'ui/record/record_screen.dart';
+import 'ui/sessions/sessions_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,7 +83,11 @@ class _BootState extends State<Boot> {
       await store.load();
       final session = await store.firstOrCreate(library);
 
-      final controller = SessionController(engine: _engine, library: library);
+      final controller = SessionController(
+        engine: _engine,
+        library: library,
+        store: store,
+      );
       await controller.open(session);
 
       if (!mounted) return;
@@ -167,9 +174,8 @@ class _BootState extends State<Boot> {
     return PadsScreen(
       controller: controller,
       onOpenRecorder: _openRecorder,
-      onOpenLibrary: () {},
-      onOpenSessions: () {},
-      onPadLongPress: (_) {},
+      onOpenLibrary: _openLibrary,
+      onOpenSessions: _openSessions,
     );
   }
 
@@ -216,6 +222,59 @@ class _BootState extends State<Boot> {
           : '${sound.name} en el pad ${kBankIds[target.bank]} · '
               '${(target.slot + 1).toString().padLeft(2, '0')}',
     );
+  }
+
+  /// The library screen. Deleting a sound also empties the pads holding it,
+  /// so the grid never points at a file that is gone.
+  Future<void> _openLibrary() async {
+    final controller = _controller;
+    final library = _library;
+    final storage = _storage;
+    if (controller == null || library == null || storage == null) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => LibraryScreen(
+          library: library,
+          storage: storage,
+          onPreview: controller.preview,
+          onDelete: (sound) async {
+            await controller.clearPadsUsing(sound.id);
+            await library.remove(sound.id);
+          },
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// The session list. The open session is written to disk before leaving, so
+  /// switching away never loses the last few edits.
+  Future<void> _openSessions() async {
+    final controller = _controller;
+    final store = _store;
+    final library = _library;
+    final current = controller?.session;
+    if (controller == null || store == null || library == null || current == null) {
+      return;
+    }
+
+    await controller.flush();
+    if (!mounted) return;
+
+    final chosen = await Navigator.of(context).push<Session>(
+      MaterialPageRoute(
+        builder: (_) => SessionsScreen(
+          store: store,
+          library: library,
+          currentId: current.id,
+        ),
+      ),
+    );
+    if (chosen != null && chosen.id != current.id) {
+      await controller.open(chosen);
+    }
+    if (mounted) setState(() {});
   }
 
   void _announce(String message) {

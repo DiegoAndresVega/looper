@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants.dart';
 import '../../core/palette.dart';
@@ -9,6 +10,7 @@ import '../../domain/pad_config.dart';
 import '../../state/session_controller.dart';
 import 'bank_tabs.dart';
 import 'control_surface.dart';
+import 'pad_sheet.dart';
 import 'pad_tile.dart';
 import 'tempo_stepper.dart';
 import 'transport_bar.dart';
@@ -22,14 +24,12 @@ class PadsScreen extends StatefulWidget {
     required this.onOpenRecorder,
     required this.onOpenLibrary,
     required this.onOpenSessions,
-    required this.onPadLongPress,
   });
 
   final SessionController controller;
   final VoidCallback onOpenRecorder;
   final VoidCallback onOpenLibrary;
   final VoidCallback onOpenSessions;
-  final void Function(int slot) onPadLongPress;
 
   @override
   State<PadsScreen> createState() => _PadsScreenState();
@@ -47,7 +47,7 @@ class _PadsScreenState extends State<PadsScreen> {
     // The loop rings need a steady repaint; the controller only notifies on
     // real state changes, which is not often enough for a moving ring.
     _ringTicker = Timer.periodic(const Duration(milliseconds: 33), (_) {
-      if (mounted && c.loops.isNotEmpty) setState(() {});
+      if (mounted && (c.loops.isNotEmpty || c.take.isRecording)) setState(() {});
     });
   }
 
@@ -131,10 +131,49 @@ class _PadsScreenState extends State<PadsScreen> {
             ),
           ),
         ),
+        if (c.take.isRecording) ...[
+          _takeBadge(),
+          const SizedBox(width: 8),
+        ],
         _iconButton(Icons.library_music_outlined, widget.onOpenLibrary),
         const SizedBox(width: 6),
         _iconButton(Icons.mic_none, widget.onOpenRecorder),
       ],
+    );
+  }
+
+  /// While a take runs, the only new thing on screen is this counter: the
+  /// recording is signalled, never in the way.
+  Widget _takeBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: Palette.rec),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Palette.rec,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _formatElapsed(c.take.elapsed),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Palette.rec,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -184,10 +223,29 @@ class _PadsScreenState extends State<PadsScreen> {
           progress: c.loopProgress(c.activeBank, slot),
           selected: c.selectedSlot == slot,
           onTap: () => setState(() => c.tapPad(slot)),
-          onLongPress: () => widget.onPadLongPress(slot),
+          onLongPress: () => _openPadSheet(slot),
         );
       },
     );
+  }
+
+  /// Long press: what sits on the pad and how it behaves. Edits land on the
+  /// session as they are made, so closing the sheet is not a "save".
+  Future<void> _openPadSheet(int slot) async {
+    final bank = c.activeBank;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => PadSheet(
+        title: '${kBankIds[bank]} · ${(slot + 1).toString().padLeft(2, '0')}',
+        pad: c.padAt(slot),
+        sounds: c.librarySounds,
+        onChanged: (pad) => c.updatePad(bank, slot, pad),
+        onPreview: c.preview,
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   PadVisualState _stateFor(int slot, PadConfig pad) {
@@ -296,7 +354,12 @@ class _PadsScreenState extends State<PadsScreen> {
         TransportAction(
           icon: Icons.repeat,
           label: 'Roll',
-          onTap: () => _notYet('Roll llega con el siguiente paso'),
+          active: c.isRolling,
+          onTap: slot == null
+              ? () => _notYet('Elige un pad y mantén pulsado para el roll')
+              : () {},
+          onPressStart: slot == null ? null : () => setState(c.startRoll),
+          onPressEnd: slot == null ? null : () => setState(c.stopRoll),
         ),
         TransportAction(
           icon: Icons.sync_alt,
@@ -309,7 +372,11 @@ class _PadsScreenState extends State<PadsScreen> {
         TransportAction(
           icon: Icons.change_history,
           label: 'Metro',
-          onTap: () => _notYet('Metrónomo llega con el siguiente paso'),
+          active: c.isMetronomeOn,
+          onTap: () async {
+            await c.toggleMetronome();
+            if (mounted) setState(() {});
+          },
         ),
         TransportAction(
           icon: Icons.volume_off_outlined,
@@ -323,11 +390,54 @@ class _PadsScreenState extends State<PadsScreen> {
         TransportAction(
           icon: Icons.fiber_manual_record,
           label: 'Toma',
-          recording: true,
-          onTap: () => _notYet('Grabar la toma llega con el siguiente paso'),
+          recording: c.take.isRecording,
+          active: false,
+          onTap: _toggleTake,
         ),
       ],
     );
+  }
+
+  /// The take button: start capturing the mixer, or stop and offer the file.
+  /// Recording never takes controls away — the grid keeps playing underneath.
+  Future<void> _toggleTake() async {
+    if (!c.take.isRecording) {
+      await c.startTake();
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final file = await c.stopTake();
+    if (!mounted) return;
+    setState(() {});
+    if (file == null) {
+      _notYet('La toma salió vacía');
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Toma guardada: ${file.uri.pathSegments.last}'),
+        backgroundColor: Palette.panelHigh,
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: 'COMPARTIR',
+          textColor: Palette.accent,
+          onPressed: () => SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(file.path)],
+              text: 'Una toma de ${c.session?.name ?? 'Looper'}',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatElapsed(Duration elapsed) {
+    final minutes = elapsed.inMinutes;
+    final seconds = elapsed.inSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   void _notYet(String message) {

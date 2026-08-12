@@ -12,6 +12,10 @@ const List<String> kBankIds = ['A', 'B', 'C', 'D'];
 /// A recorded sound never exceeds ten seconds.
 const Duration kMaxRecordDuration = Duration(seconds: 10);
 
+/// An imported file may be longer than a take, but not by much: the whole
+/// thing is held decoded in memory so a pad fires without delay.
+const Duration kMaxImportDuration = Duration(seconds: 60);
+
 /// Tempo range and the tempo the app opens with.
 const int kBpmMin = 40;
 const int kBpmMax = 220;
@@ -37,6 +41,9 @@ const Duration kPadLongPress = Duration(milliseconds: 320);
 /// Roll (retrigger) divisions offered while the ROLL button is held, in steps.
 const List<int> kRollDivisions = [2, 1]; // 1/8 and 1/16 of a bar
 
+/// The click sits under the music: loud enough to follow, never to lead.
+const double kMetronomeVolume = 0.55;
+
 /// Audio format used for every rendered and recorded sound.
 const int kSampleRate = 44100;
 const int kChannels = 1;
@@ -55,6 +62,12 @@ const double kRecordNormalisePeak = 0.9;
 
 /// How often the recording screen redraws the meter and the timer.
 const Duration kMeterTick = Duration(milliseconds: 60);
+
+/// How long after the last edit the session is written to disk.
+const Duration kSessionSaveDelay = Duration(milliseconds: 800);
+
+/// Loop lengths offered in the pad sheet, in 16th notes: 1, 2, 4 and 8 beats.
+const List<int> kLoopLengthChoices = [4, 8, 16, 32];
 
 /// Buckets in the waveform drawn after a take. Enough to read the shape of a
 /// hit without turning into a comb.

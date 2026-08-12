@@ -95,8 +95,11 @@ mutar la existente.
 - **Loops libres:** SoLoud los repite de forma nativa a su largo natural.
 - **Loops sincronizados:** un reloj propio de semicorcheas los redispara para que
   las capas caigan juntas. Cambiar el tempo no corta nada.
-- **Micrófono:** [flutter_recorder](https://pub.dev/packages/flutter_recorder),
-  a Ogg Opus. Diez segundos en mono pesan unos 80 KB.
+- **Micrófono:** [flutter_recorder](https://pub.dev/packages/flutter_recorder)
+  captura en float de 32 bits —el único formato del que se puede leer el nivel
+  de entrada— y la toma se guarda como WAV de 16 bits, el mismo formato que el
+  kit de fábrica. Antes de guardarla se corta a diez segundos y se normaliza a
+  0,9 para que suene al nivel del resto.
 - **Exportar la toma:** captura de la salida del mezclador a WAV.
 
 ## Puesta en marcha
@@ -124,11 +127,12 @@ Funcionando:
 - Grilla con disparo, loop, silenciar y solo
 - Franja de mando con las solapas de sonido, efectos y loop
 - Persistencia de sesiones y biblioteca
+- Grabar con el micrófono, escuchar la toma y guardarla: cae en el primer pad
+  libre del banco C y ya suena
 
 Pendiente:
 
-- Pantalla de grabación con micrófono y previsualización
-- Biblioteca, editor de sonido y asignar a pad
+- Biblioteca, editor de sonido y recortar la toma
 - Lista de sesiones
 - Grabar y exportar la toma
 - Roll y metrónomo

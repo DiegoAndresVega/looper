@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../data/factory_kit.dart';
+import '../../domain/loop_length.dart';
 import '../../domain/pad_config.dart';
 import '../../state/session_controller.dart';
 import 'bank_tabs.dart';
@@ -38,6 +40,11 @@ class PadsScreen extends StatefulWidget {
 class _PadsScreenState extends State<PadsScreen> {
   SurfaceTab _tab = SurfaceTab.sound;
   Timer? _ringTicker;
+
+  /// While armed, the next pad tapped opens its sheet instead of sounding.
+  /// It is the only modal state in the instrument, it lasts one tap, and the
+  /// grid says so out loud by lighting every pad as a target.
+  bool _editArmed = false;
 
   SessionController get c => widget.controller;
 
@@ -222,15 +229,43 @@ class _PadsScreenState extends State<PadsScreen> {
           state: _stateFor(slot, pad),
           progress: c.loopProgress(c.activeBank, slot),
           selected: c.selectedSlot == slot,
-          onTap: () => setState(() => c.tapPad(slot)),
-          onLongPress: () => _openPadSheet(slot),
+          onTap: () => _tapPad(slot),
+          onLongPress: () => _holdPad(slot),
         );
       },
     );
   }
 
-  /// Long press: what sits on the pad and how it behaves. Edits land on the
-  /// session as they are made, so closing the sheet is not a "save".
+  /// A tap plays. Tapping in a rhythm plays that rhythm; on a pad that is
+  /// looping it switches the loop off. With AJUSTAR armed it opens the sheet
+  /// instead, which is the one place a tap does not make a sound.
+  void _tapPad(int slot) {
+    if (_editArmed) {
+      setState(() => _editArmed = false);
+      _openPadSheet(slot);
+      return;
+    }
+    setState(() => c.tapPad(slot));
+  }
+
+  /// A long press leaves the pad looping, with a nudge so the finger knows it
+  /// took without having to look.
+  void _holdPad(int slot) {
+    if (_editArmed) {
+      setState(() => _editArmed = false);
+      _openPadSheet(slot);
+      return;
+    }
+    if (c.padAt(slot).isEmpty) {
+      _openPadSheet(slot);
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    setState(() => c.holdPad(slot));
+  }
+
+  /// What sits on the pad and how it behaves. Edits land on the session as
+  /// they are made, so closing the sheet is not a "save".
   Future<void> _openPadSheet(int slot) async {
     final bank = c.activeBank;
     await showModalBottomSheet<void>(
@@ -249,6 +284,7 @@ class _PadsScreenState extends State<PadsScreen> {
   }
 
   PadVisualState _stateFor(int slot, PadConfig pad) {
+    if (_editArmed) return PadVisualState.target;
     if (pad.isEmpty) return PadVisualState.empty;
     if (c.isLooping(c.activeBank, slot)) return PadVisualState.looping;
     return PadVisualState.loaded;
@@ -310,12 +346,15 @@ class _PadsScreenState extends State<PadsScreen> {
           KnobSpec(label: 'Drive', display: '—', value: 0.0, onChanged: null),
         ];
       case SurfaceTab.loop:
+        final looping = c.isLooping(c.activeBank, slot);
+        final choices = loopLengthChoices(pad.loopSteps);
         return [
           KnobSpec(
-            label: 'Largo',
-            display: '${pad.loopSteps ~/ kStepsPerBeat}',
-            value: pad.loopSteps / 32,
-            onChanged: null,
+            label: 'Loop',
+            display: looping ? 'ON' : 'OFF',
+            value: looping ? 1 : 0,
+            accent: looping,
+            onChanged: (v) => setState(() => c.setPadLooping(slot, v > 0.5)),
           ),
           KnobSpec(
             label: 'Sync',
@@ -325,12 +364,14 @@ class _PadsScreenState extends State<PadsScreen> {
             onChanged: (v) => setState(() => c.setPadSynced(slot, v > 0.5)),
           ),
           KnobSpec(
-            label: 'Modo',
-            display: pad.isLoop ? 'LOOP' : 'ONE',
-            value: pad.isLoop ? 1 : 0,
-            accent: pad.isLoop,
-            onChanged: (v) => setState(() => c.setPadMode(
-                slot, v > 0.5 ? PadMode.loop : PadMode.oneShot)),
+            label: 'Tiempos',
+            display: loopLengthLabel(pad.loopSteps),
+            value: choices.indexOf(pad.loopSteps) / (choices.length - 1),
+            onChanged: (v) => setState(() {
+              final index =
+                  (v * (choices.length - 1)).round().clamp(0, choices.length - 1);
+              c.setPadLoopSteps(slot, choices[index]);
+            }),
           ),
           const KnobSpec(label: 'Prob', display: '100', value: 1.0, onChanged: null),
         ];
@@ -362,12 +403,10 @@ class _PadsScreenState extends State<PadsScreen> {
           onPressEnd: slot == null ? null : () => setState(c.stopRoll),
         ),
         TransportAction(
-          icon: Icons.sync_alt,
-          label: 'Sync',
-          active: pad?.synced ?? false,
-          onTap: slot == null
-              ? () => _notYet('Elige un pad para sincronizarlo')
-              : () => setState(() => c.setPadSynced(slot, !(pad!.synced))),
+          icon: Icons.tune,
+          label: 'Ajustar',
+          active: _editArmed,
+          onTap: () => setState(() => _editArmed = !_editArmed),
         ),
         TransportAction(
           icon: Icons.change_history,

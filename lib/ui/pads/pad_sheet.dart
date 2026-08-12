@@ -129,15 +129,6 @@ class _PadSheetState extends State<PadSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _segmented(
-          label: 'Modo',
-          options: const ['Una vez', 'Loop'],
-          selected: _pad.isLoop ? 1 : 0,
-          onSelect: (i) => _apply(
-            _pad.copyWith(mode: i == 0 ? PadMode.oneShot : PadMode.loop),
-          ),
-        ),
-        const SizedBox(height: 8),
-        _segmented(
           label: 'Loop',
           options: const ['Libre', 'Al tempo'],
           selected: _pad.synced ? 1 : 0,

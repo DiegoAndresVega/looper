@@ -7,6 +7,7 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 import 'dart:io';
 
 import '../audio/audio_engine.dart';
+import '../audio/master_fx.dart';
 import '../audio/mixdown_recorder.dart';
 import '../audio/tempo_clock.dart';
 import '../core/constants.dart';
@@ -110,6 +111,9 @@ class SessionController extends ChangeNotifier {
   /// Every sound available to drop on a pad.
   List<Sound> get librarySounds => _library.sounds;
 
+  /// Master volume and the performance effects, exposed for the surface.
+  MasterFx get fx => _engine.fx;
+
   /// Plays a sound once to audition it, loading it if it never reached a pad.
   Future<void> preview(Sound sound) async {
     if (!_engine.isLoaded(sound.id)) {
@@ -139,7 +143,11 @@ class SessionController extends ChangeNotifier {
     _clock.setBpm(session.bpm);
     _activeBank = 0;
     _selectedSlot = null;
-    sequencer.load(session.patterns, session.activePattern);
+    sequencer.load(
+      session.patterns,
+      session.activePattern,
+      chainLength: session.chainLength,
+    );
     await _preloadSession();
     notifyListeners();
   }
@@ -220,6 +228,13 @@ class SessionController extends ChangeNotifier {
     _selectedSlot = slot;
     final pad = padAt(slot);
     if (pad.isEmpty) {
+      notifyListeners();
+      return;
+    }
+
+    // With ROLL held, touching a pad points the roll at it.
+    if (_rollHeld) {
+      _rollOn(_activeBank, slot);
       notifyListeners();
       return;
     }
@@ -347,8 +362,16 @@ class SessionController extends ChangeNotifier {
     _session = session.copyWith(
       patterns: sequencer.patterns,
       activePattern: sequencer.patternIndex,
+      chainLength: sequencer.chainLength,
     );
     _touch();
+  }
+
+  /// Bars in the chain: 1 loops the pattern on screen, N walks P1..PN.
+  void setChainLength(int bars) {
+    sequencer.chainLength = bars;
+    _onPatternsChanged();
+    notifyListeners();
   }
 
   void toggleSequencer() {
@@ -383,28 +406,40 @@ class SessionController extends ChangeNotifier {
 
   // ------------------------------------------------------------------- roll
 
-  bool get isRolling => _rollTimer != null;
+  bool _rollHeld = false;
 
-  /// Retriggers the selected pad while the ROLL button is held. The interval
-  /// comes from the tempo, so a roll lands on the grid instead of on the beat
-  /// the finger happened to find.
-  void startRoll({int stepsPerHit = 1}) {
+  bool get isRolling => _rollHeld;
+
+  /// Hold ROLL and touch pads: each pad touched repeats in 16th notes until
+  /// the button is let go. Holding it with a pad already selected rolls that
+  /// pad straight away, so the one-handed habit keeps working too.
+  void startRoll() {
+    if (_rollHeld) return;
+    _rollHeld = true;
     final slot = _selectedSlot;
-    if (slot == null || isRolling || padAt(slot).isEmpty) return;
-
-    final interval = Duration(
-      microseconds: (60000000 / bpm / kStepsPerBeat * stepsPerHit).round(),
-    );
-    _fireOnce(_activeBank, slot);
-    _rollTimer = Timer.periodic(interval, (_) => _fireOnce(_activeBank, slot));
+    if (slot != null && !padAt(slot).isEmpty) {
+      _rollOn(_activeBank, slot);
+    }
     notifyListeners();
   }
 
   void stopRoll() {
-    if (!isRolling) return;
+    if (!_rollHeld) return;
+    _rollHeld = false;
     _rollTimer?.cancel();
     _rollTimer = null;
     notifyListeners();
+  }
+
+  /// Points the roll at a pad. Touching another pad mid-roll retargets it —
+  /// that is how a fill walks across the kit.
+  void _rollOn(int bank, int slot) {
+    _rollTimer?.cancel();
+    final interval = Duration(
+      microseconds: (60000000 / bpm / kStepsPerBeat).round(),
+    );
+    _fireOnce(bank, slot);
+    _rollTimer = Timer.periodic(interval, (_) => _fireOnce(bank, slot));
   }
 
   // -------------------------------------------------------------- metronome

@@ -129,13 +129,17 @@ Funcionando:
 - Persistencia de sesiones y biblioteca
 - Grabar con el micrófono, escuchar la toma y guardarla: cae en el primer pad
   libre del banco C y ya suena
+- Pulsación larga en un pad: elegir sonido oyéndolo, modo, sincronía, largo y
+  vaciar
+- Biblioteca con editor: recorte, tono, volumen, familia, borrar e importar WAV
+- Lista de sesiones: abrir, crear, renombrar, duplicar y borrar
+- Grabar la interpretación y compartir el WAV
+- Roll manteniendo pulsado y metrónomo
 
 Pendiente:
 
-- Biblioteca, editor de sonido y recortar la toma
-- Lista de sesiones
-- Grabar y exportar la toma
-- Roll y metrónomo
+- Mandos de efectos (filtro, delay, drive): la franja los enseña sin conectar
+- Pantalla de licencias y licencia del repositorio
 
 ## Fuera de alcance
 

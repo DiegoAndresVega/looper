@@ -58,6 +58,12 @@ cada pad estrena una segunda luz en la esquina opuesta, que se enciende floja
 si ese paso tiene notas y fuerte cuando el cabezal pasa por encima. El patrón se
 lee en la propia grilla, sin robarle sitio a nada.
 
+Un compás se queda corto enseguida, y la solución es la de siempre —las Volca,
+la Circuit y el FM-1 encadenan patrones en vez de estirarlos—: el botón de
+**compases** de la barra pone a sonar P1…PN seguidos (1, 2, 4, 8 o 16
+compases). La grilla va siguiendo al patrón que suena, así que las luces
+siempre cuentan la verdad.
+
 Hay dos maneras de escribir, las mismas que trae una caja de ritmos:
 
 - **En vivo (GRABAR):** cada pad que tocas cae en el paso actual y el cabezal
@@ -193,10 +199,15 @@ Funcionando:
 - Secuenciador de dieciséis pasos con dieciséis patrones, grabación en vivo y
   edición paso a paso
 
+- Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
+  en la franja de mando
+- Cadena de patrones de 1 a 16 compases
+- Licencias de código abierto desde la lista de sesiones
+- Logo e iconos generados por código (`tool/make_icon.py`)
+
 Pendiente:
 
-- Mandos de efectos (filtro, delay, drive): la franja los enseña sin conectar
-- Pantalla de licencias y licencia del repositorio
+- Elegir licencia del repositorio
 
 ## Fuera de alcance
 

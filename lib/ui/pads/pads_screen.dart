@@ -1,0 +1,342 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../../core/constants.dart';
+import '../../core/palette.dart';
+import '../../data/factory_kit.dart';
+import '../../domain/pad_config.dart';
+import '../../state/session_controller.dart';
+import 'bank_tabs.dart';
+import 'control_surface.dart';
+import 'pad_tile.dart';
+import 'tempo_stepper.dart';
+import 'transport_bar.dart';
+
+/// The root of the app. Banks, tempo, grid, control surface and transport —
+/// everything a session needs, with no menu in the way.
+class PadsScreen extends StatefulWidget {
+  const PadsScreen({
+    super.key,
+    required this.controller,
+    required this.onOpenRecorder,
+    required this.onOpenLibrary,
+    required this.onOpenSessions,
+    required this.onPadLongPress,
+  });
+
+  final SessionController controller;
+  final VoidCallback onOpenRecorder;
+  final VoidCallback onOpenLibrary;
+  final VoidCallback onOpenSessions;
+  final void Function(int slot) onPadLongPress;
+
+  @override
+  State<PadsScreen> createState() => _PadsScreenState();
+}
+
+class _PadsScreenState extends State<PadsScreen> {
+  SurfaceTab _tab = SurfaceTab.sound;
+  Timer? _ringTicker;
+
+  SessionController get c => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // The loop rings need a steady repaint; the controller only notifies on
+    // real state changes, which is not often enough for a moving ring.
+    _ringTicker = Timer.periodic(const Duration(milliseconds: 33), (_) {
+      if (mounted && c.loops.isNotEmpty) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ringTicker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (c.session == null) {
+      return const Scaffold(
+        backgroundColor: Palette.ground,
+        body: Center(child: CircularProgressIndicator(color: Palette.accent)),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Palette.ground,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+          child: Column(
+            children: [
+              _topBar(),
+              const SizedBox(height: 10),
+              BankTabs(
+                ids: kBankIds,
+                labels: kBankLabels,
+                activeIndex: c.activeBank,
+                busyBanks: {
+                  for (var i = 0; i < kBankCount; i++)
+                    if (c.bankHasLoops(i)) i
+                },
+                onSelect: (i) => setState(() => c.selectBank(i)),
+              ),
+              const SizedBox(height: 10),
+              TempoStepper(
+                bpm: c.bpm,
+                onChanged: (v) => setState(() => c.setBpm(v)),
+              ),
+              const SizedBox(height: 12),
+              // The grid absorbs whatever height is left so no dead space is
+              // wasted — on a tall phone the pads simply get taller.
+              Expanded(child: _grid()),
+              const SizedBox(height: 10),
+              _surface(),
+              const SizedBox(height: 10),
+              _transport(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _topBar() {
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: widget.onOpenSessions,
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    c.session!.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                      color: Palette.ink,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                const Icon(Icons.expand_more, size: 15, color: Palette.inkFaint),
+              ],
+            ),
+          ),
+        ),
+        _iconButton(Icons.library_music_outlined, widget.onOpenLibrary),
+        const SizedBox(width: 6),
+        _iconButton(Icons.mic_none, widget.onOpenRecorder),
+      ],
+    );
+  }
+
+  Widget _iconButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: Palette.line),
+        ),
+        child: Icon(icon, size: 16, color: Palette.inkDim),
+      ),
+    );
+  }
+
+  Widget _grid() {
+    return LayoutBuilder(builder: (context, box) {
+      const gap = 8.0;
+      const rows = kPadsPerBank ~/ kGridColumns;
+      final padWidth = (box.maxWidth - gap * (kGridColumns - 1)) / kGridColumns;
+      final padHeight = (box.maxHeight - gap * (rows - 1)) / rows;
+      return _buildGrid(padWidth / padHeight, gap);
+    });
+  }
+
+  Widget _buildGrid(double aspectRatio, double gap) {
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: kPadsPerBank,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: kGridColumns,
+        crossAxisSpacing: gap,
+        mainAxisSpacing: gap,
+        childAspectRatio: aspectRatio,
+      ),
+      itemBuilder: (context, slot) {
+        final pad = c.padAt(slot);
+        final sound = c.soundFor(pad);
+        return PadTile(
+          pad: pad,
+          sound: sound,
+          state: _stateFor(slot, pad),
+          progress: c.loopProgress(c.activeBank, slot),
+          selected: c.selectedSlot == slot,
+          onTap: () => setState(() => c.tapPad(slot)),
+          onLongPress: () => widget.onPadLongPress(slot),
+        );
+      },
+    );
+  }
+
+  PadVisualState _stateFor(int slot, PadConfig pad) {
+    if (pad.isEmpty) return PadVisualState.empty;
+    if (c.isLooping(c.activeBank, slot)) return PadVisualState.looping;
+    return PadVisualState.loaded;
+  }
+
+  Widget _surface() {
+    final slot = c.selectedSlot;
+    final pad = slot == null ? null : c.padAt(slot);
+    final sound = pad == null ? null : c.soundFor(pad);
+
+    final label = sound == null
+        ? 'Maestro'
+        : '${kBankIds[c.activeBank]} · ${(slot! + 1).toString().padLeft(2, '0')} · ${sound.name}';
+
+    return ControlSurface(
+      targetLabel: label,
+      targetColor: sound?.family.color ?? Palette.rec,
+      tab: _tab,
+      onTabChanged: (t) => setState(() => _tab = t),
+      knobs: _knobsFor(slot, pad),
+    );
+  }
+
+  List<KnobSpec> _knobsFor(int? slot, PadConfig? pad) {
+    if (slot == null || pad == null || pad.isEmpty) {
+      return const [
+        KnobSpec(label: 'Vol', display: '—', value: 0.9, onChanged: null),
+        KnobSpec(label: 'Swing', display: '—', value: 0.5, onChanged: null),
+        KnobSpec(label: 'Filtro', display: '—', value: 0.2, onChanged: null),
+        KnobSpec(label: 'Límite', display: '—', value: 0.4, onChanged: null),
+      ];
+    }
+
+    switch (_tab) {
+      case SurfaceTab.sound:
+        return [
+          KnobSpec(
+            label: 'Vol',
+            display: (pad.volume * 100).round().toString(),
+            value: pad.volume,
+            accent: true,
+            onChanged: (v) => setState(() => c.setPadVolume(slot, v)),
+          ),
+          KnobSpec(
+            label: 'Tono',
+            display: pad.semitones > 0 ? '+${pad.semitones}' : '${pad.semitones}',
+            value: (pad.semitones + 12) / 24,
+            onChanged: (v) => setState(
+                () => c.setPadSemitones(slot, (v * 24 - 12).round())),
+          ),
+          const KnobSpec(label: 'Ataque', display: '0', value: 0.0, onChanged: null),
+          const KnobSpec(label: 'Fade', display: '0', value: 0.0, onChanged: null),
+        ];
+      case SurfaceTab.fx:
+        return const [
+          KnobSpec(label: 'Filtro', display: '—', value: 0.5, onChanged: null),
+          KnobSpec(label: 'Reso', display: '—', value: 0.3, onChanged: null),
+          KnobSpec(label: 'Delay', display: '—', value: 0.0, onChanged: null),
+          KnobSpec(label: 'Drive', display: '—', value: 0.0, onChanged: null),
+        ];
+      case SurfaceTab.loop:
+        return [
+          KnobSpec(
+            label: 'Largo',
+            display: '${pad.loopSteps ~/ kStepsPerBeat}',
+            value: pad.loopSteps / 32,
+            onChanged: null,
+          ),
+          KnobSpec(
+            label: 'Sync',
+            display: pad.synced ? 'ON' : 'OFF',
+            value: pad.synced ? 1 : 0,
+            accent: pad.synced,
+            onChanged: (v) => setState(() => c.setPadSynced(slot, v > 0.5)),
+          ),
+          KnobSpec(
+            label: 'Modo',
+            display: pad.isLoop ? 'LOOP' : 'ONE',
+            value: pad.isLoop ? 1 : 0,
+            accent: pad.isLoop,
+            onChanged: (v) => setState(() => c.setPadMode(
+                slot, v > 0.5 ? PadMode.loop : PadMode.oneShot)),
+          ),
+          const KnobSpec(label: 'Prob', display: '100', value: 1.0, onChanged: null),
+        ];
+    }
+  }
+
+  Widget _transport() {
+    final slot = c.selectedSlot;
+    final pad = slot == null ? null : c.padAt(slot);
+
+    return TransportBar(
+      actions: [
+        TransportAction(
+          icon: Icons.stop,
+          label: 'Parar',
+          onTap: () async {
+            await c.stopAllLoops();
+            if (mounted) setState(() {});
+          },
+        ),
+        TransportAction(
+          icon: Icons.repeat,
+          label: 'Roll',
+          onTap: () => _notYet('Roll llega con el siguiente paso'),
+        ),
+        TransportAction(
+          icon: Icons.sync_alt,
+          label: 'Sync',
+          active: pad?.synced ?? false,
+          onTap: slot == null
+              ? () => _notYet('Elige un pad para sincronizarlo')
+              : () => setState(() => c.setPadSynced(slot, !(pad!.synced))),
+        ),
+        TransportAction(
+          icon: Icons.change_history,
+          label: 'Metro',
+          onTap: () => _notYet('Metrónomo llega con el siguiente paso'),
+        ),
+        TransportAction(
+          icon: Icons.volume_off_outlined,
+          label: 'Mute',
+          active: pad?.muted ?? false,
+          onTap: slot == null
+              ? () => _notYet('Elige un pad para silenciarlo')
+              : () => setState(() => c.toggleMute(slot)),
+          onLongPress: slot == null ? null : () => setState(() => c.toggleSolo(slot)),
+        ),
+        TransportAction(
+          icon: Icons.fiber_manual_record,
+          label: 'Toma',
+          recording: true,
+          onTap: () => _notYet('Grabar la toma llega con el siguiente paso'),
+        ),
+      ],
+    );
+  }
+
+  void _notYet(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Palette.panelHigh,
+        duration: const Duration(milliseconds: 1400),
+      ),
+    );
+  }
+}

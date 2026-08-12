@@ -64,6 +64,9 @@ class SessionController extends ChangeNotifier {
   bool _soloActive = false;
   final Map<String, ActiveLoop> _loops = {};
 
+  /// The last one-shot fired by each pad, kept so the next tap can cut it.
+  final Map<String, SoundHandle> _hits = {};
+
   Timer? _rollTimer;
   bool _metronome = false;
   Sound? _click;
@@ -186,8 +189,9 @@ class SessionController extends ChangeNotifier {
 
   // ------------------------------------------------------------------ pads
 
-  /// A tap both fires the pad and points the control surface at it. There is
-  /// no separate "select" mode — the instrument has one finger.
+  /// A tap fires the pad and points the control surface at it. Tap again and
+  /// it fires again, so hitting the pad in a rhythm plays that rhythm. On a
+  /// pad that is already looping, the tap switches the loop off.
   void tapPad(int slot) {
     _selectedSlot = slot;
     final pad = padAt(slot);
@@ -195,23 +199,47 @@ class SessionController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (pad.isLoop) {
-      _toggleLoop(_activeBank, slot);
+    if (isLooping(_activeBank, slot)) {
+      _stopLoop(padKey(_activeBank, slot));
     } else {
       _fireOnce(_activeBank, slot);
     }
     notifyListeners();
   }
 
+  /// A long press leaves the pad looping. Holding again does nothing: the way
+  /// out is a tap, the same finger that started it.
+  void holdPad(int slot) {
+    _selectedSlot = slot;
+    final pad = padAt(slot);
+    if (pad.isEmpty || isLooping(_activeBank, slot)) {
+      notifyListeners();
+      return;
+    }
+    _startLoop(_activeBank, slot);
+    notifyListeners();
+  }
+
+  /// Fires a pad once. A new hit cuts the previous one from the same pad, so
+  /// fast tapping reads as a roll instead of piling voices on top of one
+  /// another. Loops are untouched: they have their own handle.
   void _fireOnce(int bank, int slot) {
     final pad = _session!.banks[bank].pads[slot];
     final sound = _library.byId(pad.soundId);
     if (sound == null || _isSilenced(pad)) return;
-    _engine.fire(
+
+    final key = padKey(bank, slot);
+    final previous = _hits.remove(key);
+    if (previous != null) {
+      _engine.stopHandle(previous);
+    }
+
+    final handle = _engine.fire(
       sound,
       volume: pad.volume * sound.volume,
       rate: sound.playbackRate * _rateFor(pad),
     );
+    if (handle != null) _hits[key] = handle;
   }
 
   /// Tape-style: the pad's own pitch offset stacks on the sound's.
@@ -221,12 +249,9 @@ class SessionController extends ChangeNotifier {
 
   bool _isSilenced(PadConfig pad) => pad.muted;
 
-  void _toggleLoop(int bank, int slot) {
+  void _startLoop(int bank, int slot) {
     final key = padKey(bank, slot);
-    if (_loops.containsKey(key)) {
-      _stopLoop(key);
-      return;
-    }
+    if (_loops.containsKey(key)) return;
     final pad = _session!.banks[bank].pads[slot];
     final sound = _library.byId(pad.soundId);
     if (sound == null) return;
@@ -322,8 +347,14 @@ class SessionController extends ChangeNotifier {
     }
   }
 
+  /// The panic button: every loop off and every hit still ringing cut short.
   Future<void> stopAllLoops() async {
     stopRoll();
+    for (final handle in _hits.values) {
+      await _engine.stopHandle(handle);
+    }
+    _hits.clear();
+
     final keys = _loops.keys.toList();
     for (final key in keys) {
       await _stopLoop(key);
@@ -433,18 +464,36 @@ class SessionController extends ChangeNotifier {
   void setPadSemitones(int slot, int semitones) =>
       _applyPadLive(_activeBank, slot, padAt(slot).copyWith(semitones: semitones));
 
-  void setPadMode(int slot, PadMode mode) {
-    final key = padKey(_activeBank, slot);
-    if (_loops.containsKey(key)) _stopLoop(key);
-    _applyPadLive(_activeBank, slot, padAt(slot).copyWith(mode: mode));
+  /// Switches a pad's loop on or off from a control other than the pad
+  /// itself — the surface knob, so the finger playing the grid is not the
+  /// only way to stop a layer.
+  void setPadLooping(int slot, bool looping) {
+    if (looping) {
+      _startLoop(_activeBank, slot);
+    } else {
+      _stopLoop(padKey(_activeBank, slot));
+    }
+    notifyListeners();
   }
 
+  /// Loop length in 16th notes. A running synced loop picks it up on its next
+  /// pass rather than jumping, so the change is never heard as a stumble.
+  void setPadLoopSteps(int slot, int steps) {
+    final key = padKey(_activeBank, slot);
+    final wasSynced = _loops[key]?.synced ?? false;
+    if (wasSynced) _clock.remove(key);
+    _applyPadLive(_activeBank, slot, padAt(slot).copyWith(loopSteps: steps));
+    if (wasSynced) _clock.add(key, steps);
+  }
+
+  /// Changing the sync of a running loop restarts it, this time on (or off)
+  /// the grid. Everything else about the pad stays as it was.
   void setPadSynced(int slot, bool synced) {
     final key = padKey(_activeBank, slot);
     final wasLooping = _loops.containsKey(key);
     if (wasLooping) _stopLoop(key);
     _applyPadLive(_activeBank, slot, padAt(slot).copyWith(synced: synced));
-    if (wasLooping) _toggleLoop(_activeBank, slot);
+    if (wasLooping) _startLoop(_activeBank, slot);
   }
 
   @override

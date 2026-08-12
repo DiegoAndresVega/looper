@@ -47,19 +47,51 @@ AJUSTAR es el único estado modal del instrumento y dura un solo toque: al
 encenderlo la grilla entera se enciende en ámbar para avisar de que el
 siguiente toque no va a sonar.
 
-## Cuándo se graba
+## El secuenciador de dieciséis pasos
 
-Grabar significa capturar un sonido, frase o música de un máximo de diez
-segundos —cortable antes— que se almacena en la biblioteca; desde ahí se borra o
-se asigna a un pad.
+Un patrón es un compás partido en dieciséis pasos. Cada paso guarda las notas
+que suenan en él —ninguna, una o varias a la vez— y un paso vacío es un
+silencio. Una sesión lleva dieciséis patrones independientes.
 
-El micrófono nunca se abre mientras suena la reproducción. La grabación vive en
-una pantalla propia y silenciosa. Esto elimina el sangrado del altavoz al
-micrófono y, de paso, evita que los dos motores de audio se peleen por la sesión
-de audio del sistema.
+Como la grilla tiene dieciséis pads, **el pad número N es el paso número N**:
+cada pad estrena una segunda luz en la esquina opuesta, que se enciende floja
+si ese paso tiene notas y fuerte cuando el cabezal pasa por encima. El patrón se
+lee en la propia grilla, sin robarle sitio a nada.
 
-Grabar la *interpretación* completa y exportarla es otra cosa y sí convive con
-la reproducción: captura la salida del mezclador, no el micrófono.
+Hay dos maneras de escribir, las mismas que trae una caja de ritmos:
+
+- **En vivo (GRABAR):** cada pad que tocas cae en el paso actual y el cabezal
+  avanza solo. Los pads que toques casi a la vez se quedan en el mismo paso, así
+  que un acorde sigue siendo un acorde. SILENCIO avanza dejando el paso vacío.
+- **Dirigida:** mantén pulsado un pad para elegir *su* paso; a partir de ahí
+  cada pad pone o quita su nota en ese paso y nada avanza hasta que tú quieras.
+
+El patrón corre sobre el mismo reloj de semicorcheas que los loops
+sincronizados, así que nunca se separa de ellos, y cambiar el tempo no lo corta.
+
+## Las tres capturas, y por qué ninguna se llama «grabar»
+
+Aquí se captura en tres sitios distintos, y llamarlos a todos *grabar* era la
+receta para no entender ninguno. Cada uno usa la palabra que ya usan las
+máquinas del oficio, y ninguna palabra se repite:
+
+| | **SAMPLEAR** | **REC** | **EXPORTAR** |
+|---|---|---|---|
+| Icono | Micrófono | Punto rojo | Flecha de compartir |
+| De dónde | Del micrófono | De tus dedos | De la salida del mezclador |
+| Qué guarda | Audio: un WAV en la biblioteca | Decisiones: qué pads suenan en cada paso | Audio: un WAV para mandar |
+| Dónde vive | Pantalla propia | Barra del secuenciador | Transport |
+| ¿Suena la app mientras? | No, y a propósito | Sí | Sí |
+| Dura | 10 s como mucho | Un compás | Lo que dure la sesión |
+
+El **punto rojo es del secuenciador y de nadie más**: en cualquier máquina de
+este tipo ese icono significa «estoy escribiendo el patrón». Por eso exportar
+lleva la flecha de compartir y no un círculo rojo.
+
+Samplear no puede sonar nada porque el micrófono nunca se abre mientras hay
+reproducción: se acaba el sangrado del altavoz al micro y, de paso, los dos
+motores de audio no se pelean por la sesión de audio del sistema. Exportar sí
+convive con todo, porque no oye la habitación: oye el mezclador.
 
 ## Los cuatro bancos
 
@@ -91,13 +123,21 @@ terceros sobre el audio, y retocar un sonido es cambiar unos números.
 
 ```
 lib/
-  core/        Paleta, familias de sonido y límites fijos
-  domain/      Modelos inmutables: Sound, PadConfig, Bank, Session
-  data/        Almacenamiento local, biblioteca, sesiones, kit de fábrica
-  audio/       DSP de síntesis, codificador WAV, motor SoLoud, reloj de tempo
-  state/       SessionController: qué suena, qué está en loop, el tempo
-  ui/pads/     Grilla, pestañas de banco, paso de tempo, franja de mando
+  core/         Paleta, familias de sonido y límites fijos
+  domain/       Modelos inmutables: Sound, PadConfig, Bank, Session, Pattern
+  data/         Almacenamiento local, biblioteca, sesiones, kit de fábrica
+  audio/        Síntesis, WAV, motor SoLoud, reloj, micrófono y mezcla
+  state/        SessionController y Sequencer
+  ui/pads/      Grilla, bancos, tempo, franja de mando, barra del secuenciador
+  ui/sampler/   Samplear con el micrófono y revisar lo capturado
+  ui/library/   Biblioteca y editor de sonido
+  ui/sessions/  Lista de sesiones
+  ui/common/    Lo que usan varias pantallas, como la forma de onda
 ```
+
+Los nombres del código siguen los de la interfaz: `MicRecorder` y
+`SamplerScreen` para samplear, `Sequencer` para el REC del patrón y
+`MixdownRecorder` para exportar. Ninguna clase se llama «record» a secas.
 
 El estado es inmutable: cambiar un pad devuelve una sesión nueva en lugar de
 mutar la existente.
@@ -150,6 +190,8 @@ Funcionando:
 - Lista de sesiones: abrir, crear, renombrar, duplicar y borrar
 - Grabar la interpretación y compartir el WAV
 - Roll manteniendo pulsado y metrónomo
+- Secuenciador de dieciséis pasos con dieciséis patrones, grabación en vivo y
+  edición paso a paso
 
 Pendiente:
 

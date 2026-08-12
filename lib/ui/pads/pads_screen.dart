@@ -323,7 +323,8 @@ class _PadsScreenState extends State<PadsScreen> {
 
     return ControlSurface(
       targetLabel: label,
-      targetColor: sound?.family.color ?? Palette.rec,
+      // Amber for the master row: red is reserved for things that record.
+      targetColor: sound?.family.color ?? Palette.accent,
       tab: _tab,
       onTabChanged: (t) => setState(() => _tab = t),
       knobs: _knobsFor(slot, pad),
@@ -331,12 +332,18 @@ class _PadsScreenState extends State<PadsScreen> {
   }
 
   List<KnobSpec> _knobsFor(int? slot, PadConfig? pad) {
+    // No pad picked: the surface points at the master output. Volume and the
+    // performance effects — nothing fake, nothing greyed out.
     if (slot == null || pad == null || pad.isEmpty) {
-      return const [
-        KnobSpec(label: 'Vol', display: '—', value: 0.9, onChanged: null),
-        KnobSpec(label: 'Swing', display: '—', value: 0.5, onChanged: null),
-        KnobSpec(label: 'Filtro', display: '—', value: 0.2, onChanged: null),
-        KnobSpec(label: 'Límite', display: '—', value: 0.4, onChanged: null),
+      return [
+        KnobSpec(
+          label: 'Vol',
+          display: (c.fx.volume * 100).round().toString(),
+          value: c.fx.volume,
+          accent: true,
+          onChanged: (v) => setState(() => c.fx.volume = v),
+        ),
+        ..._fxKnobs(includeResonance: false),
       ];
     }
 
@@ -357,16 +364,29 @@ class _PadsScreenState extends State<PadsScreen> {
             onChanged: (v) => setState(
                 () => c.setPadSemitones(slot, (v * 24 - 12).round())),
           ),
-          const KnobSpec(label: 'Ataque', display: '0', value: 0.0, onChanged: null),
-          const KnobSpec(label: 'Fade', display: '0', value: 0.0, onChanged: null),
+          KnobSpec(
+            label: 'Mute',
+            display: pad.muted ? 'ON' : 'OFF',
+            value: pad.muted ? 1 : 0,
+            accent: pad.muted,
+            onChanged: (v) {
+              if ((v > 0.5) != pad.muted) setState(() => c.toggleMute(slot));
+            },
+          ),
+          KnobSpec(
+            label: 'Solo',
+            display: c.isSoloActive ? 'ON' : 'OFF',
+            value: c.isSoloActive ? 1 : 0,
+            accent: c.isSoloActive,
+            onChanged: (v) {
+              if ((v > 0.5) != c.isSoloActive) {
+                setState(() => c.toggleSolo(slot));
+              }
+            },
+          ),
         ];
       case SurfaceTab.fx:
-        return const [
-          KnobSpec(label: 'Filtro', display: '—', value: 0.5, onChanged: null),
-          KnobSpec(label: 'Reso', display: '—', value: 0.3, onChanged: null),
-          KnobSpec(label: 'Delay', display: '—', value: 0.0, onChanged: null),
-          KnobSpec(label: 'Drive', display: '—', value: 0.0, onChanged: null),
-        ];
+        return _fxKnobs(includeResonance: true);
       case SurfaceTab.loop:
         final looping = c.isLooping(c.activeBank, slot);
         final choices = loopLengthChoices(pad.loopSteps);
@@ -395,9 +415,46 @@ class _PadsScreenState extends State<PadsScreen> {
               c.setPadLoopSteps(slot, choices[index]);
             }),
           ),
-          const KnobSpec(label: 'Prob', display: '100', value: 1.0, onChanged: null),
         ];
     }
+  }
+
+  /// The performance effects. They sit on the master output, so the same
+  /// knobs appear whether a pad is selected or not — turning the filter
+  /// while a loop runs is the point of them.
+  List<KnobSpec> _fxKnobs({required bool includeResonance}) {
+    final fx = c.fx;
+    return [
+      KnobSpec(
+        label: 'Filtro',
+        display: fx.cutoff >= 0.995 ? 'OFF' : (fx.cutoff * 100).round().toString(),
+        value: fx.cutoff,
+        accent: fx.cutoff < 0.995,
+        onChanged: (v) => setState(() => fx.cutoff = v),
+      ),
+      if (includeResonance)
+        KnobSpec(
+          label: 'Reso',
+          display: (fx.resonance * 100).round().toString(),
+          value: fx.resonance,
+          accent: fx.resonance > 0.005,
+          onChanged: (v) => setState(() => fx.resonance = v),
+        ),
+      KnobSpec(
+        label: 'Eco',
+        display: fx.echo <= 0.005 ? 'OFF' : (fx.echo * 100).round().toString(),
+        value: fx.echo,
+        accent: fx.echo > 0.005,
+        onChanged: (v) => setState(() => fx.echo = v),
+      ),
+      KnobSpec(
+        label: 'Drive',
+        display: fx.drive <= 0.005 ? 'OFF' : (fx.drive * 100).round().toString(),
+        value: fx.drive,
+        accent: fx.drive > 0.005,
+        onChanged: (v) => setState(() => fx.drive = v),
+      ),
+    ];
   }
 
   /// The sequencer takes the control surface's place while it is on: the
@@ -411,11 +468,13 @@ class _PadsScreenState extends State<PadsScreen> {
       editingStep: seq.editingStep,
       patternIndex: seq.patternIndex,
       filledSteps: seq.pattern.filledSteps,
+      chainLength: seq.chainLength,
       onPlay: () => setState(c.toggleSequencerPlay),
       onRecord: () => setState(c.toggleSequencerRecord),
       onRest: () => setState(seq.rest),
       onClear: () => setState(seq.clearPattern),
       onPattern: (index) => setState(() => c.selectPattern(index)),
+      onChain: (bars) => setState(() => c.setChainLength(bars)),
     );
   }
 
@@ -433,15 +492,15 @@ class _PadsScreenState extends State<PadsScreen> {
             if (mounted) setState(() {});
           },
         ),
+        // Held, not tapped: while ROLL is down every pad you touch repeats
+        // in 16th notes, and touching another pad walks the fill across.
         TransportAction(
           icon: Icons.repeat,
           label: 'Roll',
           active: c.isRolling,
-          onTap: slot == null
-              ? () => _notYet('Elige un pad y mantén pulsado para el roll')
-              : () {},
-          onPressStart: slot == null ? null : () => setState(c.startRoll),
-          onPressEnd: slot == null ? null : () => setState(c.stopRoll),
+          onTap: () {},
+          onPressStart: () => setState(c.startRoll),
+          onPressEnd: () => setState(c.stopRoll),
         ),
         TransportAction(
           icon: Icons.grid_view,

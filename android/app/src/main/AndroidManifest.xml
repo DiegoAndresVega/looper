@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sólo se abre en la pantalla de grabación, y nunca mientras suena la
+         reproducción. El audio no sale del dispositivo. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="looper"
         android:name="${applicationName}"

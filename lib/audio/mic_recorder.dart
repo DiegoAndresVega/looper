@@ -15,10 +15,10 @@ enum MicFailure {
   nothingCaptured,
 }
 
-/// What comes back from a take: mono samples plus the rate the device
+/// What comes back from a sample: mono samples plus the rate the device
 /// actually gave, which is not always the one that was asked for.
-class CapturedTake {
-  const CapturedTake({required this.samples, required this.sampleRate});
+class CapturedSample {
+  const CapturedSample({required this.samples, required this.sampleRate});
 
   final Float32List samples;
   final int sampleRate;
@@ -38,7 +38,7 @@ class MicException implements Exception {
 
 /// The microphone, from permission to samples on disk.
 ///
-/// It owns the capture device for exactly as long as a take lasts. The
+/// It owns the capture device for exactly as long as a sample lasts. The
 /// playback engine must be released before [open] and re-initialised after
 /// [close]: the two never hold the system audio session at the same time.
 class MicRecorder {
@@ -54,7 +54,7 @@ class MicRecorder {
   bool get isOpen => _open;
   bool get isCapturing => _capturing;
 
-  /// How long the current take has been running. Zero when nothing is being
+  /// How long the current sample has been running. Zero when nothing is being
   /// captured, so the screen can show a resting timer.
   Duration get elapsed {
     final start = _startedAt;
@@ -141,9 +141,9 @@ class MicRecorder {
     _startedAt = DateTime.now();
   }
 
-  /// Stops the take and hands back the samples: mono, capped at ten seconds
+  /// Stops the sample and hands back the samples: mono, capped at ten seconds
   /// and lifted to a usable level. Throws [MicException] when nothing landed.
-  Future<CapturedTake> stopCapture() async {
+  Future<CapturedSample> stopCapture() async {
     if (!_capturing) {
       throw const MicException(MicFailure.nothingCaptured, 'No había toma.');
     }
@@ -169,7 +169,7 @@ class MicRecorder {
           'La toma es demasiado corta.',
         );
       }
-      return CapturedTake(
+      return CapturedSample(
         samples: normalized(capped, peak: kRecordNormalisePeak),
         sampleRate: decoded.sampleRate,
       );
@@ -182,7 +182,7 @@ class MicRecorder {
     }
   }
 
-  /// Throws away the scratch file after a take is discarded or saved.
+  /// Throws away the scratch file after a sample is discarded or saved.
   Future<void> clearScratch() async {
     final scratch = _storage.captureScratch;
     if (await scratch.exists()) {

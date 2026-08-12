@@ -27,12 +27,14 @@ class Storage {
   }
 
   Directory get sounds => Directory('${root.path}/sounds');
-  Directory get takes => Directory('${root.path}/takes');
+
+  /// Where a rendered performance lands, ready to be shared out.
+  Directory get mixdowns => Directory('${root.path}/mixdowns');
   File get libraryIndex => File('${root.path}/library.json');
   File get sessionsIndex => File('${root.path}/sessions.json');
 
   Future<void> _ensureLayout() async {
-    for (final dir in [root, sounds, takes]) {
+    for (final dir in [root, sounds, mixdowns]) {
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }

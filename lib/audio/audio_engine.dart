@@ -118,13 +118,13 @@ class AudioEngine {
 
   /// Captures the mixer output — this is how a take is recorded. It never
   /// touches the microphone, so it can run while the grid is being played.
-  Stream<Uint8List> startTakeCapture() {
+  Stream<Uint8List> startMixdownCapture() {
     return _soloud.startMixerOutputStream(format: MixerOutputFormat.wav);
   }
 
-  void stopTakeCapture() => _soloud.stopMixerOutputStream();
+  void stopMixdownCapture() => _soloud.stopMixerOutputStream();
 
   /// The real WAV header, only known once the capture has stopped: the one
   /// that opened the stream carries placeholder sizes.
-  Uint8List takeWavHeader() => _soloud.getMixerOutputWavHeader();
+  Uint8List mixdownWavHeader() => _soloud.getMixerOutputWavHeader();
 }

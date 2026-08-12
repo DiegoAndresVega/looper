@@ -9,8 +9,8 @@ import 'audio_engine.dart';
 /// Records the performance: what comes out of the mixer, not what the
 /// microphone hears. It can run while the grid is being played, which is the
 /// whole difference between this and capturing a sound.
-class TakeRecorder {
-  TakeRecorder({required AudioEngine engine, required Storage storage})
+class MixdownRecorder {
+  MixdownRecorder({required AudioEngine engine, required Storage storage})
       : _engine = engine,
         _storage = storage;
 
@@ -33,19 +33,19 @@ class TakeRecorder {
   /// piles up in memory.
   Future<void> start() async {
     if (isRecording) return;
-    if (!await _storage.takes.exists()) {
-      await _storage.takes.create(recursive: true);
+    if (!await _storage.mixdowns.exists()) {
+      await _storage.mixdowns.create(recursive: true);
     }
 
-    final file = File('${_storage.takes.path}/${_takeName()}');
+    final file = File('${_storage.mixdowns.path}/${_mixdownName()}');
     final sink = file.openWrite();
     _file = file;
     _sink = sink;
     _startedAt = DateTime.now();
 
-    _subscription = _engine.startTakeCapture().listen(
+    _subscription = _engine.startMixdownCapture().listen(
       sink.add,
-      onError: (Object error) => debugPrint('Fallo capturando la toma: $error'),
+      onError: (Object error) => debugPrint('Fallo capturando la mezcla: $error'),
       cancelOnError: false,
     );
   }
@@ -55,7 +55,7 @@ class TakeRecorder {
   Future<File?> stop() async {
     if (!isRecording) return null;
 
-    _engine.stopTakeCapture();
+    _engine.stopMixdownCapture();
     await _subscription?.cancel();
     await _sink?.flush();
     await _sink?.close();
@@ -69,7 +69,7 @@ class TakeRecorder {
 
     // The header written at the start carries placeholder sizes; the real one
     // only exists once the engine knows how much audio there was.
-    final header = _engine.takeWavHeader();
+    final header = _engine.mixdownWavHeader();
     final length = await file.length();
     if (length <= _wavHeaderBytes || header.length != _wavHeaderBytes) {
       await file.delete();
@@ -86,10 +86,10 @@ class TakeRecorder {
     return file;
   }
 
-  String _takeName() {
+  String _mixdownName() {
     final now = DateTime.now();
     String two(int value) => value.toString().padLeft(2, '0');
-    return 'toma_${now.year}${two(now.month)}${two(now.day)}'
+    return 'mezcla_${now.year}${two(now.month)}${two(now.day)}'
         '_${two(now.hour)}${two(now.minute)}${two(now.second)}.wav';
   }
 }

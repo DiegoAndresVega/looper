@@ -33,6 +33,12 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Gradle and Xcode drop their own build directories outside the root one, and
+# the leading slash above does not reach them.
+build/
+.gradle/
+.cxx/
+
 # Symbolication related
 app.*.symbols
 

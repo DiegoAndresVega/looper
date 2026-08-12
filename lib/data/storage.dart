@@ -41,6 +41,10 @@ class Storage {
 
   File soundFile(String fileName) => File('${sounds.path}/$fileName');
 
+  /// Where the microphone writes while recording, before the take is trimmed,
+  /// normalised and saved into the library. Overwritten on every take.
+  File get captureScratch => File('${root.path}/capture.wav');
+
   /// Total bytes taken by recorded, imported and factory sounds.
   Future<int> librarySizeBytes() async {
     var total = 0;

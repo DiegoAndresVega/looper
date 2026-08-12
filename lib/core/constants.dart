@@ -43,3 +43,19 @@ const int kChannels = 1;
 
 /// Warn when the device drops below this much free space.
 const int kLowSpaceBytes = 200 * 1024 * 1024;
+
+/// Bottom of the input level meter. Below this a take reads as silence.
+const double kMicFloorDb = -60;
+
+/// A take shorter than this is a slip of the finger, not a sound.
+const int kMinRecordSamples = kSampleRate ~/ 20; // 50 ms
+
+/// Recordings are lifted to this peak so they sit level with the factory kit.
+const double kRecordNormalisePeak = 0.9;
+
+/// How often the recording screen redraws the meter and the timer.
+const Duration kMeterTick = Duration(milliseconds: 60);
+
+/// Buckets in the waveform drawn after a take. Enough to read the shape of a
+/// hit without turning into a comb.
+const int kWaveformBuckets = 96;

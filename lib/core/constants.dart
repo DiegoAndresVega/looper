@@ -21,6 +21,19 @@ const int kBpmMin = 40;
 const int kBpmMax = 220;
 const int kDefaultBpm = 92;
 
+/// The step sequencer: one bar of 16th notes, and how many patterns a session
+/// keeps. Sixteen steps on a sixteen pad grid means one pad is one step.
+const int kPatternSteps = 16;
+const int kPatternCount = 16;
+
+/// Identifies the sequencer on the tempo clock. Underscored so it can never
+/// collide with a pad key.
+const String kSequencerKey = '_sequencer';
+
+/// While recording steps by hand, notes played inside this window land on the
+/// same step. It is what makes a chord a chord instead of four steps.
+const Duration kChordWindow = Duration(milliseconds: 260);
+
 /// The scheduler resolution: every loop length is a multiple of a 16th note.
 const int kStepsPerBeat = 4;
 const int kStepsPerBar = 16;

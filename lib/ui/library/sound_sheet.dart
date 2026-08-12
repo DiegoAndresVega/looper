@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
 import '../../domain/sound.dart';
-import '../record/waveform_view.dart';
+import '../common/waveform_view.dart';
 import 'family_picker.dart';
 
 /// The sound editor. Everything here is non-destructive: trimming, pitch and

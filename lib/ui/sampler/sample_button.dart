@@ -7,8 +7,8 @@ import '../../core/palette.dart';
 /// The one big button of the recording screen: tap to start, tap to stop.
 /// While a take runs it wears two rings — the input level breathing on the
 /// outside, and how much of the ten seconds is gone on the inside.
-class RecordButton extends StatelessWidget {
-  const RecordButton({
+class SampleButton extends StatelessWidget {
+  const SampleButton({
     super.key,
     required this.isRecording,
     required this.level,

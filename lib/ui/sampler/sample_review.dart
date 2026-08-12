@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
 import '../library/family_picker.dart';
-import 'waveform_view.dart';
+import '../common/waveform_view.dart';
 
 /// What is offered once a take exists: hear it, name it, say what kind of
 /// sound it is, and either keep it or throw it away and go again.
-class TakeReview extends StatelessWidget {
-  const TakeReview({
+class SampleReview extends StatelessWidget {
+  const SampleReview({
     super.key,
     required this.peaks,
     required this.durationMs,

@@ -16,8 +16,8 @@ import '../../data/session_store.dart';
 import '../../data/sound_library.dart';
 import '../../data/storage.dart';
 import '../../domain/sound.dart';
-import 'record_button.dart';
-import 'take_review.dart';
+import 'sample_button.dart';
+import 'sample_review.dart';
 
 const _uuid = Uuid();
 
@@ -27,9 +27,9 @@ enum _Phase { idle, recording, review }
 ///
 /// The screen is silent on purpose: the caller stops the session and releases
 /// the playback engine before pushing it, so the microphone never hears the
-/// speaker. The engine only comes back up to preview the take.
-class RecordScreen extends StatefulWidget {
-  const RecordScreen({
+/// speaker. The engine only comes back up to preview the sample.
+class SamplerScreen extends StatefulWidget {
+  const SamplerScreen({
     super.key,
     required this.engine,
     required this.library,
@@ -41,10 +41,10 @@ class RecordScreen extends StatefulWidget {
   final Storage storage;
 
   @override
-  State<RecordScreen> createState() => _RecordScreenState();
+  State<SamplerScreen> createState() => _SamplerScreenState();
 }
 
-class _RecordScreenState extends State<RecordScreen> {
+class _SamplerScreenState extends State<SamplerScreen> {
   late final MicRecorder _mic = MicRecorder(widget.storage);
   final TextEditingController _name = TextEditingController();
 
@@ -55,7 +55,7 @@ class _RecordScreenState extends State<RecordScreen> {
   Duration _elapsed = Duration.zero;
 
   Float32List _peaks = Float32List(0);
-  Sound? _take;
+  Sound? _sample;
   SoundFamily _family = SoundFamily.voice;
   SoundHandle? _previewHandle;
 
@@ -125,11 +125,11 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _busy = true);
 
     try {
-      final take = await _mic.stopCapture();
+      final sample = await _mic.stopCapture();
       await _mic.close();
 
       final fileName = '${_uuid.v4()}.wav';
-      final bytes = encodeWav(take.samples, sampleRate: take.sampleRate);
+      final bytes = encodeWav(sample.samples, sampleRate: sample.sampleRate);
       await widget.storage.soundFile(fileName).writeAsBytes(bytes);
       await _mic.clearScratch();
 
@@ -139,7 +139,7 @@ class _RecordScreenState extends State<RecordScreen> {
         family: _family,
         fileName: fileName,
         origin: SoundOrigin.recorded,
-        durationMs: take.durationMs,
+        durationMs: sample.durationMs,
         sizeBytes: bytes.length,
       );
 
@@ -149,8 +149,8 @@ class _RecordScreenState extends State<RecordScreen> {
 
       if (!mounted) return;
       setState(() {
-        _take = sound;
-        _peaks = peakEnvelope(take.samples, kWaveformBuckets);
+        _sample = sound;
+        _peaks = peakEnvelope(sample.samples, kWaveformBuckets);
         _name.text = sound.name;
         _phase = _Phase.review;
       });
@@ -175,21 +175,21 @@ class _RecordScreenState extends State<RecordScreen> {
   // ----------------------------------------------------------------- preview
 
   void _togglePreview() {
-    final take = _take;
-    if (take == null) return;
+    final sample = _sample;
+    if (sample == null) return;
 
     if (_previewHandle != null) {
       _stopPreview();
       return;
     }
-    final handle = widget.engine.fire(take, volume: 1.0, rate: 1.0);
+    final handle = widget.engine.fire(sample, volume: 1.0, rate: 1.0);
     if (handle == null) {
-      setState(() => _error = 'La toma no se pudo reproducir.');
+      setState(() => _error = 'El sample no se pudo reproducir.');
       return;
     }
     setState(() => _previewHandle = handle);
     _previewTimer = Timer(
-      Duration(milliseconds: take.durationMs + 60),
+      Duration(milliseconds: sample.durationMs + 60),
       () => mounted ? _stopPreview() : null,
     );
   }
@@ -205,40 +205,40 @@ class _RecordScreenState extends State<RecordScreen> {
 
   // -------------------------------------------------------------- keep or go
 
-  Future<void> _discardTake() async {
-    final take = _take;
+  Future<void> _discardSample() async {
+    final sample = _sample;
     _stopPreview();
-    if (take != null) {
-      await widget.engine.unload(take.id);
-      final file = widget.storage.soundFile(take.fileName);
+    if (sample != null) {
+      await widget.engine.unload(sample.id);
+      final file = widget.storage.soundFile(sample.fileName);
       if (await file.exists()) await file.delete();
     }
     if (!mounted) return;
     setState(() {
-      _take = null;
+      _sample = null;
       _peaks = Float32List(0);
       _phase = _Phase.idle;
     });
   }
 
   Future<void> _save() async {
-    final take = _take;
-    if (take == null || _busy) return;
+    final sample = _sample;
+    if (sample == null || _busy) return;
     _stopPreview();
     setState(() => _busy = true);
 
     // The preview source is cached under a throwaway id; the saved sound gets
     // its own and is loaded again when it lands on a pad.
-    await widget.engine.unload(take.id);
+    await widget.engine.unload(sample.id);
 
     final name = _name.text.trim();
     final sound = await registerRecording(
       library: widget.library,
-      fileName: take.fileName,
+      fileName: sample.fileName,
       name: name.isEmpty ? _defaultName() : name,
       family: _family,
-      durationMs: take.durationMs,
-      sizeBytes: take.sizeBytes,
+      durationMs: sample.durationMs,
+      sizeBytes: sample.sizeBytes,
     );
 
     if (!mounted) return;
@@ -253,7 +253,7 @@ class _RecordScreenState extends State<RecordScreen> {
       await _mic.clearScratch();
     }
     if (_phase == _Phase.review) {
-      await _discardTake();
+      await _discardSample();
     }
     if (!mounted) return;
     Navigator.of(context).pop();
@@ -309,7 +309,7 @@ class _RecordScreenState extends State<RecordScreen> {
         ),
         const SizedBox(width: 12),
         const Text(
-          'Grabar',
+          'Samplear',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -341,7 +341,7 @@ class _RecordScreenState extends State<RecordScreen> {
           ),
         ),
         const SizedBox(height: 28),
-        RecordButton(
+        SampleButton(
           isRecording: recording,
           level: _level,
           progress: progress,
@@ -349,7 +349,7 @@ class _RecordScreenState extends State<RecordScreen> {
         ),
         const SizedBox(height: 28),
         Text(
-          recording ? 'Toca para parar' : 'Toca para grabar',
+          recording ? 'Toca para parar' : 'Toca para samplear',
           style: const TextStyle(
             fontSize: 12,
             letterSpacing: 0.4,
@@ -360,7 +360,7 @@ class _RecordScreenState extends State<RecordScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
           child: Text(
-            'La sesión se para mientras grabas: el micrófono nunca oye lo que suena.',
+            'La sesión se para mientras sampleas: el micrófono nunca oye lo que suena.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, height: 1.5, color: Palette.inkFaint),
           ),
@@ -370,18 +370,18 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Widget _reviewBody() {
-    final take = _take!;
+    final sample = _sample!;
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 20),
-      child: TakeReview(
+      child: SampleReview(
         peaks: _peaks,
-        durationMs: take.durationMs,
+        durationMs: sample.durationMs,
         name: _name,
         family: _family,
         isPlaying: _previewHandle != null,
         onFamilyChanged: (f) => setState(() => _family = f),
         onTogglePlay: _togglePreview,
-        onDiscard: _discardTake,
+        onDiscard: _discardSample,
         onSave: _save,
       ),
     );

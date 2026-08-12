@@ -3,12 +3,17 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 import '../core/constants.dart';
 import '../domain/sound.dart';
+import 'master_fx.dart';
 
 /// Thin wrapper over SoLoud. Everything the instrument needs to make noise,
 /// and nothing else. Sources are cached so a pad never reloads its file.
 class AudioEngine {
   final SoLoud _soloud = SoLoud.instance;
   final Map<String, AudioSource> _sources = {};
+
+  /// Master volume and performance effects. Their state outlives the engine,
+  /// which is torn down whenever the sampler needs the audio session.
+  final MasterFx fx = MasterFx();
 
   bool _ready = false;
   bool get isReady => _ready;
@@ -21,6 +26,7 @@ class AudioEngine {
       bufferSize: 1024,
     );
     _ready = true;
+    fx.apply();
   }
 
   /// Frees the engine so the recorder can own the audio session. iOS refuses
@@ -110,11 +116,6 @@ class AudioEngine {
     _sources.clear();
   }
 
-  /// Master output level, used by the control surface when no pad is selected.
-  void setMasterVolume(double volume) {
-    if (!_ready) return;
-    _soloud.setGlobalVolume(volume.clamp(0.0, 1.0));
-  }
 
   /// Captures the mixer output — this is how a take is recorded. It never
   /// touches the microphone, so it can run while the grid is being played.

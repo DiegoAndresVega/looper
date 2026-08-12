@@ -46,7 +46,38 @@ class _SessionsScreenState extends State<SessionsScreen> {
                 ),
               ),
               _newButton(),
+              const SizedBox(height: 10),
+              _licensesLink(),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The one legal obligation of the app: flutter_recorder ships under
+  /// Apache 2.0 and asks to be credited. This is the quietest place that is
+  /// still findable — settings territory, without building a settings screen.
+  Widget _licensesLink() {
+    return Center(
+      child: GestureDetector(
+        onTap: () => showLicensePage(
+          context: context,
+          applicationName: 'Looper',
+          applicationLegalese:
+              'Instrumento de bolsillo. Todo el audio vive en tu dispositivo.',
+        ),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: Text(
+            'Licencias de código abierto',
+            style: TextStyle(
+              fontSize: 10,
+              letterSpacing: 0.3,
+              color: Palette.inkFaint,
+              decoration: TextDecoration.underline,
+              decorationColor: Palette.inkFaint,
+            ),
           ),
         ),
       ),

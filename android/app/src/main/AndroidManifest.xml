@@ -3,7 +3,7 @@
          reproducción. El audio no sale del dispositivo. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
-        android:label="looper"
+        android:label="Looper"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

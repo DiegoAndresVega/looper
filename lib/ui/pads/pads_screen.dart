@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../audio/fx_curves.dart';
 import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../data/factory_kit.dart';
@@ -308,8 +309,10 @@ class _PadsScreenState extends State<PadsScreen> {
   PadVisualState _stateFor(int slot, PadConfig pad) {
     if (_editArmed) return PadVisualState.target;
     if (pad.isEmpty) return PadVisualState.empty;
-    if (c.isLooping(c.activeBank, slot)) return PadVisualState.looping;
-    return PadVisualState.loaded;
+    if (!c.isLooping(c.activeBank, slot)) return PadVisualState.loaded;
+    return c.isQueued(c.activeBank, slot)
+        ? PadVisualState.queued
+        : PadVisualState.looping;
   }
 
   Widget _surface() {
@@ -424,12 +427,15 @@ class _PadsScreenState extends State<PadsScreen> {
   /// while a loop runs is the point of them.
   List<KnobSpec> _fxKnobs({required bool includeResonance}) {
     final fx = c.fx;
+    // The same threshold the effects bypass themselves at, so a knob reading
+    // OFF is one that is genuinely out of the signal path.
+    final filterOpen = fx.cutoff >= 1 - kFxEpsilon;
     return [
       KnobSpec(
         label: 'Filtro',
-        display: fx.cutoff >= 0.995 ? 'OFF' : (fx.cutoff * 100).round().toString(),
+        display: filterOpen ? 'OFF' : (fx.cutoff * 100).round().toString(),
         value: fx.cutoff,
-        accent: fx.cutoff < 0.995,
+        accent: !filterOpen,
         onChanged: (v) => setState(() => fx.cutoff = v),
       ),
       if (includeResonance)
@@ -437,21 +443,23 @@ class _PadsScreenState extends State<PadsScreen> {
           label: 'Reso',
           display: (fx.resonance * 100).round().toString(),
           value: fx.resonance,
-          accent: fx.resonance > 0.005,
+          accent: fx.resonance > kFxEpsilon,
           onChanged: (v) => setState(() => fx.resonance = v),
         ),
       KnobSpec(
         label: 'Eco',
-        display: fx.echo <= 0.005 ? 'OFF' : (fx.echo * 100).round().toString(),
+        display:
+            fx.echo <= kFxEpsilon ? 'OFF' : (fx.echo * 100).round().toString(),
         value: fx.echo,
-        accent: fx.echo > 0.005,
+        accent: fx.echo > kFxEpsilon,
         onChanged: (v) => setState(() => fx.echo = v),
       ),
       KnobSpec(
         label: 'Drive',
-        display: fx.drive <= 0.005 ? 'OFF' : (fx.drive * 100).round().toString(),
+        display:
+            fx.drive <= kFxEpsilon ? 'OFF' : (fx.drive * 100).round().toString(),
         value: fx.drive,
-        accent: fx.drive > 0.005,
+        accent: fx.drive > kFxEpsilon,
         onChanged: (v) => setState(() => fx.drive = v),
       ),
     ];

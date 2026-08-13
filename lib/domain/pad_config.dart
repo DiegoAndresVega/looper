@@ -11,7 +11,7 @@ class PadConfig {
     this.volume = 0.8,
     this.semitones = 0,
     this.loopSteps = kStepsPerBar,
-    this.synced = false,
+    this.synced = true,
     this.muted = false,
   });
 
@@ -24,6 +24,9 @@ class PadConfig {
   /// Loop length in 16th notes. Only meaningful when [synced] is true;
   /// a free loop runs at its own natural length.
   final int loopSteps;
+
+  /// Whether the loop rides the tempo grid. On by default: an instrument
+  /// where two pads left running do not line up is not an instrument.
   final bool synced;
   final bool muted;
 
@@ -53,18 +56,22 @@ class PadConfig {
         'volume': volume,
         'semitones': semitones,
         'loopSteps': loopSteps,
-        'synced': synced,
+        'sync': synced,
         'muted': muted,
       };
 
-  /// Sessions saved before the gesture rewrite carry a 'mode' key. It is
-  /// ignored on purpose: how a pad plays is no longer something it remembers.
+  /// Sessions saved before the gesture rewrite carry a 'mode' key, and ones
+  /// saved before loops were put on the grid carry 'synced'. Both are ignored
+  /// on purpose: 'synced' was written false for every pad back when free
+  /// running was the default, and reading it back would keep old sessions out
+  /// of time forever. The new key is 'sync', so an old session simply takes
+  /// the new default.
   factory PadConfig.fromJson(Map<String, dynamic> json) => PadConfig(
         soundId: json['soundId'] as String?,
         volume: (json['volume'] as num?)?.toDouble() ?? 0.8,
         semitones: json['semitones'] as int? ?? 0,
         loopSteps: json['loopSteps'] as int? ?? kStepsPerBar,
-        synced: json['synced'] as bool? ?? false,
+        synced: json['sync'] as bool? ?? true,
         muted: json['muted'] as bool? ?? false,
       );
 }

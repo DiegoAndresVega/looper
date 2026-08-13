@@ -99,18 +99,26 @@ void main() {
     });
 
     test('la sesión sobrevive a un viaje por JSON', () {
+      // El pad va suelto a propósito: sincronizado es el valor por defecto,
+      // así que solo el suelto demuestra que la clave viaja de verdad.
       final original = Session.blank(id: 'x', name: 'Cocina 04')
           .copyWith(bpm: 148)
           .withPad(1, 0,
-              const PadConfig(soundId: 's9', synced: true, loopSteps: 32));
+              const PadConfig(soundId: 's9', synced: false, loopSteps: 32));
 
       final restored = Session.fromJson(original.toJson());
 
       expect(restored.name, 'Cocina 04');
       expect(restored.bpm, 148);
       expect(restored.padAt(1, 0).soundId, 's9');
-      expect(restored.padAt(1, 0).synced, isTrue);
+      expect(restored.padAt(1, 0).synced, isFalse);
       expect(restored.padAt(1, 0).loopSteps, 32);
+    });
+
+    test('un pad nuevo nace enganchado al tempo', () {
+      const pad = PadConfig(soundId: 's1');
+
+      expect(pad.synced, isTrue);
     });
 
     test('los patrones del secuenciador viajan con la sesión', () {
@@ -139,7 +147,7 @@ void main() {
             'id': 'A',
             'label': 'Kit',
             'pads': [
-              {'soundId': 's1', 'mode': 'loop', 'volume': 0.7, 'synced': true},
+              {'soundId': 's1', 'mode': 'loop', 'volume': 0.7, 'synced': false},
               for (var i = 1; i < kPadsPerBank; i++) {'soundId': null},
             ],
           },
@@ -157,6 +165,9 @@ void main() {
       final restored = Session.fromJson(legacy);
 
       expect(restored.padAt(0, 0).soundId, 's1');
+      // La clave vieja 'synced' se escribió en falso para todos los pads
+      // cuando lo normal era ir suelto. Se ignora: si no, una sesión de antes
+      // se quedaría fuera de tempo para siempre.
       expect(restored.padAt(0, 0).synced, isTrue);
       expect(restored.padAt(0, 0).volume, 0.7);
       expect(restored.patterns.length, kPatternCount);

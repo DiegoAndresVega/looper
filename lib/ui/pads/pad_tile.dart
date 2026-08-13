@@ -4,8 +4,12 @@ import '../../core/palette.dart';
 import '../../domain/pad_config.dart';
 import '../../domain/sound.dart';
 
-/// The six states a pad can be in. Read by colour and movement, never by text.
-enum PadVisualState { empty, loaded, firing, looping, target, blocked }
+/// The states a pad can be in. Read by colour and movement, never by text.
+///
+/// [queued] is the one that needs saying out loud: the loop is on and armed,
+/// waiting for the downbeat so it lands with whatever is already running. It
+/// wears the ring empty, so the pad looks loaded and ready rather than dead.
+enum PadVisualState { empty, loaded, firing, queued, looping, target, blocked }
 
 /// The second light, in the corner opposite the sound dot. With the sequencer
 /// on, the sixteen pads double as the sixteen steps: this is where the bar is
@@ -67,6 +71,7 @@ class _PadTileState extends State<PadTile> {
     if (_pressed || widget.state == PadVisualState.firing) return 0.60;
     if (widget.pad.muted) return 0.07;
     if (widget.state == PadVisualState.looping) return 0.32;
+    if (widget.state == PadVisualState.queued) return 0.20;
     return 0.14;
   }
 
@@ -76,6 +81,7 @@ class _PadTileState extends State<PadTile> {
         ? Palette.accent
         : _familyColor;
     final looping = widget.state == PadVisualState.looping;
+    final queued = widget.state == PadVisualState.queued;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -91,13 +97,16 @@ class _PadTileState extends State<PadTile> {
             color: Palette.panelHigh,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _borderColor(color, looping),
+              color: _borderColor(color, looping || queued),
               width: widget.selected || widget.state == PadVisualState.target ? 2 : 1,
             ),
           ),
           child: CustomPaint(
-            painter: looping
-                ? _LoopRingPainter(color: color, progress: widget.progress)
+            painter: looping || queued
+                ? _LoopRingPainter(
+                    color: color,
+                    progress: queued ? 0 : widget.progress,
+                  )
                 : null,
             child: Stack(
               children: [
@@ -185,6 +194,7 @@ class _PadTileState extends State<PadTile> {
     final name = widget.sound?.name ?? 'Vacío';
     final bright = widget.state == PadVisualState.looping ||
         widget.state == PadVisualState.firing ||
+        widget.state == PadVisualState.queued ||
         _pressed;
     return Positioned(
       left: 8,

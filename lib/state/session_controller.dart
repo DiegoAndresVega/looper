@@ -135,6 +135,10 @@ class SessionController extends ChangeNotifier {
     return _clock.progressFor(key);
   }
 
+  /// True while a loop is armed and waiting for the downbeat to come round.
+  /// The pad is already on: it just has not made a sound yet.
+  bool isQueued(int bank, int slot) => _clock.isPending(padKey(bank, slot));
+
   // ---------------------------------------------------------------- session
 
   Future<void> open(Session session) async {
@@ -316,8 +320,10 @@ class SessionController extends ChangeNotifier {
 
     if (pad.synced) {
       // Retriggered by the clock so it lands with the other synced layers.
+      // The clock decides when: if something is already running, this one
+      // waits for the downbeat instead of starting under the finger.
       _loops[key] = ActiveLoop(bank: bank, slot: slot, synced: true);
-      _clock.add(key, pad.loopSteps);
+      _clock.add(key, pad.loopSteps, alignTo: _launchOn(pad.loopSteps));
     } else {
       // Free loop: SoLoud repeats it natively at its own natural length.
       final handle = _engine.fire(
@@ -329,6 +335,11 @@ class SessionController extends ChangeNotifier {
       _loops[key] = ActiveLoop(bank: bank, slot: slot, handle: handle, synced: false);
     }
   }
+
+  /// The boundary a loop waits for before coming in: its own length, but never
+  /// more than a bar. Waiting two whole bars for a pad to answer reads as
+  /// broken, and a bar line is a boundary every other length shares anyway.
+  int _launchOn(int steps) => math.min(steps, kStepsPerBar);
 
   void _onSyncedStep(String key) {
     if (key == kMetronomeId) {
@@ -385,7 +396,9 @@ class SessionController extends ChangeNotifier {
   void toggleSequencerPlay() {
     sequencer.togglePlay();
     if (sequencer.isPlaying) {
-      _clock.add(kSequencerKey, 1);
+      // It ticks every step, but its first step waits for a bar line: that is
+      // what keeps the pattern and the running loops on the same downbeat.
+      _clock.add(kSequencerKey, 1, alignTo: kPatternSteps);
     } else {
       _clock.remove(kSequencerKey);
     }
@@ -495,8 +508,12 @@ class SessionController extends ChangeNotifier {
     }
     _clock.clear();
     // Stopping the music does not stop the click: it is a tool, not a layer.
+    // The sequencer goes back first so it lands on the new downbeat instead
+    // of sitting out the bar waiting for one.
+    if (sequencer.isPlaying) {
+      _clock.add(kSequencerKey, 1, alignTo: kPatternSteps);
+    }
     if (_metronome) _clock.add(kMetronomeId, kStepsPerBeat);
-    if (sequencer.isPlaying) _clock.add(kSequencerKey, 1);
     notifyListeners();
   }
 
@@ -618,7 +635,7 @@ class SessionController extends ChangeNotifier {
     final wasSynced = _loops[key]?.synced ?? false;
     if (wasSynced) _clock.remove(key);
     _applyPadLive(_activeBank, slot, padAt(slot).copyWith(loopSteps: steps));
-    if (wasSynced) _clock.add(key, steps);
+    if (wasSynced) _clock.add(key, steps, alignTo: _launchOn(steps));
   }
 
   /// Changing the sync of a running loop restarts it, this time on (or off)

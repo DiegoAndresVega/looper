@@ -25,6 +25,11 @@ class AudioEngine {
       channels: Channels.stereo,
       bufferSize: 1024,
     );
+    // SoLoud allows sixteen voices at once out of the box, and it drops the
+    // quietest ones over that. Sixteen is nothing here: a handful of loops
+    // retriggering, the sequencer and a roll go past it without trying, and
+    // what a player hears is layers cutting out for no reason.
+    _soloud.setMaxActiveVoiceCount(kMaxVoices);
     _ready = true;
     fx.apply();
   }

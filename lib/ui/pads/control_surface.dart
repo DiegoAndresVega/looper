@@ -131,6 +131,9 @@ class ControlSurface extends StatelessWidget {
   }
 }
 
+/// How far the thumb travels to take a knob from nothing to everything.
+const double _fullThrowPixels = 120;
+
 /// A knob you drag vertically. Big target, no fiddly arc dragging.
 class _Knob extends StatelessWidget {
   const _Knob({required this.spec});
@@ -141,9 +144,14 @@ class _Knob extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = spec.onChanged != null;
     return GestureDetector(
+      // The whole column takes the drag, not just the 38 pixels of dial: a
+      // thumb that lands beside the ring was doing nothing at all before.
+      behavior: HitTestBehavior.opaque,
       onVerticalDragUpdate: enabled
           ? (details) {
-              final next = (spec.value - details.delta.dy / 120).clamp(0.0, 1.0);
+              final next =
+                  (spec.value - details.delta.dy / _fullThrowPixels)
+                      .clamp(0.0, 1.0);
               spec.onChanged!(next);
             }
           : null,

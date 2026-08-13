@@ -61,6 +61,10 @@ const double kMetronomeVolume = 0.55;
 const int kSampleRate = 44100;
 const int kChannels = 1;
 
+/// How many voices may sound at once. Sixty-four is a pad per voice with room
+/// for their tails; the engine's own default of sixteen cuts layers short.
+const int kMaxVoices = 64;
+
 /// Warn when the device drops below this much free space.
 const int kLowSpaceBytes = 200 * 1024 * 1024;
 

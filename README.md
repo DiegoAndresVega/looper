@@ -44,7 +44,7 @@ El gesto decide cómo suena un pad; el pad no guarda ningún «modo».
 | AJUSTAR y luego un pad | Abre la hoja del pad: cambiar sonido, sincronía, largo y vaciar |
 
 AJUSTAR es el único estado modal del instrumento y dura un solo toque: al
-encenderlo la grilla entera se enciende en ámbar para avisar de que el
+encenderlo la grilla entera se enciende en fósforo para avisar de que el
 siguiente toque no va a sonar.
 
 ## El secuenciador de dieciséis pasos
@@ -83,16 +83,18 @@ máquinas del oficio, y ninguna palabra se repite:
 
 | | **SAMPLEAR** | **REC** | **EXPORTAR** |
 |---|---|---|---|
-| Icono | Micrófono | Punto rojo | Flecha de compartir |
+| Icono | Micrófono | Punto láser | Flecha de compartir |
 | De dónde | Del micrófono | De tus dedos | De la salida del mezclador |
 | Qué guarda | Audio: un WAV en la biblioteca | Decisiones: qué pads suenan en cada paso | Audio: un WAV para mandar |
 | Dónde vive | Pantalla propia | Barra del secuenciador | Transport |
 | ¿Suena la app mientras? | No, y a propósito | Sí | Sí |
 | Dura | 10 s como mucho | Un compás | Lo que dure la sesión |
 
-El **punto rojo es del secuenciador y de nadie más**: en cualquier máquina de
+El **punto láser es del secuenciador y de nadie más**: en cualquier máquina de
 este tipo ese icono significa «estoy escribiendo el patrón». Por eso exportar
-lleva la flecha de compartir y no un círculo rojo.
+lleva la flecha de compartir y no un círculo. El color es el magenta de la
+marca, no el rojo de fábrica: el rojo estaba en tres botones a la vez y por eso
+había dejado de significar algo.
 
 Samplear no puede sonar nada porque el micrófono nunca se abre mientras hay
 reproducción: se acaba el sangrado del altavoz al micro y, de paso, los dos
@@ -125,11 +127,42 @@ cuyo corte cae durante la nota, que es de donde sale el chillido característico
 La consecuencia práctica es que el repositorio no pesa nada, no hay licencias de
 terceros sobre el audio, y retocar un sonido es cambiar unos números.
 
+## La identidad
+
+El suelo es berenjena, no gris oscuro: el violeta de la marca bajado al 11 % de
+luminosidad, con un 54 % de saturación intacto. Es lo que deja la luz UV al
+pegar en una pared, y por eso la app parece estar dentro del aparato en vez de
+sobre una hoja. La profundidad se construye subiendo esa escalera —pozo, sala,
+panel, alto, línea— y nunca tirando un negro translúcido por encima.
+
+Los cuatro colores de familia recorren un solo arco de matiz: fósforo para la
+percusión, menta para la voz, cielo para el tono y UV para la textura. El
+fósforo hace además de acento de marca, y el láser sustituye al rojo en el REC
+del secuenciador. El rojo se fue porque estaba en tres botones a la vez.
+
+Dos tipografías variables, y los ejes se manejan desde un solo sitio
+(`lib/core/type.dart`):
+
+| Cara | Eje | Para qué |
+|------|-----|----------|
+| Archivo | `wdth` 100–125, `wght` 400–900 | La voz: nombres, títulos y texto corrido |
+| Martian Mono | `wdth` 75–87, `wght` 500–700 | Los datos: tempo, pasos, direcciones de pad y las micro-etiquetas del transport |
+
+El peso se pide siempre por `fontVariations` y nunca por `fontWeight`, para que
+el motor interpole el eje en vez de fingir una negrita encima de otra.
+
+Ningún color vive fuera de `lib/core/palette.dart`, y ningún `TextStyle` se
+escribe a mano fuera de `type.dart`. El logo (`tool/make_icon.py`) y los fondos
+de arranque de Android e iOS salen de los mismos valores.
+
+Identidad completa: artifact «Identidad Looper»,
+https://claude.ai/code/artifact/e88abf13-2695-40e4-85e7-9f3743adc153
+
 ## Estructura
 
 ```
 lib/
-  core/         Paleta, familias de sonido y límites fijos
+  core/         Paleta, tipografía de marca, familias de sonido y límites
   domain/       Modelos inmutables: Sound, PadConfig, Bank, Session, Pattern
   data/         Almacenamiento local, biblioteca, sesiones, kit de fábrica
   audio/        Síntesis, WAV, motor SoLoud, reloj, micrófono y mezcla
@@ -228,5 +261,9 @@ Las versiones de Android están fijadas a propósito:
 ## Licencia
 
 Pendiente de decidir. Las dependencias son todas permisivas (zlib, MIT, Apache
-2.0 y BSD-3) y el audio de fábrica se genera con código propio, así que no hay
-material de terceros con restricciones.
+2.0 y BSD-3) y el audio de fábrica se genera con código propio.
+
+El único material de terceros son las dos tipografías, Archivo y Martian Mono,
+ambas bajo SIL Open Font License 1.1. La OFL pide viajar con las fuentes que
+cubre: sus textos están en `assets/fonts/` y `main()` los registra en
+`LicenseRegistry`, así que salen en la pantalla de licencias de la app.

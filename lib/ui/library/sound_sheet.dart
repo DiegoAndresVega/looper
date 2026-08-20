@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../domain/sound.dart';
 import '../common/waveform_view.dart';
 import 'family_picker.dart';
@@ -144,22 +145,10 @@ class _SoundSheetState extends State<SoundSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'RECORTE',
-              style: TextStyle(
-                fontSize: 9,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w700,
-                color: Palette.inkFaint,
-              ),
-            ),
+            Text('RECORTE', style: Brand.label(9, weight: 700)),
             Text(
               '${(_sound.trimmedDurationMs / 1000).toStringAsFixed(2)} s',
-              style: const TextStyle(
-                fontSize: 11,
-                color: Palette.inkDim,
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
+              style: Brand.readout(10.5, color: Palette.inkDim),
             ),
           ],
         ),
@@ -191,7 +180,7 @@ class _SoundSheetState extends State<SoundSheet> {
     return TextField(
       controller: _name,
       maxLength: 18,
-      style: const TextStyle(color: Palette.ink, fontSize: 15),
+      style: Brand.strong(15),
       cursorColor: Palette.accent,
       onChanged: (value) {
         final trimmed = value.trim();
@@ -201,7 +190,7 @@ class _SoundSheetState extends State<SoundSheet> {
       decoration: InputDecoration(
         counterText: '',
         labelText: 'Nombre',
-        labelStyle: const TextStyle(color: Palette.inkFaint, fontSize: 12),
+        labelStyle: Brand.label(9, weight: 700),
         filled: true,
         fillColor: Palette.panel,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -229,12 +218,7 @@ class _SoundSheetState extends State<SoundSheet> {
           width: 66,
           child: Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 9,
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w700,
-              color: Palette.inkFaint,
-            ),
+            style: Brand.label(9, width: 75, weight: 700),
           ),
         ),
         Expanded(
@@ -257,11 +241,7 @@ class _SoundSheetState extends State<SoundSheet> {
           child: Text(
             display,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Palette.inkDim,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: Brand.readout(10.5, color: Palette.inkDim),
           ),
         ),
       ],
@@ -282,13 +262,9 @@ class _SoundSheetState extends State<SoundSheet> {
                 color: _sound.family.color,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Text(
-                'Escuchar',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Palette.ground,
-                ),
+              child: Text(
+                'ESCUCHAR',
+                style: Brand.label(10, weight: 700, color: Palette.onAccent),
               ),
             ),
           ),
@@ -305,13 +281,9 @@ class _SoundSheetState extends State<SoundSheet> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Palette.rec),
                 ),
-                child: const Text(
-                  'Borrar',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Palette.rec,
-                  ),
+                child: Text(
+                  'BORRAR',
+                  style: Brand.label(10, weight: 700, color: Palette.rec),
                 ),
               ),
             ),
@@ -326,23 +298,21 @@ class _SoundSheetState extends State<SoundSheet> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Palette.panel,
-        title: Text(
-          'Borrar ${_sound.name}',
-          style: const TextStyle(color: Palette.ink, fontSize: 15),
-        ),
-        content: const Text(
+        title: Text('Borrar ${_sound.name}', style: Brand.title(16)),
+        content: Text(
           'Se borra el archivo y se vacían los pads que lo usaban. No hay vuelta atrás.',
-          style: TextStyle(color: Palette.inkDim, fontSize: 12, height: 1.5),
+          style: Brand.body(12.5, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Palette.inkDim)),
+            child: Text('CANCELAR',
+                style: Brand.label(9, weight: 700, color: Palette.inkDim)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Borrar', style: TextStyle(color: Palette.rec)),
+            child: Text('BORRAR',
+                style: Brand.label(9, weight: 700, color: Palette.rec)),
           ),
         ],
       ),

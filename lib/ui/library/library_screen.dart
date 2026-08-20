@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../data/sound_import.dart';
 import '../../data/sound_library.dart';
 import '../../data/storage.dart';
@@ -88,19 +89,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
         const SizedBox(width: 12),
-        const Expanded(
-          child: Text(
-            'Biblioteca',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Palette.ink,
-            ),
-          ),
+        Expanded(
+          child: Text('Biblioteca', style: Brand.title(17)),
         ),
         Text(
           '${_library.count} · ${_formatSize(_library.sizeBytes)}',
-          style: const TextStyle(fontSize: 11, color: Palette.inkFaint),
+          style: Brand.readout(10, color: Palette.inkFaint),
         ),
       ],
     );
@@ -132,12 +126,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
           border: Border.all(color: Palette.line),
         ),
         child: Text(
-          _importing ? 'Importando…' : 'Importar un WAV',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Palette.inkDim,
-          ),
+          _importing ? 'IMPORTANDO…' : 'IMPORTAR UN WAV',
+          style: Brand.label(9, weight: 700, color: Palette.inkDim),
         ),
       ),
     );
@@ -151,10 +141,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         borderRadius: BorderRadius.circular(11),
         border: Border.all(color: Palette.line),
       ),
-      child: Text(
-        message,
-        style: const TextStyle(fontSize: 11, height: 1.4, color: Palette.inkDim),
-      ),
+      child: Text(message, style: Brand.body(11.5)),
     );
   }
 

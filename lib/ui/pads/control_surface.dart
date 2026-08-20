@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 
 /// Which set of four knobs the surface is showing.
 enum SurfaceTab { sound, fx, loop }
@@ -69,10 +70,11 @@ class ControlSurface extends StatelessWidget {
                 child: Text(
                   targetLabel.toUpperCase(),
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    letterSpacing: 1.3,
-                    fontWeight: FontWeight.w700,
+                  style: Brand.label(
+                    9,
+                    width: 75,
+                    weight: 700,
+                    tracking: 0.1,
                     color: Palette.ink,
                   ),
                 ),
@@ -118,10 +120,10 @@ class ControlSurface extends StatelessWidget {
           ),
           child: Text(
             names[t]!.toUpperCase(),
-            style: TextStyle(
-              fontSize: 7.5,
-              letterSpacing: 1.0,
-              fontWeight: on ? FontWeight.w700 : FontWeight.w600,
+            style: Brand.label(
+              7.5,
+              width: 75,
+              weight: on ? 700 : 600,
               color: on ? Palette.ground : Palette.inkFaint,
             ),
           ),
@@ -175,20 +177,14 @@ class _Knob extends StatelessWidget {
             spec.label.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 7,
-              letterSpacing: 1.0,
-              fontWeight: FontWeight.w600,
-              color: Palette.inkFaint,
-            ),
+            style: Brand.label(7, width: 75),
           ),
           Text(
             spec.display,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
+            style: Brand.readout(
+              9,
+              weight: 600,
               color: enabled ? Palette.ink : Palette.inkFaint,
-              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

@@ -12,6 +12,7 @@ import '../../audio/wav_decoder.dart';
 import '../../audio/wav_encoder.dart';
 import '../../core/constants.dart';
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../data/session_store.dart';
 import '../../data/sound_library.dart';
 import '../../data/storage.dart';
@@ -308,14 +309,7 @@ class _SamplerScreenState extends State<SamplerScreen> {
           ),
         ),
         const SizedBox(width: 12),
-        const Text(
-          'Samplear',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Palette.ink,
-          ),
-        ),
+        Text('Samplear', style: Brand.title(17)),
       ],
     );
   }
@@ -328,18 +322,14 @@ class _SamplerScreenState extends State<SamplerScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          recording
-              ? _formatElapsed(_elapsed)
-              : 'Hasta ${kMaxRecordDuration.inSeconds} segundos',
-          style: TextStyle(
-            fontSize: recording ? 34 : 13,
-            fontWeight: recording ? FontWeight.w300 : FontWeight.w500,
-            letterSpacing: recording ? -1 : 0.3,
-            color: recording ? Palette.ink : Palette.inkDim,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
+        // While it runs, the clock is the machine talking: mono, big and
+        // light. Before it runs, it is only a promise, so it stays a caption.
+        recording
+            ? Text(_formatElapsed(_elapsed), style: Brand.readout(30, weight: 300))
+            : Text(
+                'HASTA ${kMaxRecordDuration.inSeconds} SEGUNDOS',
+                style: Brand.label(10, color: Palette.inkDim),
+              ),
         const SizedBox(height: 28),
         SampleButton(
           isRecording: recording,
@@ -349,20 +339,16 @@ class _SamplerScreenState extends State<SamplerScreen> {
         ),
         const SizedBox(height: 28),
         Text(
-          recording ? 'Toca para parar' : 'Toca para samplear',
-          style: const TextStyle(
-            fontSize: 12,
-            letterSpacing: 0.4,
-            color: Palette.inkFaint,
-          ),
+          recording ? 'TOCA PARA PARAR' : 'TOCA PARA SAMPLEAR',
+          style: Brand.label(10, weight: 700, color: Palette.inkDim),
         ),
-        const SizedBox(height: 10),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
             'La sesión se para mientras sampleas: el micrófono nunca oye lo que suena.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, height: 1.5, color: Palette.inkFaint),
+            style: Brand.body(11.5, color: Palette.inkFaint, height: 1.5),
           ),
         ),
       ],
@@ -402,24 +388,15 @@ class _SamplerScreenState extends State<SamplerScreen> {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.4,
-                color: Palette.ink,
-              ),
+              style: Brand.body(12, color: Palette.ink, height: 1.4),
             ),
           ),
           if (_blockedInSettings)
             GestureDetector(
               onTap: openAppSettings,
-              child: const Text(
+              child: Text(
                 'AJUSTES',
-                style: TextStyle(
-                  fontSize: 10,
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  color: Palette.accent,
-                ),
+                style: Brand.label(9, weight: 700, color: Palette.accent),
               ),
             ),
         ],

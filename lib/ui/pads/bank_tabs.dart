@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 
 /// The four bank tabs. A bank whose loops are still running lights up along
 /// its bottom edge, so you never lose track of what is sounding off-screen.
@@ -43,21 +44,18 @@ class BankTabs extends StatelessWidget {
                   children: [
                     Text(
                       ids[i],
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.1,
-                        fontWeight: FontWeight.w800,
+                      style: Brand.title(
+                        13,
                         color: active ? Palette.ground : Palette.inkDim,
                       ),
                     ),
                     Text(
                       labels[i].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 7,
-                        letterSpacing: 1.0,
-                        fontWeight: FontWeight.w600,
+                      style: Brand.label(
+                        7,
+                        width: 75,
                         color: active
-                            ? Palette.ground.withValues(alpha: 0.6)
+                            ? Palette.ground.withValues(alpha: 0.62)
                             : Palette.inkFaint,
                       ),
                     ),

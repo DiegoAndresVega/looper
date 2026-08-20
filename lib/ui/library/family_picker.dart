@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 
 /// Which family a sound belongs to, picked by colour. The family is not
 /// decoration: it is the colour the pad wears on the grid.
@@ -41,11 +42,12 @@ class FamilyPicker extends StatelessWidget {
           border: Border.all(color: isSelected ? option.color : Palette.line),
         ),
         child: Text(
-          option.label,
+          option.label.toUpperCase(),
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+          style: Brand.label(
+            8.5,
+            width: 75,
+            weight: 700,
             color: isSelected ? option.color : Palette.inkDim,
           ),
         ),

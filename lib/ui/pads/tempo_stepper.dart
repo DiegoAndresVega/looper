@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants.dart';
 import '../../core/palette.dart';
+import '../../core/type.dart';
 
 /// Tempo control: a big number between minus and plus. A tap moves one unit;
 /// holding accelerates in two tiers, so crossing the whole range takes about a
@@ -81,23 +82,11 @@ class _TempoStepperState extends State<TempoStepper> {
             children: [
               Text(
                 '${widget.bpm}',
-                style: const TextStyle(
-                  fontSize: 22,
-                  height: 1.1,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  color: Palette.ink,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+                style: Brand.readout(22, weight: 700),
               ),
-              const Text(
+              Text(
                 'BPM',
-                style: TextStyle(
-                  fontSize: 8,
-                  letterSpacing: 2.4,
-                  fontWeight: FontWeight.w600,
-                  color: Palette.inkFaint,
-                ),
+                style: Brand.label(8, tracking: 0.3),
               ),
             ],
           ),
@@ -114,14 +103,9 @@ class _TempoStepperState extends State<TempoStepper> {
               borderRadius: BorderRadius.circular(11),
               border: Border.all(color: Palette.line),
             ),
-            child: const Text(
+            child: Text(
               'TAP',
-              style: TextStyle(
-                fontSize: 9,
-                letterSpacing: 1.6,
-                fontWeight: FontWeight.w700,
-                color: Palette.inkDim,
-              ),
+              style: Brand.label(9, weight: 700, color: Palette.inkDim),
             ),
           ),
         ),
@@ -145,12 +129,7 @@ class _TempoStepperState extends State<TempoStepper> {
         ),
         child: Text(
           glyph,
-          style: const TextStyle(
-            fontSize: 21,
-            height: 1,
-            fontWeight: FontWeight.w600,
-            color: Palette.ink,
-          ),
+          style: Brand.strong(21, height: 1),
         ),
       ),
     );

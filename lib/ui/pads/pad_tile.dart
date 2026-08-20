@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../domain/pad_config.dart';
 import '../../domain/sound.dart';
 
@@ -204,16 +205,18 @@ class _PadTileState extends State<PadTile> {
         name.toUpperCase(),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 8.5,
-          height: 1.2,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.7,
-          fontFeatures: const [FontFeature.tabularFigures()],
+        // Narrow and tightly tracked: the pad's name is data, so it wears the
+        // mono face, but a pad is only a quarter of the screen wide and the
+        // brand's usual 0,16 em would eat two letters off every kit sound.
+        style: Brand.label(
+          8.5,
+          width: 75,
+          tracking: 0.07,
+          weight: 700,
           color: _isEmpty
               ? Palette.inkFaint.withValues(alpha: 0.6)
               : (bright ? Palette.ink : Palette.inkDim),
-        ),
+        ).copyWith(height: 1.25),
       ),
     );
   }

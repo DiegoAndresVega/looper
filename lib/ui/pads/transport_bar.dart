@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 
 /// One transport button: icon, tiny caption, and an on/off look.
 class TransportAction {
@@ -57,7 +58,7 @@ class TransportBar extends StatelessWidget {
     final Color foreground;
     if (action.recording) {
       background = Palette.rec;
-      foreground = Colors.white;
+      foreground = Palette.onAccent;
     } else if (action.active) {
       background = Palette.accent;
       foreground = Palette.ground;
@@ -92,11 +93,12 @@ class TransportBar extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             action.label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 6.5,
-              letterSpacing: 0.7,
-              fontWeight: FontWeight.w600,
-              color: Palette.inkFaint,
+            style: Brand.label(
+              6.5,
+              width: 75,
+              color: action.active || action.recording
+                  ? Palette.inkDim
+                  : Palette.inkFaint,
             ),
           ),
         ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../domain/sound.dart';
 
 /// One row of the list, or the heading that opens a group. Building the rows
@@ -66,11 +67,7 @@ class SoundList extends StatelessWidget {
           child: Text(
             emptyMessage,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              height: 1.5,
-              color: Palette.inkFaint,
-            ),
+            style: Brand.body(12, color: Palette.inkFaint, height: 1.5),
           ),
         ),
       );
@@ -96,17 +93,12 @@ class SoundList extends StatelessWidget {
         children: [
           Text(
             heading.label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 9,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.w700,
-              color: Palette.inkFaint,
-            ),
+            style: Brand.label(9, weight: 700),
           ),
           const SizedBox(width: 8),
           Text(
             '${heading.count}',
-            style: const TextStyle(fontSize: 9, color: Palette.inkFaint),
+            style: Brand.readout(9, color: Palette.inkFaint),
           ),
         ],
       ),
@@ -144,20 +136,15 @@ class SoundList extends StatelessWidget {
               child: Text(
                 sound.name,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                style: Brand.strong(
+                  13,
                   color: selected ? Palette.ink : Palette.inkDim,
                 ),
               ),
             ),
             Text(
               '${(sound.trimmedDurationMs / 1000).toStringAsFixed(1)} s',
-              style: const TextStyle(
-                fontSize: 10,
-                color: Palette.inkFaint,
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
+              style: Brand.readout(9.5, color: Palette.inkFaint),
             ),
             if (trailing != null) ...[
               const SizedBox(width: 6),

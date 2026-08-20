@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../audio/fx_curves.dart';
 import '../../core/constants.dart';
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../data/factory_kit.dart';
 import '../../domain/loop_length.dart';
 import '../../domain/pad_config.dart';
@@ -133,12 +134,7 @@ class _PadsScreenState extends State<PadsScreen> {
                   child: Text(
                     c.session!.name,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                      color: Palette.ink,
-                    ),
+                    style: Brand.title(17),
                   ),
                 ),
                 const SizedBox(width: 5),
@@ -181,12 +177,7 @@ class _PadsScreenState extends State<PadsScreen> {
           const SizedBox(width: 6),
           Text(
             _formatElapsed(c.mixdown.elapsed),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Palette.rec,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: Brand.readout(10, weight: 700, color: Palette.rec),
           ),
         ],
       ),
@@ -326,7 +317,7 @@ class _PadsScreenState extends State<PadsScreen> {
 
     return ControlSurface(
       targetLabel: label,
-      // Amber for the master row: red is reserved for things that record.
+      // Phosphor for the master row: laser is reserved for writing the pattern.
       targetColor: sound?.family.color ?? Palette.accent,
       tab: _tab,
       onTabChanged: (t) => setState(() => _tab = t),
@@ -540,7 +531,7 @@ class _PadsScreenState extends State<PadsScreen> {
               : () => setState(() => c.toggleMute(slot)),
           onLongPress: slot == null ? null : () => setState(() => c.toggleSolo(slot)),
         ),
-        // The red dot belongs to the sequencer and only to the sequencer.
+        // The laser dot belongs to the sequencer and only to the sequencer.
         // Rendering the performance out is an export, and wears the icon
         // every phone already reads as "send this somewhere".
         TransportAction(

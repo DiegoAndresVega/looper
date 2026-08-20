@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../data/session_store.dart';
 import '../../data/sound_library.dart';
 import '../../domain/session.dart';
@@ -67,14 +68,11 @@ class _SessionsScreenState extends State<SessionsScreen> {
           applicationLegalese:
               'Instrumento de bolsillo. Todo el audio vive en tu dispositivo.',
         ),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           child: Text(
-            'Licencias de código abierto',
-            style: TextStyle(
-              fontSize: 10,
-              letterSpacing: 0.3,
-              color: Palette.inkFaint,
+            'LICENCIAS DE CÓDIGO ABIERTO',
+            style: Brand.label(8).copyWith(
               decoration: TextDecoration.underline,
               decorationColor: Palette.inkFaint,
             ),
@@ -100,14 +98,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
           ),
         ),
         const SizedBox(width: 12),
-        const Text(
-          'Sesiones',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Palette.ink,
-          ),
-        ),
+        Text('Sesiones', style: Brand.title(17)),
       ],
     );
   }
@@ -135,30 +126,24 @@ class _SessionsScreenState extends State<SessionsScreen> {
                   Text(
                     session.name,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                    style: Brand.strong(
+                      14.5,
                       color: isCurrent ? Palette.ink : Palette.inkDim,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     '${session.filledPadCount} pads · ${session.bpm} BPM · '
                     '${_formatDate(session.updatedAt)}',
-                    style: const TextStyle(fontSize: 10, color: Palette.inkFaint),
+                    style: Brand.readout(9, color: Palette.inkFaint),
                   ),
                 ],
               ),
             ),
             if (isCurrent)
-              const Text(
+              Text(
                 'ABIERTA',
-                style: TextStyle(
-                  fontSize: 8,
-                  letterSpacing: 1.0,
-                  fontWeight: FontWeight.w700,
-                  color: Palette.accent,
-                ),
+                style: Brand.label(8, weight: 700, color: Palette.accent),
               ),
           ],
         ),
@@ -176,13 +161,9 @@ class _SessionsScreenState extends State<SessionsScreen> {
           color: Palette.accent,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Text(
-          'Sesión nueva',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Palette.ground,
-          ),
+        child: Text(
+          'SESIÓN NUEVA',
+          style: Brand.label(10, weight: 700, color: Palette.onAccent),
         ),
       ),
     );
@@ -248,7 +229,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
 
     return ListTile(
       leading: Icon(icon, size: 18, color: color),
-      title: Text(label, style: TextStyle(fontSize: 13, color: color)),
+      title: Text(label, style: Brand.strong(13.5, color: color)),
       onTap: enabled
           ? () {
               Navigator.of(sheetContext).pop();
@@ -264,26 +245,25 @@ class _SessionsScreenState extends State<SessionsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Palette.panel,
-        title: const Text('Renombrar',
-            style: TextStyle(color: Palette.ink, fontSize: 15)),
+        title: Text('Renombrar', style: Brand.title(16)),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 24,
-          style: const TextStyle(color: Palette.ink),
+          style: Brand.strong(15),
           cursorColor: Palette.accent,
           decoration: const InputDecoration(counterText: ''),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar',
-                style: TextStyle(color: Palette.inkDim)),
+            child: Text('CANCELAR',
+                style: Brand.label(9, weight: 700, color: Palette.inkDim)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Guardar',
-                style: TextStyle(color: Palette.accent)),
+            child: Text('GUARDAR',
+                style: Brand.label(9, weight: 700, color: Palette.accent)),
           ),
         ],
       ),

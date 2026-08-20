@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../../domain/loop_length.dart';
 import '../../domain/pad_config.dart';
 import '../../domain/sound.dart';
@@ -95,15 +96,7 @@ class _PadSheetState extends State<PadSheet> {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            widget.title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-              color: Palette.ink,
-            ),
-          ),
+          child: Text(widget.title, style: Brand.title(16)),
         ),
         if (!_pad.isEmpty)
           GestureDetector(
@@ -114,9 +107,9 @@ class _PadSheetState extends State<PadSheet> {
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: Palette.line),
               ),
-              child: const Text(
-                'Vaciar pad',
-                style: TextStyle(fontSize: 11, color: Palette.rec),
+              child: Text(
+                'VACIAR PAD',
+                style: Brand.label(8.5, weight: 700, color: Palette.rec),
               ),
             ),
           ),
@@ -166,12 +159,7 @@ class _PadSheetState extends State<PadSheet> {
           width: 74,
           child: Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 9,
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w700,
-              color: Palette.inkFaint,
-            ),
+            style: Brand.label(8.5, width: 75, weight: 700),
           ),
         ),
         Expanded(
@@ -201,9 +189,8 @@ class _PadSheetState extends State<PadSheet> {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+          style: Brand.strong(
+            11.5,
             color: selected ? Palette.ground : Palette.inkDim,
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants.dart';
 import '../../core/palette.dart';
+import '../../core/type.dart';
 
 /// The sequencer's own controls, only on screen while SEQ is lit. Everything
 /// about the pattern that is not a pad lives here: transport, the rest key,
@@ -78,7 +79,7 @@ class SequencerBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              // REC and the red dot mean one thing in this app: writing the
+              // REC and the laser dot mean one thing in this app: writing the
               // pattern. Nothing else wears them.
               Expanded(
                 child: _button(
@@ -129,12 +130,7 @@ class SequencerBar extends StatelessWidget {
           child: Text(
             'P${patternIndex + 1}',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: Palette.ink,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: Brand.readout(13, weight: 700),
           ),
         ),
         _arrow(Icons.chevron_right,
@@ -164,12 +160,14 @@ class SequencerBar extends StatelessWidget {
           border: Border.all(color: active ? Palette.accent : Palette.line),
         ),
         child: Text(
-          '$chainLength ${chainLength == 1 ? 'compás' : 'compases'}',
-          style: TextStyle(
-            fontSize: 8.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.4,
-            color: active ? Palette.ground : Palette.inkDim,
+          '$chainLength ${chainLength == 1 ? 'compás' : 'compases'}'
+              .toUpperCase(),
+          style: Brand.label(
+            8,
+            width: 75,
+            tracking: 0.05,
+            weight: 700,
+            color: active ? Palette.onAccent : Palette.inkDim,
           ),
         ),
       ),
@@ -216,7 +214,7 @@ class SequencerBar extends StatelessWidget {
       text,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 10, height: 1.3, color: color),
+      style: Brand.body(9.5, color: color, height: 1.32),
     );
   }
 
@@ -232,7 +230,7 @@ class SequencerBar extends StatelessWidget {
     final Color foreground;
     if (active) {
       background = danger ? Palette.rec : Palette.accent;
-      foreground = danger ? Colors.white : Palette.ground;
+      foreground = Palette.onAccent;
     } else {
       background = Colors.transparent;
       foreground = enabled ? Palette.inkDim : Palette.inkFaint;
@@ -258,12 +256,7 @@ class SequencerBar extends StatelessWidget {
             const SizedBox(height: 1),
             Text(
               label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 6.5,
-                letterSpacing: 0.6,
-                fontWeight: FontWeight.w700,
-                color: foreground,
-              ),
+              style: Brand.label(6.5, width: 75, weight: 700, color: foreground),
             ),
           ],
         ),

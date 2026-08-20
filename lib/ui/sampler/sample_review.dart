@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
+import '../../core/type.dart';
 import '../library/family_picker.dart';
 import '../common/waveform_view.dart';
 
@@ -55,11 +56,7 @@ class SampleReview extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     '${(durationMs / 1000).toStringAsFixed(1)} s',
-                    style: const TextStyle(
-                      color: Palette.inkDim,
-                      fontSize: 12,
-                      letterSpacing: 0.3,
-                    ),
+                    style: Brand.readout(11.5, color: Palette.inkDim),
                   ),
                 ],
               ),
@@ -121,12 +118,12 @@ class SampleReview extends StatelessWidget {
     return TextField(
       controller: name,
       maxLength: 18,
-      style: const TextStyle(color: Palette.ink, fontSize: 15),
+      style: Brand.strong(15),
       cursorColor: Palette.accent,
       decoration: InputDecoration(
         counterText: '',
         labelText: 'Nombre',
-        labelStyle: const TextStyle(color: Palette.inkFaint, fontSize: 12),
+        labelStyle: Brand.label(9, weight: 700),
         filled: true,
         fillColor: Palette.panel,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -161,12 +158,8 @@ class SampleReview extends StatelessWidget {
           ),
         ),
         child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: foreground,
-          ),
+          label.toUpperCase(),
+          style: Brand.label(10, weight: 700, color: foreground),
         ),
       ),
     );

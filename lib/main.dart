@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'audio/audio_engine.dart';
 import 'core/constants.dart';
 import 'core/palette.dart';
+import 'core/type.dart';
 import 'data/session_store.dart';
 import 'data/sound_library.dart';
 import 'data/storage.dart';
@@ -15,10 +17,38 @@ import 'ui/pads/pads_screen.dart';
 import 'ui/sampler/sampler_screen.dart';
 import 'ui/sessions/sessions_screen.dart';
 
+/// The two brand faces are the only third-party material in the app — the kit
+/// is synthesised and the code is ours — and the SIL Open Font License asks to
+/// be shipped alongside them. This puts both licences on the app's own licence
+/// page, next to the ones Flutter collects by itself.
+void _registerFontLicenses() {
+  const licences = {
+    'Archivo': 'assets/fonts/OFL-Archivo.txt',
+    'Martian Mono': 'assets/fonts/OFL-MartianMono.txt',
+  };
+  LicenseRegistry.addLicense(() async* {
+    for (final entry in licences.entries) {
+      yield LicenseEntryWithLineBreaks(
+        [entry.key],
+        await rootBundle.loadString(entry.value),
+      );
+    }
+  });
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _registerFontLicenses();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+  // The system bars join the room instead of framing it: the aubergine runs
+  // edge to edge, so the phone stops looking like a phone holding an app.
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Palette.ground,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   runApp(const LooperApp());
 }
 
@@ -33,10 +63,41 @@ class LooperApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Palette.ground,
+        canvasColor: Palette.ground,
+        dividerColor: Palette.line,
+        fontFamily: Brand.faceDisplay,
         colorScheme: const ColorScheme.dark(
           surface: Palette.ground,
+          onSurface: Palette.ink,
+          surfaceContainerHighest: Palette.panelHigh,
           primary: Palette.accent,
+          onPrimary: Palette.onAccent,
           secondary: Palette.tone,
+          onSecondary: Palette.onAccent,
+          error: Palette.rec,
+          onError: Palette.onAccent,
+          outline: Palette.line,
+          outlineVariant: Palette.lineLive,
+        ),
+        // Only the roles Material draws on its own — dialogs, the licence
+        // page, text fields. Everything the instrument draws itself asks
+        // Brand directly.
+        textTheme: TextTheme(
+          displayLarge: Brand.hero(32),
+          titleLarge: Brand.title(19),
+          titleMedium: Brand.title(15),
+          bodyLarge: Brand.body(15, color: Palette.ink),
+          bodyMedium: Brand.body(13),
+          bodySmall: Brand.body(11),
+          labelLarge: Brand.label(12, color: Palette.ink),
+          labelMedium: Brand.label(10, color: Palette.inkDim),
+          labelSmall: Brand.label(8),
+        ),
+        iconTheme: const IconThemeData(color: Palette.inkDim),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: Palette.panelHigh,
+          contentTextStyle: Brand.body(12.5, color: Palette.ink),
+          behavior: SnackBarBehavior.floating,
         ),
       ),
       home: const Boot(),
@@ -125,18 +186,15 @@ class _BootState extends State<Boot> {
                 const Icon(Icons.warning_amber_rounded,
                     color: Palette.rec, size: 34),
                 const SizedBox(height: 14),
-                const Text(
+                Text(
                   'El motor de audio no arrancó',
-                  style: TextStyle(
-                      color: Palette.ink,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700),
+                  style: Brand.title(17),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   error,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Palette.inkDim, fontSize: 12),
+                  style: Brand.body(12, color: Palette.inkFaint),
                 ),
               ],
             ),
@@ -159,11 +217,10 @@ class _BootState extends State<Boot> {
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Palette.accent),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Text(
-                _status,
-                style: const TextStyle(
-                    color: Palette.inkDim, fontSize: 12, letterSpacing: 0.4),
+                _status.toUpperCase(),
+                style: Brand.label(8.5, color: Palette.inkDim),
               ),
             ],
           ),

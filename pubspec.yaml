@@ -78,22 +78,23 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # The OFL asks to travel with the fonts it covers, so both licences ship as
+  # assets and main() hands them to the licence page.
+  assets:
+    - assets/fonts/OFL-Archivo.txt
+    - assets/fonts/OFL-MartianMono.txt
+
+  # The two faces of the brand, both variable. Each family is declared once,
+  # at its default weight: the axes are driven from lib/core/type.dart with
+  # `fontVariations`, so listing extra weights here would only invite the
+  # engine to fake a bold on top of a real one.
+  #   Archivo      wght 100..900, wdth 62..125   — voice
+  #   MartianMono  wght 100..800, wdth 75..112.5 — data
+  # Both are SIL Open Font License 1.1.
+  fonts:
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo.ttf
+    - family: MartianMono
+      fonts:
+        - asset: assets/fonts/MartianMono.ttf

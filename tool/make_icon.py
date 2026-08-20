@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Genera el logo de Looper por código, como todo lo demás en este proyecto.
 
-La marca es la grilla del instrumento: 4x4 pads redondeados sobre el fondo
-oscuro de la app, con la diagonal encendida en los cuatro colores de familia
+La marca es la grilla del instrumento: 4x4 pads redondeados sobre la berenjena
+de la app, con la diagonal encendida en los cuatro colores de familia
 (percusión, voz, tono, textura) y un anillo de loop en el pad de la voz.
+
+Los cuatro colores recorren un solo arco de matiz —fósforo, menta, cielo, UV—
+y el fondo pertenece a ese mismo arco, un violeta al 11 % de luminosidad. Por
+eso el anillo del pad de la voz se recorta en berenjena: es el suelo asomando
+por un agujero, no una línea de otro color.
 
 Produce:
   assets/icon/icon.png        1024x1024, fondo incluido (iOS y fuente general)
@@ -18,13 +23,13 @@ from PIL import Image, ImageDraw
 SIZE = 1024
 
 # La paleta de lib/core/palette.dart, calcada.
-GROUND = (11, 15, 14, 255)        # 0xFF0B0F0E
-PANEL_HIGH = (28, 35, 33, 255)    # 0xFF1C2321
-LINE = (38, 46, 44, 255)          # 0xFF262E2C
-PERCUSSION = (224, 87, 74, 255)   # 0xFFE0574A
-VOICE = (242, 167, 59, 255)       # 0xFFF2A73B
-TONE = (79, 195, 217, 255)        # 0xFF4FC3D9
-TEXTURE = (169, 139, 224, 255)    # 0xFFA98BE0
+GROUND = (23, 13, 43, 255)        # 0xFF170D2B  berenjena sala
+PANEL_HIGH = (44, 29, 87, 255)    # 0xFF2C1D57
+LINE = (51, 32, 92, 255)          # 0xFF33205C
+PERCUSSION = (180, 236, 92, 255)  # 0xFFB4EC5C  fósforo
+VOICE = (79, 227, 180, 255)       # 0xFF4FE3B4  menta
+TONE = (91, 180, 245, 255)        # 0xFF5BB4F5  cielo
+TEXTURE = (155, 120, 240, 255)    # 0xFF9B78F0  UV
 
 DIAGONAL = {0: PERCUSSION, 5: VOICE, 10: TONE, 15: TEXTURE}
 RING_PAD = 5  # el pad de la voz lleva el anillo de loop

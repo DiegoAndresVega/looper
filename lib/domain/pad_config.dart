@@ -76,6 +76,24 @@ class PadConfig {
       );
 }
 
+/// Whether a pad is silent right now, given which pad — if any — is soloed.
+///
+/// Solo deliberately lives *outside* [PadConfig]. The first version wrote
+/// `muted: true` onto every other pad to implement it and `muted: false` onto
+/// every one of them to undo it, which threw away the mutes the player had set
+/// by hand — and the session autosaves, so the loss was written to disk.
+///
+/// The rule is the one every mixer uses: while a solo is up it decides alone,
+/// and the manual mutes wait underneath for it to come down. Soloing a muted
+/// pad therefore lets it through, because that is what the finger just asked
+/// for.
+bool isPadSilenced({
+  required PadConfig pad,
+  required String key,
+  required String? soloKey,
+}) =>
+    soloKey == null ? pad.muted : soloKey != key;
+
 /// One page of the grid. Four of these make up a session.
 class Bank {
   const Bank({required this.id, required this.label, required this.pads});

@@ -85,7 +85,11 @@ class SessionController extends ChangeNotifier {
   Session? _session;
   int _activeBank = 0;
   int? _selectedSlot;
-  bool _soloActive = false;
+  /// The pad currently soloed, or null. Stored as a key rather than written
+  /// into every other pad's `muted`, which is what used to destroy the
+  /// player's own mutes — and persist the loss, because the session
+  /// autosaves. Solo is performance state: it never reaches disk.
+  String? _soloKey;
   final Map<String, ActiveLoop> _loops = {};
 
   /// The last one-shot fired by each pad, kept so the next tap can cut it.
@@ -99,7 +103,10 @@ class SessionController extends ChangeNotifier {
   int get activeBank => _activeBank;
   int? get selectedSlot => _selectedSlot;
   int get bpm => _session?.bpm ?? kDefaultBpm;
-  bool get isSoloActive => _soloActive;
+  bool get isSoloActive => _soloKey != null;
+
+  /// Whether this pad of the bank on screen is the one being soloed.
+  bool isSoloOn(int slot) => _soloKey == padKey(_activeBank, slot);
   Map<String, ActiveLoop> get loops => Map.unmodifiable(_loops);
 
   Bank get currentBank => _session!.banks[_activeBank];
@@ -288,7 +295,7 @@ class SessionController extends ChangeNotifier {
   void _fireOnce(int bank, int slot) {
     final pad = _session!.banks[bank].pads[slot];
     final sound = _library.byId(pad.soundId);
-    if (sound == null || _isSilenced(pad)) return;
+    if (sound == null || _isSilenced(bank, slot, pad)) return;
 
     final key = padKey(bank, slot);
     final previous = _hits.remove(key);
@@ -309,7 +316,10 @@ class SessionController extends ChangeNotifier {
       ? 1.0
       : math.pow(2, pad.semitones / 12.0).toDouble();
 
-  bool _isSilenced(PadConfig pad) => pad.muted;
+  /// Whether this pad is silent right now. The rule itself lives in the
+  /// domain, next to [PadConfig], because it is the half worth testing.
+  bool _isSilenced(int bank, int slot, PadConfig pad) =>
+      isPadSilenced(pad: pad, key: padKey(bank, slot), soloKey: _soloKey);
 
   void _startLoop(int bank, int slot) {
     final key = padKey(bank, slot);
@@ -328,7 +338,7 @@ class SessionController extends ChangeNotifier {
       // Free loop: SoLoud repeats it natively at its own natural length.
       final handle = _engine.fire(
         sound,
-        volume: _isSilenced(pad) ? 0 : pad.volume * sound.volume,
+        volume: _isSilenced(bank, slot, pad) ? 0 : pad.volume * sound.volume,
         rate: sound.playbackRate * _rateFor(pad),
         looping: true,
       );
@@ -421,7 +431,31 @@ class SessionController extends ChangeNotifier {
 
   bool _rollHeld = false;
 
+  /// Which of [kRollDivisions] the roll repeats at. Sixteenths by default —
+  /// the fill everyone reaches for first — with eighths one tap away.
+  int _rollDivisionIndex = kRollDivisions.indexOf(1);
+
   bool get isRolling => _rollHeld;
+
+  /// The roll's division in 16th notes per hit.
+  int get rollSteps => kRollDivisions[_rollDivisionIndex];
+
+  /// How it reads on the button: '1/8' or '1/16'.
+  String get rollLabel => rollDivisionLabel(rollSteps);
+
+  /// Steps through the divisions. Changing it mid-roll retimes the fill on the
+  /// spot, which is the whole point of having two.
+  void cycleRollDivision() {
+    _rollDivisionIndex = (_rollDivisionIndex + 1) % kRollDivisions.length;
+    if (_rollHeld && _rollTarget != null) {
+      _rollOn(_rollTarget!.bank, _rollTarget!.slot);
+    }
+    notifyListeners();
+  }
+
+  /// The pad the roll is pointing at, so a division change can retime it
+  /// without waiting for the finger to move.
+  ({int bank, int slot})? _rollTarget;
 
   /// Hold ROLL and touch pads: each pad touched repeats in 16th notes until
   /// the button is let go. Holding it with a pad already selected rolls that
@@ -439,6 +473,7 @@ class SessionController extends ChangeNotifier {
   void stopRoll() {
     if (!_rollHeld) return;
     _rollHeld = false;
+    _rollTarget = null;
     _rollTimer?.cancel();
     _rollTimer = null;
     notifyListeners();
@@ -448,9 +483,8 @@ class SessionController extends ChangeNotifier {
   /// that is how a fill walks across the kit.
   void _rollOn(int bank, int slot) {
     _rollTimer?.cancel();
-    final interval = Duration(
-      microseconds: (60000000 / bpm / kStepsPerBeat).round(),
-    );
+    _rollTarget = (bank: bank, slot: slot);
+    final interval = rollIntervalFor(bpm: bpm, steps: rollSteps);
     _fireOnce(bank, slot);
     _rollTimer = Timer.periodic(interval, (_) => _fireOnce(bank, slot));
   }
@@ -575,25 +609,48 @@ class SessionController extends ChangeNotifier {
   }
 
   /// Solo: this pad keeps sounding, every other one drops to silence.
+  ///
+  /// Nothing is written to any pad. Soloing the pad that is already soloed
+  /// lifts it, and every mute the player set by hand is exactly where they
+  /// left it — which was not true when solo was implemented by muting the
+  /// other sixty-three pads.
   void toggleSolo(int slot) {
-    _soloActive = !_soloActive;
+    final key = padKey(_activeBank, slot);
+    _soloKey = _soloKey == key ? null : key;
+    _refreshLoopVolumes();
+    notifyListeners();
+  }
+
+  /// Lifts the solo whichever pad holds it, including one in a bank that is
+  /// not on screen. Every mute comes back exactly as it was.
+  void clearSolo() {
+    if (_soloKey == null) return;
+    _soloKey = null;
+    _refreshLoopVolumes();
+    notifyListeners();
+  }
+
+  /// Re-levels every loop already sounding. Called when something outside the
+  /// pads changes what should be heard — today only solo.
+  void _refreshLoopVolumes() {
     final session = _session;
     if (session == null) return;
-    for (var b = 0; b < session.banks.length; b++) {
-      for (var s = 0; s < session.banks[b].pads.length; s++) {
-        final shouldMute = _soloActive && !(b == _activeBank && s == slot);
-        final pad = session.banks[b].pads[s];
-        if (pad.muted != shouldMute) {
-          _applyPadLive(b, s, pad.copyWith(muted: shouldMute), quiet: true);
-        }
-      }
+    for (final loop in _loops.values) {
+      final handle = loop.handle;
+      if (handle == null) continue;
+      final pad = session.banks[loop.bank].pads[loop.slot];
+      final sound = _library.byId(pad.soundId);
+      if (sound == null) continue;
+      _engine.setHandleVolume(
+        handle,
+        _isSilenced(loop.bank, loop.slot, pad) ? 0 : pad.volume * sound.volume,
+      );
     }
-    notifyListeners();
   }
 
   /// Applies a pad change and reflects it on any handle already sounding, so a
   /// mute or a volume move is heard immediately rather than on the next hit.
-  void _applyPadLive(int bank, int slot, PadConfig pad, {bool quiet = false}) {
+  void _applyPadLive(int bank, int slot, PadConfig pad) {
     final session = _session;
     if (session == null) return;
     _session = session.withPad(bank, slot, pad);
@@ -603,11 +660,11 @@ class SessionController extends ChangeNotifier {
     if (loop?.handle != null && sound != null) {
       _engine.setHandleVolume(
         loop!.handle!,
-        _isSilenced(pad) ? 0 : pad.volume * sound.volume,
+        _isSilenced(bank, slot, pad) ? 0 : pad.volume * sound.volume,
       );
     }
     _touch();
-    if (!quiet) notifyListeners();
+    notifyListeners();
   }
 
   void setPadVolume(int slot, double volume) =>

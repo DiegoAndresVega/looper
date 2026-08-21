@@ -17,6 +17,12 @@ class SequencerBar extends StatelessWidget {
     required this.patternIndex,
     required this.filledSteps,
     required this.chainLength,
+    required this.swing,
+    required this.editingVelocity,
+    required this.isCountingIn,
+    required this.countInBeat,
+    required this.onSwing,
+    required this.onVelocity,
     required this.onPlay,
     required this.onRecord,
     required this.onRest,
@@ -34,6 +40,19 @@ class SequencerBar extends StatelessWidget {
 
   /// Bars in the chain: 1 loops one pattern, N plays P1..PN back to back.
   final int chainLength;
+
+  /// How much the off-beat sixteenths lag, 0.5..0.75.
+  final double swing;
+
+  /// How hard the step being edited hits, 0..1.
+  final double editingVelocity;
+
+  /// True during the courtesy bar between pressing REC and writing starting.
+  final bool isCountingIn;
+  final int countInBeat;
+
+  final ValueChanged<double> onSwing;
+  final ValueChanged<double> onVelocity;
 
   final VoidCallback onPlay;
   final VoidCallback onRecord;
@@ -53,7 +72,7 @@ class SequencerBar extends StatelessWidget {
         color: Palette.panel,
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: isRecording ? Palette.rec : Palette.line,
+          color: isRecording || isCountingIn ? Palette.rec : Palette.line,
         ),
       ),
       child: Column(
@@ -61,10 +80,17 @@ class SequencerBar extends StatelessWidget {
           Row(
             children: [
               _patternPicker(),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               _chainPill(),
-              const SizedBox(width: 10),
-              Expanded(child: _status()),
+              const SizedBox(width: 5),
+              _swingPill(),
+              const SizedBox(width: 8),
+              // The accent slider takes the status line's place while a step
+              // is selected: the screen never grows, and what is under the
+              // thumb is what is being used.
+              Expanded(
+                child: editingStep == null ? _status() : _accentSlider(),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -83,9 +109,9 @@ class SequencerBar extends StatelessWidget {
               // pattern. Nothing else wears them.
               Expanded(
                 child: _button(
-                  label: 'Rec',
+                  label: isCountingIn ? '$countInBeat…' : 'Rec',
                   icon: Icons.fiber_manual_record,
-                  active: isRecording,
+                  active: isRecording || isCountingIn,
                   danger: true,
                   onTap: onRecord,
                 ),
@@ -174,6 +200,90 @@ class SequencerBar extends StatelessWidget {
     );
   }
 
+  /// Swing as three named feels rather than a number: straight, a light
+  /// shuffle, and the triplet. A player picking a groove is choosing between
+  /// those three, not between 0.58 and 0.59.
+  Widget _swingPill() {
+    final at = _nearestSwing();
+    final active = kSwingMarks[at] > kSwingMin;
+    const names = ['Recto', 'Suave', 'Tresillo'];
+
+    return GestureDetector(
+      onTap: () => onSwing(kSwingMarks[(at + 1) % kSwingMarks.length]),
+      child: Container(
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? Palette.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: active ? Palette.accent : Palette.line),
+        ),
+        child: Text(
+          names[at].toUpperCase(),
+          style: Brand.label(
+            8,
+            width: 75,
+            tracking: 0.05,
+            weight: 700,
+            color: active ? Palette.onAccent : Palette.inkDim,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Which named feel the session's swing is sitting on. Stored as a number,
+  /// so it is matched rather than looked up.
+  int _nearestSwing() {
+    var best = 0;
+    for (var i = 1; i < kSwingMarks.length; i++) {
+      if ((kSwingMarks[i] - swing).abs() < (kSwingMarks[best] - swing).abs()) {
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  /// How hard the selected step hits. Full strength is the default, so the
+  /// slider reads as pulling a step back rather than pushing one forward.
+  Widget _accentSlider() {
+    return Row(
+      children: [
+        Text(
+          'ACENTO',
+          style: Brand.label(7.5, width: 75, weight: 700),
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderThemeData(
+              trackHeight: 3,
+              activeTrackColor: Palette.accent,
+              inactiveTrackColor: Palette.lineLive,
+              thumbColor: Palette.accent,
+              overlayShape: SliderComponentShape.noOverlay,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+            ),
+            child: Slider(
+              value: editingVelocity.clamp(kVelocityMin, kVelocityMax),
+              min: kVelocityMin,
+              max: kVelocityMax,
+              onChanged: onVelocity,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 30,
+          child: Text(
+            '${(editingVelocity * 100).round()}',
+            textAlign: TextAlign.right,
+            style: Brand.readout(11, weight: 700, color: Palette.accent),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _arrow(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -192,7 +302,10 @@ class SequencerBar extends StatelessWidget {
   Widget _status() {
     final String text;
     final Color color;
-    if (editingStep != null) {
+    if (isCountingIn) {
+      text = 'Preparado… entra en $countInBeat de $kStepsPerBeat';
+      color = Palette.rec;
+    } else if (editingStep != null) {
       text = 'Editando el paso ${editingStep! + 1} · toca pads para ponerlos';
       color = Palette.ink;
     } else if (isRecording) {

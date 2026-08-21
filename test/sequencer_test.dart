@@ -7,7 +7,7 @@ import 'package:looper/state/sequencer.dart';
   final fired = <Set<String>>[];
   final saves = <int>[];
   final seq = Sequencer(
-    onNotes: fired.add,
+    onNotes: (notes, _) => fired.add(notes),
     onPatternsChanged: () => saves.add(1),
     chordWindow: const Duration(milliseconds: 20),
   );
@@ -16,6 +16,18 @@ import 'package:looper/state/sequencer.dart';
 
 Future<void> afterChord() =>
     Future<void>.delayed(const Duration(milliseconds: 60));
+
+/// Pulsa REC y deja pasar el compás de cortesía. Entre pulsar el botón y
+/// empezar a escribir hay ahora un compás de cuenta atrás — es lo que da
+/// tiempo a colocar la mano — así que un test sobre la escritura en vivo
+/// tiene que atravesarlo primero. La cuenta en sí se prueba aparte, en
+/// `countin_test.dart`.
+void armRecording(Sequencer seq) {
+  seq.toggleRecord();
+  for (var i = 0; i < kStepsPerBar; i++) {
+    seq.tick();
+  }
+}
 
 void main() {
   group('encender y apagar', () {
@@ -30,7 +42,7 @@ void main() {
     test('apagar el secuenciador para la reproducción y la grabación', () {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       t.seq.toggleOn();
 
@@ -43,7 +55,7 @@ void main() {
       final t = build();
       t.seq.toggleOn();
 
-      t.seq.toggleRecord();
+      armRecording(t.seq);
       expect(t.seq.isRecording, isTrue);
 
       t.seq.togglePlay();
@@ -56,7 +68,7 @@ void main() {
     test('una nota cae en el paso actual y el paso avanza solo', () async {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       t.seq.tap('0:5');
       expect(t.seq.pattern.at(0), {'0:5'});
@@ -69,7 +81,7 @@ void main() {
     test('varias notas seguidas caen en el mismo paso', () async {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       t.seq.tap('0:0');
       t.seq.tap('0:4');
@@ -83,7 +95,7 @@ void main() {
     test('el silencio avanza dejando el paso vacío', () {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       t.seq.rest();
 
@@ -94,7 +106,7 @@ void main() {
     test('al llegar al final vuelve al primer paso', () async {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       for (var i = 0; i < kPatternSteps; i++) {
         t.seq.rest();
@@ -115,7 +127,7 @@ void main() {
     test('grabar avisa de que hay que guardar la sesión', () {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       t.seq.tap('0:1');
 
@@ -159,7 +171,7 @@ void main() {
     test('elegir un paso apaga la grabación en vivo', () {
       final t = build();
       t.seq.toggleOn();
-      t.seq.toggleRecord();
+      armRecording(t.seq);
 
       t.seq.selectStep(2);
 

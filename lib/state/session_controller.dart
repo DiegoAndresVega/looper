@@ -152,6 +152,7 @@ class SessionController extends ChangeNotifier {
     await stopAllLoops();
     _session = session;
     _clock.setBpm(session.bpm);
+    _clock.swing = session.swing;
     _activeBank = 0;
     _selectedSlot = null;
     sequencer.load(
@@ -292,7 +293,7 @@ class SessionController extends ChangeNotifier {
   /// Fires a pad once. A new hit cuts the previous one from the same pad, so
   /// fast tapping reads as a roll instead of piling voices on top of one
   /// another. Loops are untouched: they have their own handle.
-  void _fireOnce(int bank, int slot) {
+  void _fireOnce(int bank, int slot, {double velocity = kVelocityMax}) {
     final pad = _session!.banks[bank].pads[slot];
     final sound = _library.byId(pad.soundId);
     if (sound == null || _isSilenced(bank, slot, pad)) return;
@@ -305,7 +306,7 @@ class SessionController extends ChangeNotifier {
 
     final handle = _engine.fire(
       sound,
-      volume: pad.volume * sound.volume,
+      volume: pad.volume * sound.volume * velocity,
       rate: sound.playbackRate * _rateFor(pad),
     );
     if (handle != null) _hits[key] = handle;
@@ -353,11 +354,26 @@ class SessionController extends ChangeNotifier {
 
   void _onSyncedStep(String key) {
     if (key == kMetronomeId) {
-      _fireClick();
+      _fireClick(accent: isDownbeat(_clock.stepIndex));
       return;
     }
     if (key == kSequencerKey) {
+      // The courtesy bar is audible whether or not the metronome is on: a
+      // count you cannot hear is not a count. Only on the beats, so it reads
+      // as four clicks and not as sixteen.
+      // Skipped when the metronome is already running: it is clicking these
+      // same beats, and two clicks on one beat read as a stutter.
+      if (sequencer.isCountingIn &&
+          !_metronome &&
+          _clock.stepIndex % kStepsPerBeat == 0) {
+        _fireClick(accent: isDownbeat(_clock.stepIndex));
+      }
       sequencer.tick();
+      // Writing by hand does not ride the clock; only the count-in and
+      // playback do, so the entry goes as soon as neither is running.
+      if (!sequencer.isPlaying && !sequencer.isCountingIn) {
+        _clock.remove(kSequencerKey);
+      }
       return;
     }
     final loop = _loops[key];
@@ -367,13 +383,13 @@ class SessionController extends ChangeNotifier {
 
   // ------------------------------------------------------------ sequencer
 
-  /// Plays every note of a step at once. A rest arrives here as an empty set
-  /// and correctly does nothing.
-  void _fireNotes(Set<String> notes) {
+  /// Plays every note of a step at the strength the step carries. A rest
+  /// arrives here as an empty set and correctly does nothing.
+  void _fireNotes(Set<String> notes, double velocity) {
     for (final note in notes) {
       final target = parsePadKey(note);
       if (target == null) continue;
-      _fireOnce(target.bank, target.slot);
+      _fireOnce(target.bank, target.slot, velocity: velocity);
     }
   }
 
@@ -415,9 +431,42 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleSequencerRecord() {
+  /// Arms writing behind a bar of count-in. The clock has to be running for
+  /// that bar to go by, so the entry is added here and dropped again the
+  /// moment the count is over.
+  Future<void> toggleSequencerRecord() async {
+    final arming = !sequencer.isRecording && !sequencer.isCountingIn;
+    if (arming) await _ensureClick();
     sequencer.toggleRecord();
-    if (!sequencer.isPlaying) _clock.remove(kSequencerKey);
+    if (sequencer.isCountingIn) {
+      _clock.add(kSequencerKey, 1, alignTo: kPatternSteps);
+    } else if (!sequencer.isPlaying) {
+      _clock.remove(kSequencerKey);
+    }
+    notifyListeners();
+  }
+
+  /// How hard the step being edited hits, and how to change it.
+  double get editingVelocity => sequencer.editingVelocity;
+
+  void setStepVelocity(double velocity) {
+    sequencer.setStepVelocity(velocity);
+    notifyListeners();
+  }
+
+  // --------------------------------------------------------------- swing
+
+  double get swing => _session?.swing ?? kSwingDefault;
+
+  /// Swing belongs to the session, like the tempo: it is part of how the
+  /// pattern is meant to be felt, not a knob position that resets.
+  void setSwing(double value) {
+    final session = _session;
+    if (session == null) return;
+    final next = value.clamp(kSwingMin, kSwingMax);
+    _clock.swing = next;
+    _session = session.copyWith(swing: next);
+    _touch();
     notifyListeners();
   }
 
@@ -503,19 +552,33 @@ class SessionController extends ChangeNotifier {
       return;
     }
 
-    final click = _click ??= await ensureMetronomeSound(Storage.instance);
-    if (!_engine.isLoaded(click.id)) {
-      await _engine.preload(click, Storage.instance.soundFile(click.fileName).path);
-    }
+    await _ensureClick();
     _metronome = true;
     _clock.add(kMetronomeId, kStepsPerBeat);
     notifyListeners();
   }
 
-  void _fireClick() {
+  /// Loads the click if it has never been needed. Both the metronome and the
+  /// count-in go through here.
+  Future<void> _ensureClick() async {
+    final click = _click ??= await ensureMetronomeSound(Storage.instance);
+    if (!_engine.isLoaded(click.id)) {
+      await _engine.preload(
+          click, Storage.instance.soundFile(click.fileName).path);
+    }
+  }
+
+  /// The one of the bar comes a fifth higher and a little louder. One sound
+  /// file, two pitches — the click is a 50 ms sine, and playing it faster is
+  /// exactly how a drum machine has always made its accent.
+  void _fireClick({bool accent = false}) {
     final click = _click;
     if (click == null) return;
-    _engine.fire(click, volume: kMetronomeVolume, rate: 1.0);
+    _engine.fire(
+      click,
+      volume: accent ? kMetronomeAccentVolume : kMetronomeVolume,
+      rate: accent ? kMetronomeAccentRate : 1.0,
+    );
   }
 
   Future<void> _stopLoop(String key) async {

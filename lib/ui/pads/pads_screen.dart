@@ -228,6 +228,7 @@ class _PadsScreenState extends State<PadsScreen> {
           sound: sound,
           state: _stateFor(slot, pad),
           stepLight: _stepLightFor(slot),
+          accent: _accentFor(slot),
           progress: c.loopProgress(c.activeBank, slot),
           selected: c.selectedSlot == slot,
           onTap: () => _tapPad(slot),
@@ -295,6 +296,16 @@ class _PadsScreenState extends State<PadsScreen> {
       return StepLight.playing;
     }
     return seq.pattern.at(slot).isEmpty ? StepLight.off : StepLight.written;
+  }
+
+  /// The accent bar only shows where it means something: the sequencer on,
+  /// and a step that actually has notes in it. Drawing a full bar under every
+  /// empty step would turn a real reading into decoration.
+  double? _accentFor(int slot) {
+    final seq = c.sequencer;
+    if (!seq.isOn) return null;
+    if (seq.pattern.at(slot).isEmpty) return null;
+    return seq.pattern.velocityAt(slot);
   }
 
   PadVisualState _stateFor(int slot, PadConfig pad) {
@@ -471,8 +482,17 @@ class _PadsScreenState extends State<PadsScreen> {
       patternIndex: seq.patternIndex,
       filledSteps: seq.pattern.filledSteps,
       chainLength: seq.chainLength,
+      swing: c.swing,
+      editingVelocity: seq.editingVelocity,
+      isCountingIn: seq.isCountingIn,
+      countInBeat: seq.countInBeat,
+      onSwing: (v) => setState(() => c.setSwing(v)),
+      onVelocity: (v) => setState(() => c.setStepVelocity(v)),
       onPlay: () => setState(c.toggleSequencerPlay),
-      onRecord: () => setState(c.toggleSequencerRecord),
+      onRecord: () async {
+        await c.toggleSequencerRecord();
+        if (mounted) setState(() {});
+      },
       onRest: () => setState(seq.rest),
       onClear: () => setState(seq.clearPattern),
       onPattern: (index) => setState(() => c.selectPattern(index)),

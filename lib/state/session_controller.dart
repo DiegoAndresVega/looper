@@ -3,10 +3,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
+import 'package:uuid/uuid.dart';
 
 import 'dart:io';
 
 import '../audio/audio_engine.dart';
+import '../audio/chopper.dart';
 import '../audio/master_fx.dart';
 import '../audio/mixdown_recorder.dart';
 import '../audio/tempo_clock.dart';
@@ -20,6 +22,8 @@ import 'undo_stack.dart';
 import '../domain/pad_config.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
+
+const _uuid = Uuid();
 
 /// Identifies one pad across the whole session. Patterns are written in these,
 /// which is what lets one pattern pull pads from different banks.
@@ -257,6 +261,75 @@ class SessionController extends ChangeNotifier {
     _selectedSlot = target.slot;
     notifyListeners();
     return target;
+  }
+
+  /// How the audio would be cut, without committing to it: the sheet draws
+  /// these lines before anything is created.
+  Future<List<Slice>> previewChop(Sound sound, ChopMode mode) async {
+    final length = sound.trimmedDurationMs;
+    if (mode != ChopMode.transients) {
+      return sliceEvenly(durationMs: length, count: mode.pieces);
+    }
+
+    // About one bucket every 10 ms, capped: fine enough to separate two hits
+    // of a drum break, bounded so a long import stays cheap to analyse.
+    final buckets = (sound.durationMs ~/ 10).clamp(kWaveformBuckets, 2048);
+    final peaks = await _library.detailedPeaksFor(sound, buckets);
+    // The envelope covers the whole file; the chop only covers what the
+    // sound actually plays, so the trimmed window is cut out of it first.
+    final from = (peaks.length * sound.trimStartMs / sound.durationMs).floor();
+    final to = (peaks.length * sound.effectiveEndMs / sound.durationMs).ceil();
+    final window = peaks.sublist(
+      from.clamp(0, peaks.length),
+      to.clamp(from.clamp(0, peaks.length), peaks.length),
+    );
+    return slicesFromOnsets(
+      onsets: detectOnsets(window, maxOnsets: kPadsPerBank),
+      buckets: window.length,
+      durationMs: length,
+    );
+  }
+
+  /// Cuts [sound] into pieces and lays them across the grid in order.
+  ///
+  /// No audio is copied: every piece is a sound over the same file with its
+  /// own trim. Returns where they landed, or null when no bank has that many
+  /// free pads in a row.
+  Future<({int bank, int slot, int count})?> chop(
+    Sound sound,
+    List<Slice> slices,
+  ) async {
+    final session = _session;
+    if (session == null || slices.isEmpty) return null;
+
+    final room = findRoomFor(session, slices.length);
+    if (room == null) return null;
+
+    _remember('cortar ${sound.name}');
+
+    final pieces = chopSound(
+      source: sound,
+      slices: slices,
+      idFor: (_) => _uuid.v4(),
+    );
+
+    await _library.addAll(pieces);
+
+    var next = _session!;
+    for (var i = 0; i < pieces.length; i++) {
+      await _engine.preload(pieces[i], _library.pathFor(pieces[i]));
+      next = next.withPad(
+        room.bank,
+        room.slot + i,
+        PadConfig(soundId: pieces[i].id),
+      );
+    }
+    _session = next;
+    _activeBank = room.bank;
+    _selectedSlot = room.slot;
+    _touch();
+    notifyListeners();
+    return (bank: room.bank, slot: room.slot, count: pieces.length);
   }
 
   void selectBank(int index) {

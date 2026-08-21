@@ -1,0 +1,1594 @@
+<title>Looper · Estado del arte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap">
+
+<style>
+/* ───────────────────────────────────────────────────────────────
+   Los colores salen de lib/core/palette.dart. Las dos caras y sus
+   ejes, de lib/core/type.dart. Aquí no se inventa ninguno.
+   Tema único a propósito: el instrumento es oscuro por diseño.
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  --pozo:      #0F0820;
+  --suelo:     #170D2B;
+  --panel:     #211441;
+  --alto:      #2C1D57;
+  --linea:     #33205C;
+  --linea-viva:#48307E;
+
+  --tinta:      #EDE9F6;
+  --tinta-media:#A79BC0;
+  --tinta-flo:  #8A7DAE;
+
+  --fosforo: #B4EC5C;
+  --menta:   #4FE3B4;
+  --cielo:   #5BB4F5;
+  --uv:      #9B78F0;
+  --laser:   #FF4FA0;
+
+  --familia: var(--fosforo);
+
+  --display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'Martian Mono', 'SFMono-Regular', ui-monospace, Menlo, monospace;
+
+  --ancho: 1120px;
+  --radio: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--suelo);
+  color: var(--tinta-media);
+  font-family: var(--display);
+  font-variation-settings: 'wdth' 100, 'wght' 400;
+  font-size: 15.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Tipografía ──────────────────────────────────────────────── */
+.hero-title, .cap-title, .card h3, .ref-name, .paso-title, .cierre h2 {
+  color: var(--tinta);
+  text-wrap: balance;
+  margin: 0;
+}
+.hero-title {
+  font-variation-settings: 'wdth' 125, 'wght' 900;
+  font-size: clamp(2.9rem, 8.5vw, 5.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+.cap-title {
+  font-variation-settings: 'wdth' 118, 'wght' 800;
+  font-size: clamp(1.85rem, 4.2vw, 2.9rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+.card h3, .ref-name, .paso-title {
+  font-variation-settings: 'wdth' 100, 'wght' 600;
+  font-size: 1.0625rem;
+  line-height: 1.28;
+}
+
+.label {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 87, 'wght' 600;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta-flo);
+  line-height: 1.1;
+}
+.readout {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 100, 'wght' 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--tinta);
+}
+strong, b { color: var(--tinta); font-variation-settings: 'wdth' 100, 'wght' 600; font-weight: normal; }
+code {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 75, 'wght' 500;
+  font-size: 0.82em;
+  color: var(--menta);
+  background: rgba(79, 227, 180, 0.07);
+  padding: 0.1em 0.36em;
+  border-radius: 4px;
+  word-break: break-word;
+}
+a { color: var(--fosforo); text-decoration-color: rgba(180, 236, 92, 0.35); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--fosforo); }
+:focus-visible { outline: 2px solid var(--fosforo); outline-offset: 3px; border-radius: 4px; }
+
+/* ── Estructura ──────────────────────────────────────────────── */
+.wrap { width: 100%; max-width: var(--ancho); margin-inline: auto; padding-inline: 24px; }
+
+nav.bar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(15, 8, 32, 0.9);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--linea);
+}
+nav.bar .wrap { display: flex; align-items: center; gap: 22px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; flex-shrink: 0; }
+.brand .mark { width: 22px; height: 22px; display: block; }
+.brand span {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 87, 'wght' 700;
+  font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--tinta);
+}
+.navlinks { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.navlinks::-webkit-scrollbar { display: none; }
+.navlinks a {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 75, 'wght' 500;
+  font-size: 0.63rem; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--tinta-flo); text-decoration: none;
+  padding: 7px 10px; border-radius: 7px; white-space: nowrap;
+  transition: color .18s, background .18s;
+}
+.navlinks a:hover, .navlinks a.on { color: var(--suelo); background: var(--fosforo); }
+@media (max-width: 720px) { .navlinks { display: none; } }
+
+section { padding-block: clamp(64px, 9vw, 116px); }
+.cap-head { display: grid; gap: 16px; max-width: 760px; margin-bottom: clamp(34px, 5vw, 52px); }
+.cap-eyebrow { display: flex; align-items: center; gap: 14px; }
+.cap-eyebrow .n {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 100, 'wght' 700;
+  font-size: 0.72rem; letter-spacing: 0.1em;
+  color: var(--suelo); background: var(--familia);
+  padding: 4px 8px; border-radius: 5px;
+}
+.cap-eyebrow .rule { flex: 1; height: 1px; background: var(--linea); }
+.lede {
+  font-size: clamp(1rem, 1.9vw, 1.14rem);
+  line-height: 1.62;
+  color: var(--tinta-media);
+  max-width: 66ch;
+}
+.lede + .lede { margin-top: -2px; }
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero {
+  border-bottom: 1px solid var(--linea);
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(155, 120, 240, 0.20), transparent 62%),
+    radial-gradient(80% 60% at 82% 8%, rgba(180, 236, 92, 0.07), transparent 60%),
+    var(--pozo);
+  padding-block: clamp(72px, 12vw, 128px) clamp(56px, 8vw, 96px);
+  text-align: center;
+}
+.hero .wrap { display: grid; justify-items: center; gap: 28px; }
+.hero-grid { width: 118px; height: 118px; }
+.hero .lede { text-align: left; }
+@media (max-width: 620px) { .hero .lede { text-align: left; } }
+.hero-sub {
+  font-size: clamp(1.02rem, 2.2vw, 1.2rem);
+  color: var(--tinta-media);
+  max-width: 60ch; line-height: 1.55; margin: 0;
+}
+.hero-sub em { color: var(--tinta); font-style: normal; }
+
+.cifras {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 10px; margin-top: 6px;
+}
+.cifra {
+  display: flex; align-items: baseline; gap: 8px;
+  border: 1px solid var(--linea); border-radius: 999px;
+  padding: 8px 15px; background: rgba(33, 20, 65, 0.5);
+}
+.cifra b { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.cifra span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tinta-flo); }
+
+/* ── Leyenda de luces ────────────────────────────────────────── */
+.leyenda {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  border: 1px solid var(--linea); border-radius: var(--radio);
+  background: var(--panel); padding: 14px 16px; margin-bottom: 26px;
+}
+.leyenda .ley {
+  display: flex; align-items: center; gap: 9px;
+  padding-right: 16px;
+}
+.leyenda .ley + .ley { border-left: 1px solid var(--linea); padding-left: 16px; }
+.leyenda .ley p { margin: 0; font-size: 0.78rem; color: var(--tinta-media); }
+.leyenda .ley p b { display: block; font-size: 0.66rem; font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--tinta); }
+@media (max-width: 700px) {
+  .leyenda .ley { width: 100%; padding-right: 0; }
+  .leyenda .ley + .ley { border-left: 0; padding-left: 0; border-top: 1px solid var(--linea); padding-top: 10px; }
+}
+
+/* La luz del paso: el mismo vocabulario que PadTile dibuja en la esquina. */
+.luz { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; position: relative; }
+.luz.listo { background: var(--familia); box-shadow: 0 0 9px -1px var(--familia); }
+.luz.suelto { border: 2px solid var(--familia); background: transparent; }
+.luz.cero { background: var(--linea-viva); }
+
+/* ── Rejilla de tarjetas ─────────────────────────────────────── */
+.rejilla { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); }
+.card {
+  position: relative;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--panel);
+  padding: 20px 20px 19px;
+  display: grid; gap: 10px; align-content: start;
+  transition: border-color .2s, transform .2s;
+}
+.card::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: var(--radio); pointer-events: none;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--familia) 7%, transparent), transparent 46%);
+}
+.card:hover { border-color: var(--linea-viva); transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .card:hover { transform: none; } }
+.card > * { position: relative; z-index: 1; }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.card-top h3 { flex: 1; }
+.card p { margin: 0; font-size: 0.875rem; line-height: 1.58; }
+.card .como {
+  border-top: 1px dashed var(--linea);
+  padding-top: 10px;
+  font-size: 0.83rem;
+  color: var(--tinta-flo);
+}
+.card .como b { color: var(--tinta-media); }
+.card .tag {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--familia);
+  align-self: flex-start; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+}
+
+/* Bloques por familia */
+.bloque { margin-top: 42px; }
+.bloque:first-of-type { margin-top: 0; }
+.bloque-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.bloque-head h3 {
+  margin: 0; color: var(--tinta);
+  font-variation-settings: 'wdth' 118, 'wght' 700;
+  font-size: 1.32rem; letter-spacing: -0.01em;
+}
+.bloque-head .cuenta { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--familia); }
+.bloque-head .rule { flex: 1; min-width: 30px; height: 1px; background: var(--linea); }
+
+.b-groove   { --familia: var(--fosforo); }
+.b-muestreo { --familia: var(--menta); }
+.b-sonido   { --familia: var(--cielo); }
+.b-midi     { --familia: var(--uv); }
+.b-sesion   { --familia: var(--fosforo); }
+.b-fallo    { --familia: var(--laser); }
+
+/* ── Tabla de referencias ────────────────────────────────────── */
+.tabla-scroll { overflow-x: auto; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 660px; }
+th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--linea); vertical-align: top; font-size: 0.875rem; }
+thead th {
+  font-family: var(--mono);
+  font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tinta-flo); background: var(--pozo);
+  position: sticky; top: 0;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: rgba(44, 29, 87, 0.4); }
+td .ref-name { display: block; margin-bottom: 3px; }
+td .plat { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tinta-flo); }
+
+/* ── Fallos ──────────────────────────────────────────────────── */
+.fallos { display: grid; gap: 12px; }
+.fallo {
+  display: grid; grid-template-columns: 40px 1fr; gap: 18px;
+  border: 1px solid var(--linea); border-left: 3px solid var(--laser);
+  border-radius: var(--radio); background: var(--panel);
+  padding: 18px 20px;
+}
+.fallo .num {
+  font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700;
+  font-size: 1.05rem; color: var(--laser); font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+.fallo h3 { margin: 0 0 6px; color: var(--tinta); font-variation-settings: 'wdth' 100, 'wght' 600; font-size: 1rem; line-height: 1.3; }
+.fallo p { margin: 0 0 9px; font-size: 0.875rem; line-height: 1.58; }
+.fallo p:last-child { margin-bottom: 0; }
+.fallo .arreglo { border-top: 1px dashed var(--linea); padding-top: 9px; font-size: 0.83rem; color: var(--tinta-flo); }
+.fallo .arreglo b { color: var(--menta); font-variation-settings: 'wdth' 75, 'wght' 600; font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+@media (max-width: 560px) { .fallo { grid-template-columns: 1fr; gap: 8px; } }
+
+/* ── Interacción ─────────────────────────────────────────────── */
+.patrones { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+.patron {
+  border: 1px solid var(--linea); border-radius: var(--radio);
+  background: var(--panel); padding: 22px;
+  display: grid; gap: 11px; align-content: start;
+}
+.patron h3 { margin: 0; color: var(--tinta); font-variation-settings: 'wdth' 118, 'wght' 700; font-size: 1.14rem; letter-spacing: -0.01em; }
+.patron p { margin: 0; font-size: 0.875rem; line-height: 1.58; }
+.patron .fuente { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--cielo); }
+
+/* ── Teléfonos ───────────────────────────────────────────────── */
+.telefonos { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.lamina { display: grid; gap: 16px; justify-items: center; }
+.lamina-pie { max-width: 320px; }
+.lamina-pie h3 { margin: 0 0 6px; color: var(--tinta); font-variation-settings: 'wdth' 100, 'wght' 600; font-size: 0.98rem; }
+.lamina-pie p { margin: 0; font-size: 0.82rem; line-height: 1.55; }
+.lamina-pie .gesto {
+  display: inline-block; margin-top: 8px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.57rem; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--suelo); background: var(--familia);
+  padding: 4px 8px; border-radius: 5px;
+}
+
+.tel {
+  width: 320px; max-width: 100%;
+  border: 1px solid var(--linea-viva); border-radius: 30px;
+  background: var(--suelo);
+  padding: 9px;
+  box-shadow: 0 22px 46px -20px rgba(0,0,0,0.85);
+}
+.tel-in {
+  border-radius: 23px; background: var(--suelo); overflow: hidden;
+  display: grid; gap: 0;
+}
+.tel-status {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 15px 4px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500;
+  font-size: 0.52rem; letter-spacing: 0.1em; color: var(--tinta-flo);
+}
+.tel-status .dots { display: flex; gap: 3px; }
+.tel-status .dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--tinta-flo); display: block; }
+.tel-home { height: 4px; width: 96px; border-radius: 99px; background: var(--linea-viva); margin: 9px auto 7px; }
+
+/* interior del teléfono */
+.t-top { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px 10px; }
+.t-name { font-family: var(--display); font-variation-settings: 'wdth' 100, 'wght' 600; font-size: 0.78rem; color: var(--tinta); }
+.t-icons { display: flex; gap: 9px; }
+.t-icons i { width: 13px; height: 13px; border: 1.4px solid var(--tinta-flo); border-radius: 3px; display: block; }
+.t-banks { display: flex; gap: 5px; padding: 0 14px 10px; }
+.t-bank {
+  flex: 1; text-align: center; padding: 5px 0 6px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.5rem; letter-spacing: 0.08em; color: var(--tinta-flo);
+  border-bottom: 2px solid transparent;
+}
+.t-bank.on { color: var(--tinta); border-bottom-color: var(--fosforo); }
+.t-tempo { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 0 14px 11px; }
+.t-tempo .step { width: 26px; height: 26px; border: 1px solid var(--linea); border-radius: 8px; display: grid; place-items: center; color: var(--tinta-media); font-size: 0.8rem; }
+.t-tempo .bpm { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 1.35rem; color: var(--tinta); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+.t-tempo .bpm sub { font-size: 0.44rem; letter-spacing: 0.14em; color: var(--tinta-flo); vertical-align: middle; margin-left: 4px; }
+.t-tempo .tap { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.5rem; letter-spacing: 0.12em; color: var(--tinta-flo); border: 1px solid var(--linea); border-radius: 7px; padding: 5px 8px; }
+
+.t-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 14px 11px; }
+.pad {
+  aspect-ratio: 1; border-radius: 10px;
+  border: 1px solid var(--linea);
+  background: var(--panel);
+  position: relative; overflow: hidden;
+  display: grid; align-content: end; padding: 6px;
+}
+.pad .nom {
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.44rem; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--tinta-flo); line-height: 1;
+}
+.pad .wash { position: absolute; inset: 0; background: var(--fam, var(--fosforo)); opacity: 0.13; }
+.pad.viva { border-color: var(--fam, var(--fosforo)); }
+.pad.viva .wash { opacity: 0.3; }
+.pad.viva .nom { color: var(--tinta); }
+.pad .paso { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+.pad .paso.esc { background: var(--tinta-flo); }
+.pad .paso.cab { background: var(--fosforo); box-shadow: 0 0 6px var(--fosforo); }
+.pad .paso.edit { border: 1.4px solid var(--laser); }
+.pad .anillo { position: absolute; inset: 0; border-radius: 10px; border: 1.6px solid var(--fosforo); opacity: 0.75; }
+.pad .grado {
+  position: absolute; top: 5px; left: 6px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 700;
+  font-size: 0.46rem; color: var(--tinta); letter-spacing: 0.04em;
+}
+.pad .acento { position: absolute; left: 5px; right: 5px; bottom: 5px; height: 2.5px; border-radius: 2px; background: var(--linea-viva); }
+.pad .acento i { display: block; height: 100%; border-radius: 2px; background: var(--fosforo); }
+
+.t-strip { display: flex; gap: 6px; padding: 0 14px 10px; }
+.t-knob { flex: 1; border: 1px solid var(--linea); border-radius: 9px; background: var(--pozo); padding: 7px 6px 6px; display: grid; gap: 5px; justify-items: center; }
+.t-knob .dial { width: 24px; height: 24px; border-radius: 50%; border: 1.6px solid var(--linea-viva); position: relative; }
+.t-knob .dial::after { content: ''; position: absolute; top: 2px; left: 50%; width: 1.6px; height: 8px; background: var(--fosforo); transform-origin: bottom center; transform: translateX(-50%) rotate(var(--giro, 0deg)); }
+.t-knob span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-flo); }
+.t-knob.armado { border-color: var(--laser); }
+.t-knob.armado .dial { border-color: var(--laser); }
+.t-knob.armado span { color: var(--laser); }
+
+.t-seqbar { display: flex; align-items: center; gap: 5px; padding: 0 14px 10px; }
+.t-seqbar .pill {
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.46rem; letter-spacing: 0.09em; text-transform: uppercase;
+  border: 1px solid var(--linea); border-radius: 7px; padding: 5px 6px; color: var(--tinta-flo);
+  white-space: nowrap;
+}
+.t-seqbar .pill.rec { border-color: var(--laser); color: var(--laser); }
+.t-seqbar .pill.on { background: var(--fosforo); border-color: var(--fosforo); color: var(--suelo); }
+
+.t-slider { padding: 0 14px 11px; display: grid; gap: 6px; }
+.t-slider .fila { display: flex; justify-content: space-between; align-items: baseline; }
+.t-slider .fila span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.48rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--tinta-flo); }
+.t-slider .fila b { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 0.72rem; color: var(--fosforo); font-variant-numeric: tabular-nums; }
+.t-slider .riel { height: 5px; border-radius: 3px; background: var(--pozo); border: 1px solid var(--linea); position: relative; }
+.t-slider .riel i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--fosforo); }
+.t-slider .riel u { position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: var(--fosforo); transform: translate(-50%, -50%); }
+.t-slider .marcas { display: flex; justify-content: space-between; }
+.t-slider .marcas em { font-style: normal; font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.42rem; letter-spacing: 0.06em; color: var(--tinta-flo); }
+
+.t-trans { display: flex; gap: 4px; padding: 0 14px 4px; }
+.t-trans div {
+  flex: 1; text-align: center; padding: 7px 0;
+  border: 1px solid var(--linea); border-radius: 8px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.42rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-flo);
+}
+.t-trans div.on { background: var(--fosforo); border-color: var(--fosforo); color: var(--suelo); }
+.t-trans div.rec { border-color: var(--laser); color: var(--laser); }
+
+.t-sheet { border-top: 1px solid var(--linea); background: var(--pozo); padding: 12px 14px 4px; display: grid; gap: 9px; }
+.t-sheet .cab { display: flex; justify-content: space-between; align-items: center; }
+.t-sheet .cab b { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 0.62rem; letter-spacing: 0.1em; color: var(--tinta); }
+.t-sheet .cab span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.46rem; letter-spacing: 0.1em; color: var(--menta); text-transform: uppercase; }
+.t-wave { height: 40px; border: 1px solid var(--linea); border-radius: 8px; background: var(--suelo); position: relative; overflow: hidden; }
+.t-wave svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.t-wave .corte { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--menta); opacity: 0.85; }
+.t-seg { display: flex; gap: 4px; }
+.t-seg div {
+  flex: 1; text-align: center; padding: 6px 0;
+  border: 1px solid var(--linea); border-radius: 7px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.44rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tinta-flo);
+}
+.t-seg div.on { background: var(--menta); border-color: var(--menta); color: var(--suelo); }
+.t-learn {
+  border: 1px solid var(--uv); border-radius: 9px; background: rgba(155,120,240,0.09);
+  padding: 9px 11px; display: grid; gap: 4px;
+}
+.t-learn b { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 700; font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--uv); }
+.t-learn span { font-size: 0.62rem; color: var(--tinta-media); line-height: 1.45; }
+
+/* ── Prioridad ───────────────────────────────────────────────── */
+.pasos { display: grid; gap: 12px; counter-reset: p; }
+.paso {
+  display: grid; grid-template-columns: 54px 1fr auto; gap: 20px; align-items: center;
+  border: 1px solid var(--linea); border-radius: var(--radio);
+  background: var(--panel); padding: 18px 22px;
+}
+.paso .n {
+  width: 40px; height: 40px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: var(--fosforo); color: var(--suelo);
+  font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 1rem;
+}
+.paso .cuerpo p { margin: 5px 0 0; font-size: 0.86rem; line-height: 1.55; }
+.paso .coste {
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--menta); border: 1px solid var(--linea); border-radius: 999px; padding: 6px 12px; white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .paso { grid-template-columns: 40px 1fr; }
+  .paso .coste { grid-column: 2; justify-self: start; }
+}
+.despues {
+  margin-top: 16px; border: 1px dashed var(--linea); border-radius: var(--radio);
+  padding: 16px 20px; font-size: 0.875rem;
+}
+.despues b { color: var(--tinta); }
+
+/* ── Techo ───────────────────────────────────────────────────── */
+.techo {
+  border: 1px solid var(--linea); border-left: 3px solid var(--uv);
+  border-radius: var(--radio); background: var(--panel);
+  padding: 22px 24px; display: grid; gap: 9px; margin-top: 28px;
+}
+.techo b { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 700; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--uv); }
+.techo p { margin: 0; font-size: 0.9rem; line-height: 1.6; }
+
+/* ── Cierre ──────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--linea); background: var(--pozo);
+  padding-block: clamp(52px, 7vw, 84px);
+}
+footer .wrap { display: grid; gap: 26px; justify-items: center; text-align: center; }
+footer .mark-big { width: 54px; height: 54px; opacity: 0.9; }
+footer p { margin: 0; max-width: 56ch; font-size: 0.875rem; }
+footer .fuentes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; }
+footer .fuentes a { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.58rem; letter-spacing: 0.11em; text-transform: uppercase; text-decoration: none; color: var(--tinta-flo); }
+footer .fuentes a:hover { color: var(--fosforo); }
+
+/* ── Revelado ────────────────────────────────────────────────── */
+.rev { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+.rev.visto { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .rev { opacity: 1; transform: none; transition: none; } }
+</style>
+
+<nav class="bar">
+  <div class="wrap">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="#170D2B"/>
+        <rect x="5"  y="5"  width="6" height="6" rx="1.6" fill="#33205C"/>
+        <rect x="13" y="5"  width="6" height="6" rx="1.6" fill="#33205C"/>
+        <rect x="21" y="5"  width="6" height="6" rx="1.6" fill="#9B78F0"/>
+        <rect x="5"  y="13" width="6" height="6" rx="1.6" fill="#33205C"/>
+        <rect x="13" y="13" width="6" height="6" rx="1.6" fill="#5BB4F5"/>
+        <rect x="21" y="13" width="6" height="6" rx="1.6" fill="#33205C"/>
+        <rect x="5"  y="21" width="6" height="6" rx="1.6" fill="#B4EC5C"/>
+        <rect x="13" y="21" width="6" height="6" rx="1.6" fill="#33205C"/>
+        <rect x="21" y="21" width="6" height="6" rx="1.6" fill="#33205C"/>
+        <circle cx="16" cy="16" r="2.1" fill="none" stroke="#4FE3B4" stroke-width="1.4"/>
+      </svg>
+      <span>Looper</span>
+    </div>
+    <div class="navlinks">
+      <a href="#referencias">Referencias</a>
+      <a href="#nuevas">Funciones</a>
+      <a href="#fallos">Correcciones</a>
+      <a href="#interfaz">Interfaz</a>
+      <a href="#pantallas">Pantallas</a>
+      <a href="#prioridad">Por dónde</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <svg class="hero-grid" id="heroGrid" viewBox="0 0 120 120" aria-label="Rejilla de 16 pads con el cabezal recorriendo los pasos">
+      <g id="heroPads"></g>
+    </svg>
+    <h1 class="hero-title">Estado del arte</h1>
+    <p class="hero-sub">
+      Siete apps y máquinas del oficio, desmontadas para decidir qué le falta a Looper.
+      <em>39 funciones nuevas, 10 defectos que ya están en el código y seis patrones de
+      interacción</em> que merece la pena robarle a quien los inventó.
+    </p>
+    <div class="cifras">
+      <div class="cifra"><b>7</b><span>Referencias</span></div>
+      <div class="cifra"><b>39</b><span>Funciones nuevas</span></div>
+      <div class="cifra"><b>10</b><span>Correcciones</span></div>
+      <div class="cifra"><b>5</b><span>Pantallas</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ 01 REFERENCIAS ══════════════════════════════════════════ -->
+<section id="referencias">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">01</span><span class="label">Contra quién se mide</span><span class="rule"></span></div>
+      <h2 class="cap-title">Las siete referencias</h2>
+      <p class="lede">
+        No hay una app que lo haga todo. Cada una resolvió bien <em>una</em> cosa, y esa cosa
+        es lo único que merece la pena estudiar de ella. Koala es la comparación más
+        incómoda: usa exactamente la misma arquitectura que Looper —cuatro bancos de
+        dieciséis pads, A/B/C/D— y encima le ha construido un sampler entero.
+      </p>
+    </div>
+
+    <div class="tabla-scroll rev">
+      <table>
+        <thead>
+          <tr><th>App o máquina</th><th>Paradigma</th><th>Lo que hace mejor que nadie</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ref-name">Loopy Pro</span><span class="plat">iOS · software</span></td>
+            <td>Lienzo de clips con alma de DAW</td>
+            <td>Jerarquía proyecto → color → clip, <em>follow actions</em>, MIDI learn de un solo gesto, grabación retrospectiva y detección automática del bucle.</td>
+          </tr>
+          <tr>
+            <td><span class="ref-name">Koala Sampler</span><span class="plat">iOS · Android · escritorio</span></td>
+            <td>4 bancos × 16 pads — idéntico a Looper</td>
+            <td>Chop por transitorios, resampling, cuatro buses con cinco FX cada uno, modo escala y teclado, separación de stems en el dispositivo.</td>
+          </tr>
+          <tr>
+            <td><span class="ref-name">Roland SP-404 MKII</span><span class="plat">Hardware</span></td>
+            <td>17 pads y una caja de efectos</td>
+            <td><em>Skip-back</em>: guarda siempre los últimos 25–40 segundos por si lo que acabas de tocar era bueno y no le diste al botón.</td>
+          </tr>
+          <tr>
+            <td><span class="ref-name">Boss RC-505</span><span class="plat">Hardware · el looper de mesa</span></td>
+            <td>Cinco pistas de frase estéreo</td>
+            <td>Modo de reproducción por pista (multi, single, one-shot, reverse), 99 memorias de frase con sus FX, y una pista de ritmo que sale solo por auriculares.</td>
+          </tr>
+          <tr>
+            <td><span class="ref-name">Patterning 3</span><span class="plat">iOS</span></td>
+            <td>Secuenciador circular</td>
+            <td>Capas de automatización por paso —probabilidad, ratchet con decaimiento, aleatorización de filtro y velocidad— y hasta 512 pasos por pista.</td>
+          </tr>
+          <tr>
+            <td><span class="ref-name">Ableton Note</span><span class="plat">iOS</span></td>
+            <td>Cuaderno de bocetos</td>
+            <td>El botón <em>Capture</em>: detecta el tempo y la longitud de lo que acabas de tocar y crea el bucle solo. La idea antes que la configuración.</td>
+          </tr>
+          <tr>
+            <td><span class="ref-name">GarageBand Live Loops</span><span class="plat">iOS · macOS</span></td>
+            <td>Rejilla de celdas</td>
+            <td>Filas = instrumento, columnas = <em>escena</em>, y una sola regla: solo una celda por fila puede sonar. Con eso un principiante entiende la estructura de una canción.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="techo rev">
+      <b>Contexto de Android</b>
+      <p>
+        Los dos grooveboxes serios de la plataforma son <strong>G-Stomper Studio</strong>
+        (36 canales de mezcla con EQ paramétrico, 47 efectos, arreglador de canción con 64
+        patrones simultáneos) y <strong>Caustic 3</strong> (doce máquinas de síntesis y
+        automatización de casi cualquier mando). Los dos son densos y feos, y llevan años
+        sin competencia. <strong>Groovepad</strong> ocupa el otro extremo: pads por género
+        y una «Beat School» por pack, para gente que no ha producido nunca.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 FUNCIONES NUEVAS ═════════════════════════════════════ -->
+<section id="nuevas" style="background: var(--pozo); border-block: 1px solid var(--linea);">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">02</span><span class="label">39 funciones · seis bloques</span><span class="rule"></span></div>
+      <h2 class="cap-title">Lo que se podría añadir</h2>
+      <p class="lede">
+        La luz de la esquina de cada tarjeta dice <em>cuánto de esto ya está construido</em>,
+        con el mismo vocabulario que <code>PadTile</code> usa en la app. Buena parte del
+        catálogo no es código nuevo: es conectar motores que ya corren.
+      </p>
+    </div>
+
+    <div class="leyenda rev">
+      <div class="ley"><span class="luz listo"></span><p><b>Motor listo</b>La pieza ya existe y funciona. Falta darle un mando.</p></div>
+      <div class="ley"><span class="luz suelto"></span><p><b>Piezas sueltas</b>Hay media implementación en el código, sin conectar.</p></div>
+      <div class="ley"><span class="luz cero"></span><p><b>De cero</b>No hay nada. Es trabajo nuevo entero.</p></div>
+    </div>
+
+    <!-- A1 GROOVE -->
+    <div class="bloque b-groove rev">
+      <div class="bloque-head">
+        <h3>Groove</h3><span class="cuenta">6 funciones</span><span class="rule"></span>
+      </div>
+      <div class="rejilla">
+
+        <article class="card">
+          <div class="card-top"><h3>Swing / shuffle</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+          <p>Lo inventó el MPC-60 en 1988 y sigue igual: retrasar <em>solo</em> las semicorcheas pares. 50 % es recto, 54–58 % es el hip-hop de toda la vida, 66 % ya es tresillo.</p>
+          <p class="como"><b>En Looper:</b> <code>TempoClock</code> ya calcula <code>stepMs</code>; el swing es desplazar el disparo de los pasos impares. Estuvo en la franja y se quitó por ser un mando muerto.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Acento y velocidad por paso</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>El MPC lo resolvió con «16 Levels»: un pad se convierte en dieciséis niveles del mismo sonido. Elektron: mantener el paso y girar el mando.</p>
+          <p class="como"><b>En Looper:</b> hoy no existe la velocidad en ninguna parte de la app. Mantener el paso y arrastrar en vertical es el gesto natural sobre la rejilla que ya hay.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Probabilidad por paso</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Patterning lo pinta como una «capa» encima de la rejilla. Elektron lo llama <em>trig conditions</em>: 1:2, 3:4, «solo en el fill». Un patrón deja de repetirse idéntico.</p>
+          <p class="como"><b>En Looper:</b> una capa más sobre la misma rejilla 4×4, exactamente como ya se hace con la segunda luz de la esquina.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Micro-timing</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Elektron permite ±1/384 de compás por paso. Adelantar el bombo dos milisegundos es la diferencia entre una caja de ritmos y un batería.</p>
+          <p class="como"><b>En Looper:</b> arrastre horizontal sobre el paso seleccionado. Mueve un golpe sin tocar el resto del patrón.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Ratchet por paso</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+          <p>Subdividir un paso en dos, tres o cuatro golpes. Patterning añade <em>decaimiento</em> al ratchet para que el redoble se apague solo.</p>
+          <p class="como"><b>En Looper:</b> el ROLL <em>ya es esto</em>, solo que en vivo y clavado a semicorcheas. Falta poder fijarlo a un paso concreto del patrón.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Longitud distinta por pista</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Patterning llega a 512 pasos por pista. Un hat de 7 pasos contra un bombo de 16 genera polimetría: el patrón tarda compases en repetirse.</p>
+          <p class="como"><b>En Looper:</b> hoy el patrón es un único conjunto de 16 pasos. Es la función más cara del bloque: obliga a reestructurar <code>Pattern</code>.</p>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- A2 ESTRUCTURA -->
+    <div class="bloque b-groove rev">
+      <div class="bloque-head">
+        <h3>Estructura de canción</h3><span class="cuenta">5 funciones</span><span class="rule"></span>
+      </div>
+      <div class="rejilla">
+
+        <article class="card">
+          <div class="card-top"><h3>Escenas</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Live Loops: las columnas son escenas, y disparar una columna lanza la sección entera. Intro, estrofa, estribillo, cada uno en su columna.</p>
+          <p class="como"><b>En Looper:</b> la rejilla 4×4 se puede leer como 4 escenas × 4 pistas sin tocar el motor. Es la pieza que falta para pasar de «bucle» a «canción».</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Modo canción</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>G-Stomper y Caustic tienen línea de tiempo de patrones. Koala cambia de secuencia desde la pantalla PERFORM, en vivo.</p>
+          <p class="como"><b>En Looper:</b> hoy solo hay cadena lineal P1…PN de 1 a 16 compases. Falta poder ordenar los patrones libremente y repetirlos.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Grupos de corte</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>La convención MPC: el hat abierto y el cerrado no pueden sonar a la vez, porque un charles de verdad tampoco puede. Un grupo, una voz.</p>
+          <p class="como"><b>En Looper:</b> se descartó en v1. Hoy un pad solo se corta a sí mismo (el mapa <code>_hits</code>), que es la mitad del problema resuelta.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Modo de reproducción por pad</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>El RC-505 da cuatro por pista: multi, single, one-shot y reverse. Cambiar el modo cambia el instrumento sin cambiar el sonido.</p>
+          <p class="como"><b>En Looper:</b> existe «Libre» contra «Al tempo». Faltan reverse —cuyo campo <code>Sound.reversed</code> <em>ya está guardándose</em>— y el one-shot explícito.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Plantillas y lista de actuación</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>El RC-505 guarda 99 memorias de frase. Loopy Pro tiene plantillas de proyecto y <em>set lists</em> para saltar de tema a tema en directo.</p>
+          <p class="como"><b>En Looper:</b> las sesiones ya se crean, renombran, duplican y borran. Falta el escalón de arriba: una sesión marcada como punto de partida y un orden de actuación.</p>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- A3 MUESTREO -->
+    <div class="bloque b-muestreo rev">
+      <div class="bloque-head">
+        <h3>Muestreo y manipulación</h3><span class="cuenta">7 funciones</span><span class="rule"></span>
+      </div>
+      <div class="rejilla">
+
+        <article class="card">
+          <div class="card-top"><h3>Chop a los 16 pads</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Koala corta hasta 32 trozos, por transitorios o por divisiones iguales. El SP-404 lo llama auto-chop. Es cómo un sampler convierte un disco en un instrumento.</p>
+          <p class="como"><b>En Looper:</b> encaje perfecto — la rejilla 4×4 <em>es</em> el destino. Las envolventes de picos ya se calculan para dibujar la forma de onda; detectar transitorios es reutilizarlas.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Resampling</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+          <p>La salida del mezclador, con los efectos puestos, vuelve a caer en un pad. Es el bucle central de trabajo del SP-404 y de Koala: capa sobre capa sin gastar voces.</p>
+          <p class="como"><b>En Looper:</b> <code>MixdownRecorder</code> ya hace <code>startMixerOutputStream</code>. Es dirigirlo a un buffer corto en vez de a disco. <em>No abre el micrófono</em>, así que la regla de oro sigue intacta.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Captura retrospectiva</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+          <p>El SP-404 guarda siempre los últimos 25–40 segundos. Loopy Pro la llama <em>retrospective recording</em>. Ableton Note va más lejos: detecta el tempo y la longitud sola.</p>
+          <p class="como"><b>En Looper:</b> un buffer circular sobre el mismo stream del mezclador. Mucho valor por poco código, y resuelve el momento «esto estaba bien y no le di al botón».</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Estiramiento y detección de BPM</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Koala estira a un BPM concreto. Loopy Pro ajusta lo importado al tempo del proyecto automáticamente y detecta el tempo de origen.</p>
+          <p class="como"><b>En Looper:</b> hoy el tono es de cinta (<code>setRelativePlaySpeed</code>): tono y velocidad van siempre juntos. Separarlos abre el bloque melódico entero.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Reverse, fade y normalizar</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Los tres están en cualquier sampler desde hace treinta años. Reverse es el más barato y el que más cambia un sonido.</p>
+          <p class="como"><b>En Looper:</b> <code>Sound.reversed</code> y <code>Sound.fadeMs</code> <em>ya se declaran y se guardan en el JSON en cada escritura</em>, y el motor no los lee jamás. Ver el defecto 06.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Separación de stems</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Koala parte una canción en batería, bajo, voz y resto, en el propio dispositivo, con las librerías abiertas de Spleeter. Un toque.</p>
+          <p class="como"><b>En Looper:</b> ambicioso —el modelo pesa y hay que vigilar la memoria en móviles viejos— pero es 100 % offline, así que encaja con la filosofía sin ceder nada.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Más formatos al importar</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Todos aceptan MP3, M4A y FLAC. Nadie tiene ya una carpeta llena de WAV en el móvil.</p>
+          <p class="como"><b>En Looper:</b> hoy solo WAV y 60 segundos como techo. Es la fricción más tonta que tiene la app: el usuario elige un archivo y se le rechaza.</p>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- A4 SONIDO -->
+    <div class="bloque b-sonido rev">
+      <div class="bloque-head">
+        <h3>Melodía y efectos</h3><span class="cuenta">9 funciones</span><span class="rule"></span>
+      </div>
+      <div class="rejilla">
+
+        <article class="card">
+          <div class="card-top"><h3>Teclado con escala bloqueada</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Koala trae 9 escalas; el Model 15 y Animoog, 22; Synth One, más de cien afinaciones. Bloquear la escala es lo que permite que alguien sin oído no toque una nota falsa.</p>
+          <p class="como"><b>En Looper:</b> los 16 pads pasan a ser grados de la escala elegida. Es <em>la vía más corta</em> para que Looper deje de ser solo percusión.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Acordes y arpegiador</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Un pad dispara tres notas; el arpegiador las reparte en el tiempo. Synth One lleva arpegiador polifónico clásico y secuenciador de 16 pasos.</p>
+          <p class="como"><b>En Looper:</b> el secuenciador <em>ya apila varias notas en un mismo paso</em> —de eso va la ventana de 260 ms de <code>kChordWindow</code>—. La estructura de datos está lista.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Tono real, no de cinta</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Cualquier sampler moderno separa el tono de la velocidad. Sin eso, subir una octava también duplica el tempo del bucle.</p>
+          <p class="como"><b>En Looper:</b> el pitch de ±12 semitonos es hoy velocidad de reproducción. Es el techo real del bloque melódico entero.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Efectos por familia</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Loopy Pro convierte los «colores» en pistas con su propia cadena. Koala reparte los pads en 4 buses más el máster, cinco slots de efectos cada uno.</p>
+          <p class="como"><b>En Looper:</b> hoy los efectos son solo de máster. Pero <em>las cuatro familias —percusión, voz, tono, textura— ya son buses de facto</em>: solo les falta cadena propia.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Envío compartido</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Reverb y delay como envío en vez de como insert: una sola instancia que varios canales alimentan. Es la diferencia entre poder tener reverb y no poder.</p>
+          <p class="como"><b>En Looper:</b> imprescindible si entran los efectos por familia — sin envíos, cuatro reverbs se comen la CPU de un móvil de gama media.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Más efectos</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Reverb, compresor, distorsión, chorus. Loopy Pro lleva reverb con nueve presets, EQ paramétrico de ocho tipos de filtro y un compresor.</p>
+          <p class="como"><b>En Looper:</b> hoy hay filtro con resonancia, eco (con un techo duro de 0,3 s porque su buffer se dimensiona en la primera pasada) y lofi. Falta reverb, que es la que más se echa en falta.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Panorama por pad</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Loopy Pro da balance por canal. Separar dos elementos en el estéreo es la manera más barata de que una mezcla respire.</p>
+          <p class="como"><b>En Looper:</b> la app es mono de principio a fin (<code>kChannels = 1</code>). Esto no es un mando: es una decisión de arquitectura.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Macros XY y automatización</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Loopy Pro tiene pads XY que mueven varios parámetros a la vez. Caustic automatiza casi cualquier mando a lo largo del arreglo.</p>
+          <p class="como"><b>En Looper:</b> el pad XY es el mando más expresivo que tiene un móvil —dos ejes con un dedo— y la app no lo usa en ninguna pantalla.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Abrir el sintetizador</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Synth One expone cinco osciladores, dos LFO y sus filtros, y es gratis. Enseñar los mandos es lo que convierte un kit fijo en un instrumento.</p>
+          <p class="como"><b>En Looper:</b> <code>voices.dart</code> y <code>dsp.dart</code> contienen el motor entero —osciladores, envolventes AD, biquad, saturador— <em>cerrado en números fijos</em>. Está todo escrito, sin un solo mando.</p>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- A5 MIDI -->
+    <div class="bloque b-midi rev">
+      <div class="bloque-head">
+        <h3>MIDI y sincronía</h3><span class="cuenta">7 funciones</span><span class="rule"></span>
+      </div>
+      <div class="rejilla">
+
+        <article class="card">
+          <div class="card-top"><h3>MIDI de entrada</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Por BLE y por USB. Es lo primero que pide cualquiera que tenga un controlador encima de la mesa, y es estándar en todas las referencias.</p>
+          <p class="como"><b>En Looper:</b> <code>flutter_midi_command</code> envuelve <code>android.media.midi</code> y CoreMIDI, y contribuye solo los permisos de BLE. El M-Vave FM-1 que inspiró el secuenciador podría tocarlo.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>MIDI learn</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Loopy Pro lo resolvió con un gesto: mantienes pulsado el objeto en pantalla, mueves el mando físico, y quedan casados. Sin menús, sin listas de CC.</p>
+          <p class="como"><b>En Looper:</b> el patrón de interacción a copiar tal cual. Encaja con AJUSTAR, que ya es «armar un modo que dura exactamente un toque».</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>MIDI de salida y reloj</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Que el secuenciador de Looper dispare un cacharro externo, y que su tempo mande sobre el resto de la mesa.</p>
+          <p class="como"><b>En Looper:</b> el mismo paquete resuelve entrada y salida. El reloj de 16avos ya existe; es publicar sus pasos.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Ableton Link</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Tempo, <em>fase</em> y start/stop compartidos por red local, sin configurar nada. Cualquiera cambia el tempo y los demás siguen; entrar y salir no rompe la sesión.</p>
+          <p class="como"><b>En Looper:</b> no hay binding de Flutter hecho: habría que envolver la librería C++ de Ableton. El concepto de <em>quantum</em> —la unidad de alineación en tiempos— es justo lo que <code>_launchOn</code> ya hace por su cuenta.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Estado de vuelta al controlador</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Loopy Pro devuelve MIDI para encender los LED del controlador. Sin esto, la pantalla dice una cosa y los botones de plástico dicen otra.</p>
+          <p class="como"><b>En Looper:</b> solo tiene sentido si entra MIDI de entrada, pero hay que diseñarlo a la vez o el resultado se siente roto.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Exportar por pistas</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Loopy Pro exporta pistas por separado. Koala exporta el proyecto entero como sesión de Ableton Live.</p>
+          <p class="como"><b>En Looper:</b> hoy solo sale la mezcla. El <code>MixdownRecorder</code> ya escribe WAV a disco según llega; multiplicarlo por familia es el paso natural.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>La app como plugin</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>AUv3 es el ecosistema entero de iOS: Loopy Pro y Koala se cargan dentro de otras apps y se combinan sin límite.</p>
+          <p class="como"><b>Techo real:</b> en Android <em>no hay un estándar consolidado</em>. AAP existe y su propia documentación admite que la API todavía no es cómoda de usar. Siendo Android primero, esto no está sobre la mesa.</p>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- A6 SESIÓN -->
+    <div class="bloque b-sesion rev">
+      <div class="bloque-head">
+        <h3>Red de seguridad y aprendizaje</h3><span class="cuenta">5 funciones</span><span class="rule"></span>
+      </div>
+      <div class="rejilla">
+
+        <article class="card">
+          <div class="card-top"><h3>Deshacer</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p><em>La petición número uno en las reseñas de loopers.</em> Existe una app entera —UndoLooper— construida solo sobre el deshacer ilimitado, porque el hardware da un único nivel y eso arruina una toma de diez capas.</p>
+          <p class="como"><b>En Looper:</b> no hay ninguno. <code>grep</code> da cero. VACIAR PAD y BORRAR PATRÓN son irreversibles, y la sesión se autoguarda 800 ms después, así que el error se persiste solo.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Puntos de guardado</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Loopy Pro los llama <em>save points</em>: instantáneas dentro del proyecto a las que se puede volver. Es el deshacer de sesión entera.</p>
+          <p class="como"><b>En Looper:</b> <code>SessionStore</code> ya sabe duplicar una sesión completa. Un punto de guardado es esa misma operación con otro nombre y otra pantalla.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Copiar y duplicar</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Copiar un pad a otro banco, duplicar un patrón para variarlo. Universal en grooveboxes, y lo primero que se echa de menos al segundo patrón.</p>
+          <p class="como"><b>En Looper:</b> quedó sin responder en el alcance de v1. Hoy hay que reconstruir un patrón nota a nota para hacerle una variación.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Aprender tocando, no leyendo</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+          <p>Groovepad monta una «Beat School» por pack de sonidos. Spotify deja saltarse el tutorial entero. La lección compartida: el tour de coach marks es el peor de los formatos.</p>
+          <p class="como"><b>En Looper:</b> el README dice «cero onboarding», y la alternativa no es un tour — es <em>una sesión de ejemplo que ya suena al abrir</em>, con un patrón escrito que se puede desmontar.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><h3>Aviso de espacio</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+          <p>Grabar sin parar llena un móvil. Un aviso antes de que falle la escritura es la diferencia entre una molestia y una sesión perdida.</p>
+          <p class="como"><b>En Looper:</b> la constante <code>kLowSpaceBytes</code> <em>ya está escrita en el código con un comentario que dice qué debería hacer</em>, y no la referencia nadie.</p>
+        </article>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 03 FALLOS ═══════════════════════════════════════════════ -->
+<section id="fallos" class="b-fallo">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">03</span><span class="label">Diez defectos en el código de hoy</span><span class="rule"></span></div>
+      <h2 class="cap-title">Lo que hay que corregir</h2>
+      <p class="lede">
+        Esto no sale de comparar con nadie: sale de leer los 43 ficheros de <code>lib/</code>.
+        Ordenados por daño al usuario. Los dos primeros corrompen datos guardados, así que
+        van antes que cualquier función nueva de la lista anterior.
+      </p>
+    </div>
+
+    <div class="fallos">
+
+      <article class="fallo rev">
+        <span class="num">01</span>
+        <div>
+          <h3>El solo destruye los silencios y los guarda así</h3>
+          <p><code>toggleSolo</code> implementa el solo escribiendo <code>muted: true</code> en todos los demás pads. Al quitarlo, escribe <code>muted: false</code> en todos. Los silencios que el usuario hubiera puesto a mano <em>desaparecen</em>, y el destrozo se persiste a disco con el autoguardado.</p>
+          <p class="arreglo"><b>Arreglo · lib/state/session_controller.dart</b>Guardar el pad en solo como estado aparte y aplicarlo al mezclar, sin tocar nunca <code>PadConfig.muted</code>. Testeable sin dispositivo.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">02</span>
+        <div>
+          <h3>Duplicar una sesión pierde la cadena de patrones</h3>
+          <p><code>duplicate()</code> copia bancos, patrones y <code>activePattern</code>, pero se deja <code>chainLength</code>. La copia vuelve a un compás: el usuario duplica una sesión de 8 compases y le suena otra cosa, sin ningún aviso.</p>
+          <p class="arreglo"><b>Arreglo · lib/data/session_store.dart</b>Una línea. Y un test que compare el objeto entero, no campo a campo, para que no vuelva a pasar con el siguiente campo que se añada.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">03</span>
+        <div>
+          <h3>El metrónomo no sirve para entrar a tiempo</h3>
+          <p>Un click fijo de 1760 Hz, volumen clavado en 0,55, <em>sin acento en el uno, sin cuenta atrás y sin control de volumen</em>. Un click sin acento no dice dónde empieza el compás, que es justo para lo que se enciende un metrónomo.</p>
+          <p class="arreglo"><b>Arreglo · lib/data/metronome.dart</b>Acentuar el paso 0 (otra voz sintetizada más aguda) y añadir cuenta atrás de un compás antes del REC. Van juntos con el defecto 09.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">04</span>
+        <div>
+          <h3>Ocho milisegundos de jitter en el reloj</h3>
+          <p><code>TempoClock</code> dispara con un <code>Timer.periodic</code> de 8 ms leyendo un <code>Stopwatch</code>. No es preciso a nivel de muestra, y ocho milisegundos son audibles en un hat cerrado. Ya estaba anotado como deuda técnica.</p>
+          <p class="arreglo"><b>Arreglo · lib/audio/tempo_clock.dart</b><code>playClocked</code> de flutter_soloud agenda sobre el reloj de muestras, con separación submilisegundo, pensado justo para metrónomos y secuenciadores. Es también el prerrequisito del swing.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">05</span>
+        <div>
+          <h3>Estados de pad que no pueden salir nunca</h3>
+          <p>El pintor dibuja <code>PadVisualState.firing</code> y <code>PadVisualState.blocked</code> —el segundo con un candado— pero <code>_stateFor()</code> no los produce jamás. Hay un icono de candado en el binario que ningún usuario puede ver.</p>
+          <p class="arreglo"><b>Arreglo · pad_tile.dart + pads_screen.dart</b>O se producen (<code>firing</code> daría el destello del golpe, que hoy falta) o se borran. Hoy es código muerto que hace pensar que existe una función que no existe.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">06</span>
+        <div>
+          <h3>Campos que se guardan y nadie lee</h3>
+          <p><code>Sound.reversed</code> y <code>Sound.fadeMs</code> se declaran, se serializan y viajan en el JSON en cada guardado. El motor los ignora por completo. El formato de datos promete dos funciones que la app no tiene.</p>
+          <p class="arreglo"><b>Arreglo · lib/domain/sound.dart</b>Implementar reverse —mucho valor, poco coste: es invertir el buffer al cargar— o sacarlos del formato. Dejarlos ahí es deuda que crece en cada sesión guardada.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">07</span>
+        <div>
+          <h3>Constantes muertas</h3>
+          <p><code>kRollDivisions = [2, 1]</code> declara corcheas y semicorcheas, pero el ROLL está clavado a semicorcheas. <code>kLowSpaceBytes</code> y <code>kPadLongPress</code> no los referencia nadie.</p>
+          <p class="arreglo"><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">08</span>
+        <div>
+          <h3>Sin conversión de frecuencia al importar</h3>
+          <p>La app trabaja a 44.100 Hz de punta a punta, y no hay resampler en ninguna parte. Un WAV a 48 kHz importado es el caso a verificar: si se re-codifica con cabecera a 44.100, sonará grave y lento sin decir nada.</p>
+          <p class="arreglo"><b>Verificar · wav_decoder.dart + sound_import.dart</b>Importar un WAV a 48 kHz en un móvil y escucharlo. Si el problema existe, convertir la frecuencia al importar y rechazar lo que no se pueda convertir.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">09</span>
+        <div>
+          <h3>El REC del secuenciador no da margen</h3>
+          <p>Se empieza a escribir en el paso actual, sin cuenta atrás. Para escribir un patrón en vivo hay que anticiparse al botón, que es exactamente lo que ninguna caja de ritmos pide.</p>
+          <p class="arreglo"><b>Arreglo · lib/state/sequencer.dart</b>Un compás de cuenta atrás antes de armar la escritura, con el acento del defecto 03 marcando el uno.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev">
+        <span class="num">10</span>
+        <div>
+          <h3>La franja de tres pestañas esconde a qué apunta</h3>
+          <p>Sonido / FX / Loop cambian de objetivo según haya o no un pad seleccionado —con pad apuntan al pad, sin pad al máster— y eso no se lee en ninguna parte de la pantalla. El mismo mando hace dos cosas distintas sin decirlo.</p>
+          <p class="arreglo"><b>Arreglo · lib/ui/pads/control_surface.dart</b>Un rótulo permanente con el objetivo: <code>A · 03</code> o <code>MÁSTER</code>. Es una línea de texto y resuelve la única ambigüedad de estado que le queda a la app.</p>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 INTERFAZ ═════════════════════════════════════════════ -->
+<section id="interfaz" style="background: var(--pozo); border-block: 1px solid var(--linea);">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">04</span><span class="label">Seis patrones de interacción</span><span class="rule"></span></div>
+      <h2 class="cap-title">Cómo se toca, no qué hace</h2>
+      <p class="lede">
+        Lo que separa una app de música que se usa de una que se abandona no es la lista de
+        funciones: es cuántos toques hay entre la idea y el sonido. Estos seis patrones son
+        los mecanismos concretos que merece la pena estudiar.
+      </p>
+    </div>
+
+    <div class="patrones">
+
+      <div class="patron rev">
+        <span class="fuente">Loopy Pro</span>
+        <h3>La longitud del gesto codifica la intención</h3>
+        <p>Deslizar corto sobre un clip pide confirmación para borrarlo; deslizar <em>largo</em> lo borra sin preguntar. El usuario no elige en un diálogo: elige con la mano. Y los gestos son reasignables — toque, toque a dos dedos, deslizar en cuatro direcciones, rotación, pulsación larga.</p>
+        <p><strong>Para Looper:</strong> el vocabulario ya es coherente (toque dispara, mantener enlaza, AJUSTAR + toque configura). Lo que falta es <em>deslizar</em>, que es el gesto libre que queda.</p>
+      </div>
+
+      <div class="patron rev">
+        <span class="fuente">GarageBand Live Loops</span>
+        <h3>Una sola regla enseña la estructura</h3>
+        <p>Filas son instrumentos, columnas son escenas, y solo una celda por fila puede sonar. Con esa única restricción, alguien que nunca ha producido entiende qué es una estrofa y qué es un estribillo, sin que nadie se lo explique.</p>
+        <p><strong>Para Looper:</strong> la rejilla 4×4 se lee como 4 escenas × 4 pistas. La restricción es lo que enseña — más opciones enseñarían menos.</p>
+      </div>
+
+      <div class="patron rev">
+        <span class="fuente">Loopy Pro · el contraejemplo</span>
+        <h3>La potencia se paga en curva</h3>
+        <p>El lienzo de Loopy Pro deja colocar clips, botones, deslizadores, diales, pads XY y etiquetas en varias páginas, todo configurable en tres niveles (proyecto, color, clip). Es la app más potente del catálogo y <em>cuesta días entenderla</em>.</p>
+        <p><strong>Para Looper:</strong> la lección no es copiar el lienzo. Es que cada capa de configuración se cobra en el primer minuto de alguien que abre la app por primera vez.</p>
+      </div>
+
+      <div class="patron rev">
+        <span class="fuente">Patterning 3</span>
+        <h3>El tiempo como giro, no como línea</h3>
+        <p>El patrón se dibuja en anillos concéntricos: cada pista es un anillo, el cabezal gira. Un bucle <em>es</em> circular, y verlo así hace obvio por qué un patrón de 7 pasos contra uno de 16 tarda en repetirse.</p>
+        <p><strong>Para Looper:</strong> encaja con el anillo de progreso que <code>PadTile</code> <em>ya pinta</em> alrededor de cada pad en bucle. La metáfora ya está en pantalla, sin explotar.</p>
+      </div>
+
+      <div class="patron rev">
+        <span class="fuente">Ableton Note · SP-404</span>
+        <h3>Grabar hacia atrás</h3>
+        <p>El botón no arma la grabación: rescata lo que ya sonó. Note detecta además el tempo y la longitud de la frase y monta el bucle solo. El usuario no tiene que decidir <em>antes</em> si lo que va a tocar merece la pena.</p>
+        <p><strong>Para Looper:</strong> invierte la relación con el botón rojo. Es la función que más cambia el ánimo de una sesión por menos código.</p>
+      </div>
+
+      <div class="patron rev">
+        <span class="fuente">Lo que hoy falta</span>
+        <h3>Los detalles que se notan sin nombrarse</h3>
+        <p>Forma de onda dentro del pad —hoy solo hay lavado de color, así que dos sonidos distintos se ven igual—. Háptica diferenciada por evento —hoy solo <code>mediumImpact</code> al enlazar—. Modo apaisado y tablet —hoy bloqueado a vertical—. Localización —hoy español a fuego— y semántica de accesibilidad, hoy inexistente.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 PANTALLAS ════════════════════════════════════════════ -->
+<section id="pantallas">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">05</span><span class="label">Cinco maquetas sobre la app real</span><span class="rule"></span></div>
+      <h2 class="cap-title">Cómo se vería</h2>
+      <p class="lede">
+        Las cinco propuestas con más recorrido, dibujadas sobre la interfaz que ya existe:
+        misma barra superior, mismas solapas de banco, misma rejilla, mismo transport de
+        siete pastillas. Ninguna añade una pantalla nueva.
+      </p>
+    </div>
+
+    <div class="telefonos">
+
+      <!-- 1 · SWING -->
+      <div class="lamina rev b-groove">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Sesión 3</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-banks">
+              <div class="t-bank on">A · Kit</div><div class="t-bank">B · Techno</div><div class="t-bank">C · Mías</div><div class="t-bank">D · Libre</div>
+            </div>
+            <div class="t-tempo"><span class="step">−</span><span class="bpm">92<sub>BPM</sub></span><span class="step">+</span><span class="tap">TAP</span></div>
+            <div class="t-grid">
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso cab"></span><span class="nom">Bombo</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">Caja</span></div>
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">Hat</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">Palma</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Snap</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">Tom</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Rim</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">Shaker</span></div>
+              <div class="pad viva" style="--fam:#5BB4F5"><span class="wash"></span><span class="anillo"></span><span class="nom">Bajo</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="nom">Acorde</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="nom">Campana</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Pad</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="nom">Voz 1</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="nom">Voz 2</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Botella</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Vinilo</span></div>
+            </div>
+            <div class="t-slider">
+              <div class="fila"><span>Swing</span><b>58 %</b></div>
+              <div class="riel"><i style="width:32%"></i><u style="left:32%"></u></div>
+              <div class="marcas"><em>50 recto</em><em>58 MPC</em><em>66 tresillo</em></div>
+            </div>
+            <div class="t-seqbar">
+              <span class="pill on">SEQ</span><span class="pill">P1</span><span class="pill rec">● REC</span><span class="pill">Silencio</span><span class="pill">4 compases</span>
+            </div>
+            <div class="t-trans">
+              <div>Parar</div><div>Roll</div><div class="on">Seq</div><div>Ajustar</div><div>Metro</div><div>Mute</div><div>Export</div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>Swing en la barra del secuenciador</h3>
+          <p>El mando vive donde vive el patrón, no en la franja de mandos. Las marcas nombran los tres sitios que importan en vez de dar un número desnudo: recto, el MPC, y el tresillo.</p>
+          <span class="gesto">Arrastre horizontal</span>
+        </div>
+      </div>
+
+      <!-- 2 · ACENTO POR PASO -->
+      <div class="lamina rev b-groove">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Sesión 3</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-banks">
+              <div class="t-bank on">A · Kit</div><div class="t-bank">B · Techno</div><div class="t-bank">C · Mías</div><div class="t-bank">D · Libre</div>
+            </div>
+            <div class="t-tempo"><span class="step">−</span><span class="bpm">92<sub>BPM</sub></span><span class="step">+</span><span class="tap">TAP</span></div>
+            <div class="t-grid">
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso cab"></span><span class="nom">01</span><span class="acento"><i style="width:100%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">02</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">03</span><span class="acento"><i style="width:42%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">04</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">05</span><span class="acento"><i style="width:72%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">06</span></div>
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso edit"></span><span class="anillo"></span><span class="nom">07</span><span class="acento"><i style="width:88%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">08</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">09</span><span class="acento"><i style="width:100%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">10</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">11</span><span class="acento"><i style="width:38%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">12</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">13</span><span class="acento"><i style="width:64%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">14</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="paso esc"></span><span class="nom">15</span><span class="acento"><i style="width:52%"></i></span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">16</span></div>
+            </div>
+            <div class="t-slider">
+              <div class="fila"><span>Paso 07 · Bombo</span><b>112</b></div>
+              <div class="riel"><i style="width:88%"></i><u style="left:88%"></u></div>
+              <div class="marcas"><em>Suave</em><em>Velocidad</em><em>Fuerte</em></div>
+            </div>
+            <div class="t-seqbar">
+              <span class="pill on">SEQ</span><span class="pill">P1</span><span class="pill rec">● REC</span><span class="pill on">Acento</span><span class="pill">Prob.</span>
+            </div>
+            <div class="t-trans">
+              <div>Parar</div><div>Roll</div><div class="on">Seq</div><div>Ajustar</div><div>Metro</div><div>Mute</div><div>Export</div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>Acento por paso, sin pantalla nueva</h3>
+          <p>Con la capa Acento encendida, la barra inferior de cada pad es la velocidad de ese paso. El anillo marca el paso en edición y la luz láser lo confirma, igual que ya hace hoy la escritura del patrón.</p>
+          <span class="gesto">Mantener el paso + arrastrar</span>
+        </div>
+      </div>
+
+      <!-- 3 · CHOP -->
+      <div class="lamina rev b-muestreo">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Biblioteca</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-grid">
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">01</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">02</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">03</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">04</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">05</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">06</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">07</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">08</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">09</span><span class="nom">Corte</span></div>
+              <div class="pad viva" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">10</span><span class="nom">Corte</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">11</span><span class="nom">Corte</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">12</span><span class="nom">Corte</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">13</span><span class="nom">Corte</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">14</span><span class="nom">Corte</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">15</span><span class="nom">Corte</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="grado">16</span><span class="nom">Corte</span></div>
+            </div>
+            <div class="t-sheet">
+              <div class="cab"><b>CORTAR · vinilo_02.wav</b><span>10 cortes</span></div>
+              <div class="t-wave">
+                <svg viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M0,20 L4,14 L8,26 L12,9 L16,31 L20,18 L24,22 L28,12 L32,28 L36,20 L40,20 L44,6 L48,34 L52,16 L56,24 L60,20 L64,20 L68,13 L72,27 L76,19 L80,21 L84,20 L88,10 L92,30 L96,17 L100,23 L104,20 L108,20 L112,7 L116,33 L120,15 L124,25 L128,20 L132,20 L136,14 L140,26 L144,18 L148,22 L152,20 L156,9 L160,31 L164,16 L168,24 L172,20 L176,20 L180,12 L184,28 L188,19 L192,21 L196,20 L200,6 L204,34 L208,17 L212,23 L216,20 L220,20 L224,13 L228,27 L232,18 L236,22 L240,20 L244,11 L248,29 L252,16 L256,24 L260,20 L264,20 L268,15 L272,25 L276,19 L280,21 L284,20 L288,18 L292,22 L296,20 L300,20"
+                        fill="none" stroke="#4FE3B4" stroke-width="1.1" opacity="0.85"/>
+                </svg>
+                <span class="corte" style="left:8%"></span><span class="corte" style="left:18%"></span>
+                <span class="corte" style="left:27%"></span><span class="corte" style="left:39%"></span>
+                <span class="corte" style="left:47%"></span><span class="corte" style="left:58%"></span>
+                <span class="corte" style="left:66%"></span><span class="corte" style="left:78%"></span>
+                <span class="corte" style="left:88%"></span>
+              </div>
+              <div class="t-seg">
+                <div class="on">Transitorios</div><div>En 8</div><div>En 16</div><div>A mano</div>
+              </div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>Cortar un sonido a los 16 pads</h3>
+          <p>La rejilla es el resultado, no un paso intermedio: cada corte cae en su pad y ya se puede tocar. Los pads apagados son los que sobran cuando la detección encuentra menos de dieciséis transitorios.</p>
+          <span class="gesto">Hoja del sonido → CORTAR</span>
+        </div>
+      </div>
+
+      <!-- 4 · ESCALA -->
+      <div class="lamina rev b-sonido">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Sesión 3</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-banks">
+              <div class="t-bank">A · Kit</div><div class="t-bank">B · Techno</div><div class="t-bank on">C · Mías</div><div class="t-bank">D · Libre</div>
+            </div>
+            <div class="t-tempo"><span class="step">−</span><span class="bpm">92<sub>BPM</sub></span><span class="step">+</span><span class="tap">TAP</span></div>
+            <div class="t-grid">
+              <div class="pad viva" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">1</span><span class="nom">La</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">2</span><span class="nom">Si</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">3</span><span class="nom">Do</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">4</span><span class="nom">Re</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">5</span><span class="nom">Mi</span></div>
+              <div class="pad viva" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">6</span><span class="nom">Fa</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">7</span><span class="nom">Sol</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">8</span><span class="nom">La′</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">9</span><span class="nom">Si′</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">10</span><span class="nom">Do′</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">11</span><span class="nom">Re′</span></div>
+              <div class="pad viva" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">12</span><span class="nom">Mi′</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">13</span><span class="nom">Fa′</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">14</span><span class="nom">Sol′</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">15</span><span class="nom">La″</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="grado">16</span><span class="nom">Si″</span></div>
+            </div>
+            <div class="t-strip">
+              <div class="t-knob"><span class="dial" style="--giro:-46deg"></span><span>Tónica</span></div>
+              <div class="t-knob"><span class="dial" style="--giro:24deg"></span><span>Escala</span></div>
+              <div class="t-knob"><span class="dial" style="--giro:-12deg"></span><span>Octava</span></div>
+              <div class="t-knob"><span class="dial" style="--giro:64deg"></span><span>Acorde</span></div>
+            </div>
+            <div class="t-seqbar">
+              <span class="pill on">Escala</span><span class="pill">La menor</span><span class="pill">Pentatónica</span><span class="pill">Dórica</span>
+            </div>
+            <div class="t-trans">
+              <div>Parar</div><div>Roll</div><div>Seq</div><div>Ajustar</div><div>Metro</div><div>Mute</div><div>Export</div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>La rejilla como escala</h3>
+          <p>El sonido del pad seleccionado se reparte en dieciséis grados de la escala elegida. No hay nota falsa posible, que es exactamente la promesa del README: hacer música sin saber producción.</p>
+          <span class="gesto">Franja → solapa Escala</span>
+        </div>
+      </div>
+
+      <!-- 5 · MIDI LEARN -->
+      <div class="lamina rev b-midi">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Sesión 3</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-banks">
+              <div class="t-bank on">A · Kit</div><div class="t-bank">B · Techno</div><div class="t-bank">C · Mías</div><div class="t-bank">D · Libre</div>
+            </div>
+            <div class="t-tempo"><span class="step">−</span><span class="bpm">92<sub>BPM</sub></span><span class="step">+</span><span class="tap">TAP</span></div>
+            <div class="t-grid">
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">C1</span><span class="nom">Bombo</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">D1</span><span class="nom">Caja</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">E1</span><span class="nom">Hat</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">F1</span><span class="nom">Palma</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">G1</span><span class="nom">Snap</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">A1</span><span class="nom">Tom</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">B1</span><span class="nom">Rim</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">C2</span><span class="nom">Shaker</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">D2</span><span class="nom">Bajo</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">E2</span><span class="nom">Acorde</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">F2</span><span class="nom">Campana</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">G2</span><span class="nom">Pad</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">A2</span><span class="nom">Voz 1</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">B2</span><span class="nom">Voz 2</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">C3</span><span class="nom">Botella</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">D3</span><span class="nom">Vinilo</span></div>
+            </div>
+            <div class="t-strip">
+              <div class="t-knob"><span class="dial" style="--giro:-30deg"></span><span>Vol</span></div>
+              <div class="t-knob armado"><span class="dial" style="--giro:18deg"></span><span>Filtro</span></div>
+              <div class="t-knob"><span class="dial" style="--giro:0deg"></span><span>Eco</span></div>
+              <div class="t-knob"><span class="dial" style="--giro:52deg"></span><span>Drive</span></div>
+            </div>
+            <div class="t-sheet">
+              <div class="t-learn">
+                <b>Aprendiendo · Filtro</b>
+                <span>Mueve un mando del FM-1 para asignarlo. Toca en cualquier sitio para salir.</span>
+              </div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>MIDI learn con un solo gesto</h3>
+          <p>Mantener pulsado el mando en pantalla lo pone a escuchar; el primer mensaje que llegue del controlador queda casado. Sin listas de CC ni pantalla de ajustes — el mismo principio que AJUSTAR: un modo que dura exactamente una acción.</p>
+          <span class="gesto">Mantener el mando + mover el físico</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 PRIORIDAD ════════════════════════════════════════════ -->
+<section id="prioridad" style="background: var(--pozo); border-block: 1px solid var(--linea);">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Una secuencia, no una lista</span><span class="rule"></span></div>
+      <h2 class="cap-title">Por dónde empezar</h2>
+      <p class="lede">
+        Ordenado por valor entregado dividido entre coste, aprovechando lo que ya está
+        construido. Aquí los números sí significan orden: cada paso deja el terreno
+        preparado para el siguiente.
+      </p>
+    </div>
+
+    <div class="pasos">
+
+      <article class="paso rev">
+        <span class="n">1</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Los tres arreglos que no pueden esperar</h3>
+          <p>Defectos <strong>01</strong> (el solo destruye los silencios), <strong>02</strong> (duplicar pierde la cadena) y <strong>07</strong> (el roll multi-división). Los dos primeros corrompen datos guardados; el tercero es conectar una constante que ya existe.</p>
+        </div>
+        <span class="coste">Una tarde</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">2</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Swing, acento por paso y cuenta atrás con acento</h3>
+          <p>El salto de calidad más grande por línea escrita. <code>TempoClock</code> ya tiene la rejilla de 16avos; el swing la desplaza, el acento la enriquece y el metrónomo acentuado por fin dice dónde está el uno.</p>
+        </div>
+        <span class="coste">Dos o tres días</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">3</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Deshacer</h3>
+          <p>Al menos en VACIAR PAD, BORRAR PATRÓN y la edición de sonido. Es la petición número uno documentada de los usuarios de loopers, y hoy es exactamente cero. El autoguardado a los 800 ms lo hace más urgente, no menos.</p>
+        </div>
+        <span class="coste">Dos días</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">4</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Resampling y captura retrospectiva</h3>
+          <p><code>MixdownRecorder</code> ya captura la salida del mezclador con los efectos puestos. Las dos funciones salen del mismo stream y ninguna abre el micrófono, así que la regla de oro del proyecto sigue intacta.</p>
+        </div>
+        <span class="coste">Tres o cuatro días</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">5</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Cortar un sonido a los 16 pads</h3>
+          <p>La rejilla 4×4 ya es el destino natural y las envolventes de picos ya se calculan para dibujar la forma de onda. Es la función que convierte la biblioteca en un instrumento.</p>
+        </div>
+        <span class="coste">Tres días</span>
+      </article>
+
+    </div>
+
+    <div class="despues rev">
+      <b>Y después, en este orden:</b> modo escala en los pads · efectos por familia con
+      envío compartido · MIDI de entrada con MIDI learn · escenas · modo canción. Cada uno
+      depende de que el anterior esté en pie.
+    </div>
+
+    <div class="techo rev">
+      <b>El único techo que no se puede saltar</b>
+      <p>
+        Todo lo anterior es viable en Flutter con lo que ya hay montado. Lo que
+        <em>no</em> lo es, siendo Android primero, es convertir Looper en plugin de otras
+        apps: AUv3 no existe fuera de Apple, y en Android el proyecto AAP sigue sin una API
+        estable según su propia documentación. Ableton Link sí es posible, pero exige
+        envolver la librería C++ de Ableton a mano — no hay binding de Flutter hecho.
+      </p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <svg class="mark-big" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="7" fill="#211441"/>
+      <rect x="5"  y="5"  width="6" height="6" rx="1.6" fill="#33205C"/>
+      <rect x="13" y="5"  width="6" height="6" rx="1.6" fill="#33205C"/>
+      <rect x="21" y="5"  width="6" height="6" rx="1.6" fill="#9B78F0"/>
+      <rect x="5"  y="13" width="6" height="6" rx="1.6" fill="#33205C"/>
+      <rect x="13" y="13" width="6" height="6" rx="1.6" fill="#5BB4F5"/>
+      <rect x="21" y="13" width="6" height="6" rx="1.6" fill="#33205C"/>
+      <rect x="5"  y="21" width="6" height="6" rx="1.6" fill="#B4EC5C"/>
+      <rect x="13" y="21" width="6" height="6" rx="1.6" fill="#33205C"/>
+      <rect x="21" y="21" width="6" height="6" rx="1.6" fill="#33205C"/>
+      <circle cx="16" cy="16" r="2.1" fill="none" stroke="#4FE3B4" stroke-width="1.4"/>
+    </svg>
+    <p>
+      Investigación sobre siete apps y máquinas del oficio, contrastada línea a línea con
+      los 43 ficheros de <code>lib/</code>. Ninguna de estas funciones está decidida:
+      el documento existe para poder elegir.
+    </p>
+    <div class="fuentes">
+      <a href="https://loopypro.com/manual/" target="_blank" rel="noopener">Manual de Loopy Pro</a>
+      <a href="https://manual.koalasampler.com/" target="_blank" rel="noopener">Manual de Koala</a>
+      <a href="https://www.olympianoiseco.com/apps/patterning-3/" target="_blank" rel="noopener">Patterning 3</a>
+      <a href="https://www.ableton.com/en/note/" target="_blank" rel="noopener">Ableton Note</a>
+      <a href="https://ableton.github.io/link/" target="_blank" rel="noopener">Ableton Link</a>
+      <a href="https://pub.dev/packages/flutter_midi_command" target="_blank" rel="noopener">flutter_midi_command</a>
+      <a href="https://androidaudioplugin.org/" target="_blank" rel="noopener">Proyecto AAP</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── El logotipo del hero es un secuenciador: el cabezal recorre los
+        dieciséis pasos al mismo tempo que la app arranca por defecto. ── */
+  var COLORES = ['#B4EC5C', '#4FE3B4', '#5BB4F5', '#9B78F0'];
+  var grupo = document.getElementById('heroPads');
+  var celdas = [];
+
+  for (var f = 0; f < 4; f++) {
+    for (var c = 0; c < 4; c++) {
+      var r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', String(6 + c * 28));
+      r.setAttribute('y', String(6 + f * 28));
+      r.setAttribute('width', '22');
+      r.setAttribute('height', '22');
+      r.setAttribute('rx', '5');
+      r.setAttribute('fill', COLORES[f]);
+      r.setAttribute('opacity', '0.16');
+      grupo.appendChild(r);
+      celdas.push(r);
+    }
+  }
+
+  if (!quieto) {
+    // 92 BPM en semicorcheas = 60000 / 92 / 4 ms por paso, igual que TempoClock.
+    var pasoMs = 60000 / 92 / 4;
+    var i = 0;
+    setInterval(function () {
+      celdas[i].setAttribute('opacity', '0.16');
+      i = (i + 1) % 16;
+      celdas[i].setAttribute('opacity', '0.92');
+    }, pasoMs);
+  } else {
+    celdas[0].setAttribute('opacity', '0.92');
+  }
+
+  /* ── Revelado por scroll ── */
+  if ('IntersectionObserver' in window && !quieto) {
+    var obs = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add('visto');
+          obs.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+
+    Array.prototype.forEach.call(document.querySelectorAll('.rev'), function (el, n) {
+      el.style.transitionDelay = Math.min(n % 4, 3) * 55 + 'ms';
+      obs.observe(el);
+    });
+  } else {
+    Array.prototype.forEach.call(document.querySelectorAll('.rev'), function (el) {
+      el.classList.add('visto');
+    });
+  }
+
+  /* ── Marcar el capítulo activo en la barra ── */
+  var enlaces = Array.prototype.slice.call(document.querySelectorAll('.navlinks a'));
+  var secciones = enlaces.map(function (a) {
+    return document.querySelector(a.getAttribute('href'));
+  });
+
+  if ('IntersectionObserver' in window) {
+    var obsNav = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var idx = secciones.indexOf(e.target);
+        if (idx < 0) return;
+        enlaces.forEach(function (a) { a.classList.remove('on'); });
+        enlaces[idx].classList.add('on');
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+
+    secciones.forEach(function (s) { if (s) obsNav.observe(s); });
+  }
+})();
+</script>

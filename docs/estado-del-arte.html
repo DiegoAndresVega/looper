@@ -583,9 +583,9 @@ footer .fuentes a:hover { color: var(--fosforo); }
     </p>
     <div class="cifras">
       <div class="cifra"><b>7</b><span>Referencias</span></div>
-      <div class="cifra"><b>6 / 39</b><span>Funciones hechas</span></div>
+      <div class="cifra"><b>8 / 39</b><span>Funciones hechas</span></div>
       <div class="cifra"><b>5 / 9</b><span>Correcciones</span></div>
-      <div class="cifra"><b>3 / 5</b><span>Pantallas</span></div>
+      <div class="cifra"><b>4½ / 5</b><span>Pantallas</span></div>
     </div>
   </div>
 </header>
@@ -829,8 +829,8 @@ footer .fuentes a:hover { color: var(--fosforo); }
       </div>
       <div class="rejilla">
 
-        <article class="card">
-          <div class="card-top"><h3>Teclado con escala bloqueada</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Teclado con escala bloqueada</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p>Koala trae 9 escalas; el Model 15 y Animoog, 22; Synth One, más de cien afinaciones. Bloquear la escala es lo que permite que alguien sin oído no toque una nota falsa.</p>
           <p class="como"><b>En Looper:</b> los 16 pads pasan a ser grados de la escala elegida. Es <em>la vía más corta</em> para que Looper deje de ser solo percusión.</p>
         </article>
@@ -893,8 +893,8 @@ footer .fuentes a:hover { color: var(--fosforo); }
       </div>
       <div class="rejilla">
 
-        <article class="card">
-          <div class="card-top"><h3>MIDI de entrada</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>MIDI de entrada</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p>Por BLE y por USB. Es lo primero que pide cualquiera que tenga un controlador encima de la mesa, y es estándar en todas las referencias.</p>
           <p class="como"><b>En Looper:</b> <code>flutter_midi_command</code> envuelve <code>android.media.midi</code> y CoreMIDI, y contribuye solo los permisos de BLE. El M-Vave FM-1 que inspiró el secuenciador podría tocarlo.</p>
         </article>
@@ -1410,6 +1410,7 @@ footer .fuentes a:hover { color: var(--fosforo); }
         <div class="lamina-pie">
           <h3>MIDI learn con un solo gesto</h3>
           <p>Mantener pulsado el mando en pantalla lo pone a escuchar; el primer mensaje que llegue del controlador queda casado. Sin listas de CC ni pantalla de ajustes — el mismo principio que AJUSTAR: un modo que dura exactamente una acción.</p>
+          <p><strong>A medias.</strong> La entrada está construida y los pads responden sin configurar nada, pero esta pantalla —casar un mando físico con uno de la app— sigue pendiente. Es lo único que le falta a las cinco láminas.</p>
           <span class="gesto">Mantener el mando + mover el físico</span>
         </div>
       </div>
@@ -1422,20 +1423,22 @@ footer .fuentes a:hover { color: var(--fosforo); }
 <section id="prioridad" style="background: var(--pozo); border-block: 1px solid var(--linea);">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Los cinco pasos, hechos</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Siete tandas construidas</span><span class="rule"></span></div>
       <h2 class="cap-title">Dónde está</h2>
       <p class="lede">
-        Los cinco pasos que este documento priorizó están construidos, con tests y
-        probados en un móvil los dos primeros. Lo que sigue es el estado real contra
-        el catálogo entero, que es bastante más grande que esos cinco pasos.
+        Los cinco pasos que este documento priorizó están construidos, y dos más de la
+        cola que venía detrás. Swing, acento y las luces de paso están probados en un
+        móvil. Lo que sigue es el estado real contra el catálogo entero, que es bastante
+        más grande que esos cinco pasos.
       </p>
     </div>
 
     <div class="estado-barra rev">
       <div><b>5 / 5</b><span>Pasos priorizados</span></div>
-      <div><b>6 / 39</b><span>Funciones del catálogo</span></div>
-      <div><b>213</b><span>Tests</span></div>
-      <div><b>3 / 5</b><span>Pantallas maquetadas</span></div>
+      <div><b>+2</b><span>De la cola siguiente</span></div>
+      <div><b>8 / 39</b><span>Funciones del catálogo</span></div>
+      <div><b>247</b><span>Tests</span></div>
+      <div><b>4½ / 5</b><span>Pantallas maquetadas</span></div>
     </div>
 
     <div class="pasos">
@@ -1485,22 +1488,44 @@ footer .fuentes a:hover { color: var(--fosforo); }
       </article>
     </div>
 
+      <article class="paso rev">
+        <span class="n">6</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">La rejilla como escala</h3>
+          <p>Seis escalas, tónica y octava, con la escala bloqueada para que no haya nota falsa posible. Al pasarse del último grado sigue una octava arriba, así que una pentatónica cubre tres octavas en la grilla — que es lo que la hace sonar a solo y no a ejercicio.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">7</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Controlador MIDI</h3>
+          <p>USB y Bluetooth, y ningún mapeo que montar: las notas desde la 36 tocan los dieciséis pads del banco visible. Una nota del cable hace lo que un dedo — suena, escribe en el patrón, toca su grado. El MIDI learn de los mandos sigue pendiente.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+    </div>
+
     <div class="despues rev">
-      <b>Lo siguiente, en este orden:</b> modo escala en los pads · efectos por familia
-      con envío compartido · MIDI de entrada con MIDI learn · escenas · modo canción.
-      Las dos pantallas que faltan de las cinco maquetadas —modo escala y MIDI learn—
-      salen de ahí, no de los cinco pasos.
+      <b>Lo siguiente, en este orden:</b> efectos por familia con envío compartido ·
+      MIDI learn de los mandos · escenas · modo canción. La primera es la que más
+      cambia el sonido y la que más riesgo de CPU trae; la segunda es lo único que le
+      falta a las cinco láminas de arriba.
     </div>
 
     <div class="techo rev">
       <b>Lo que salió por el camino y no estaba aquí</b>
       <p>
-        Tres cosas que este documento no previó. <strong>Una luz por sonido</strong> en
-        cada paso, que salió de probar el swing en un móvil y descubrir que una sola luz
-        no sabía decir si un tiempo llevaba una voz o tres. El <strong>grifo único del
-        mezclador</strong>, que no es una función sino la pieza sin la cual exportar y
-        rescatar se pisaban. Y que <strong>resamplear y rescatar son la misma
-        función</strong> preguntada en dos momentos distintos.
+        Cuatro cosas que este documento no previó. <strong>Una luz por sonido</strong>
+        en cada paso, que salió de probar el swing en un móvil y descubrir que una sola
+        luz no sabía decir si un tiempo llevaba una voz o tres. El <strong>grifo único
+        del mezclador</strong>, que no es una función sino la pieza sin la cual exportar
+        y rescatar se pisaban. Que <strong>resamplear y rescatar son la misma
+        función</strong> preguntada en dos momentos distintos. Y que el teclado
+        <strong>salía monofónico</strong> hasta que la transposición pasó a formar parte
+        de la identidad de cada voz: sin eso, un do y un mi del mismo sonido se cortaban
+        el uno al otro.
       </p>
     </div>
 
@@ -1511,6 +1536,12 @@ footer .fuentes a:hover { color: var(--fosforo); }
         Android el proyecto AAP sigue sin una API estable según su propia documentación.
         Ableton Link sí es posible, pero exige envolver la librería C++ de Ableton a
         mano — no hay binding de Flutter hecho.
+      </p>
+      <p>
+        Lo que <em>sí</em> resultó ser exactamente lo que prometía: <strong>MIDI de
+        entrada</strong>. <code>flutter_midi_command</code> entró sin romper ninguna de
+        las versiones que este proyecto tiene fijadas a la fuerza, y el APK de Android
+        compila con él dentro.
       </p>
     </div>
   </div>

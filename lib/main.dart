@@ -13,6 +13,8 @@ import 'domain/session.dart';
 import 'domain/sound.dart';
 import 'state/session_controller.dart';
 import 'ui/library/library_screen.dart';
+import 'data/midi_service.dart';
+import 'ui/midi/midi_screen.dart';
 import 'ui/pads/pads_screen.dart';
 import 'ui/sampler/sampler_screen.dart';
 import 'ui/sessions/sessions_screen.dart';
@@ -118,6 +120,7 @@ class _BootState extends State<Boot> {
   final AudioEngine _engine = AudioEngine();
   SessionController? _controller;
   Storage? _storage;
+  final MidiService _midi = MidiService();
   SoundLibrary? _library;
   SessionStore? _store;
   String _status = 'Afinando el instrumento…';
@@ -157,6 +160,11 @@ class _BootState extends State<Boot> {
         _library = library;
         _store = store;
         _controller = controller;
+        // The controller listens to whatever device the service is attached
+        // to; picking one is a screen away, and none is a perfectly normal
+        // state to stay in for ever.
+        controller.listenToMidi(_midi.events);
+        _midi.start();
       });
     } catch (e, stack) {
       debugPrint('Fallo al arrancar: $e\n$stack');
@@ -231,6 +239,8 @@ class _BootState extends State<Boot> {
     return PadsScreen(
       controller: controller,
       onOpenSampler: _openSampler,
+      onOpenMidi: _openMidi,
+      isMidiConnected: _midi.isConnected,
       onOpenLibrary: _openLibrary,
       onOpenSessions: _openSessions,
     );
@@ -239,6 +249,13 @@ class _BootState extends State<Boot> {
   /// Hands the audio session over to the microphone and takes it back when the
   /// recording screen closes. A saved sound goes straight onto a free pad, so
   /// it can be played the second it exists.
+  Future<void> _openMidi() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => MidiScreen(midi: _midi)),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _openSampler() async {
     final controller = _controller;
     final library = _library;

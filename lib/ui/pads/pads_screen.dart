@@ -30,12 +30,20 @@ class PadsScreen extends StatefulWidget {
     required this.onOpenSampler,
     required this.onOpenLibrary,
     required this.onOpenSessions,
+    required this.onOpenMidi,
+    required this.isMidiConnected,
   });
 
   final SessionController controller;
   final VoidCallback onOpenSampler;
   final VoidCallback onOpenLibrary;
   final VoidCallback onOpenSessions;
+  final VoidCallback onOpenMidi;
+
+  /// Lit while a controller is attached, so the icon is a state and not just
+  /// a door: whether the grid is listening to plastic is worth knowing at a
+  /// glance from the instrument.
+  final bool isMidiConnected;
 
   @override
   State<PadsScreen> createState() => _PadsScreenState();
@@ -164,6 +172,12 @@ class _PadsScreenState extends State<PadsScreen> {
         _iconButton(Icons.library_music_outlined, widget.onOpenLibrary),
         const SizedBox(width: 6),
         _iconButton(Icons.mic_none, widget.onOpenSampler),
+        const SizedBox(width: 6),
+        _iconButton(
+          Icons.piano_outlined,
+          widget.onOpenMidi,
+          lit: widget.isMidiConnected,
+        ),
       ],
     );
   }
@@ -198,7 +212,7 @@ class _PadsScreenState extends State<PadsScreen> {
     );
   }
 
-  Widget _iconButton(IconData icon, VoidCallback onTap) {
+  Widget _iconButton(IconData icon, VoidCallback onTap, {bool lit = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -206,9 +220,9 @@ class _PadsScreenState extends State<PadsScreen> {
         height: 34,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: Palette.line),
+          border: Border.all(color: lit ? Palette.accent : Palette.line),
         ),
-        child: Icon(icon, size: 16, color: Palette.inkDim),
+        child: Icon(icon, size: 16, color: lit ? Palette.accent : Palette.inkDim),
       ),
     );
   }

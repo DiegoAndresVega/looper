@@ -135,6 +135,29 @@ Los trozos caen en el primer banco con esos pads libres **seguidos**, buscando
 C, D, A y B en ese orden: lo tuyo primero, el kit de fábrica lo último que se
 pisa. Si no hay sitio seguido en ninguno, no corta y lo dice.
 
+## Rescatar lo que acaba de sonar
+
+Mientras el instrumento está en pantalla, la app **siempre tiene guardada la
+última media hora de minuto** de la salida del mezclador —treinta segundos, con
+los efectos puestos y sin abrir jamás el micrófono—. El botón del reloj de la
+barra de arriba se lleva **los últimos cuatro compases** al primer pad libre.
+
+Compases y no segundos: un trozo cortado a la rejilla vuelve a caer en ella a
+tiempo.
+
+Sirve para dos cosas a la vez. Pedido justo después de algo bueno es un
+**rescate**: ya no hay que decidir *antes* de tocar si merecía la pena grabarlo.
+Pedido con varios bucles sonando es un **resampleo**: cuatro capas se quedan en
+un solo pad y liberan voces.
+
+**Por qué existe un único grifo.** El motor entrega un solo flujo de la salida
+del mezclador: abrir un segundo pararía el primero. Así que exportar la sesión,
+resamplear y el rescate no abren cada uno el suyo — todos beben de `MixerTap`,
+que es también quien se come la cabecera WAV del principio para que ningún
+rescate empiece con un chasquido. Y por eso EXPORTAR ya no usa la cabecera del
+motor para cerrar su fichero: esa describe el flujo entero, y una toma puede
+empezar mucho después de que el grifo se abriera.
+
 ## Las tres capturas, y por qué ninguna se llama «grabar»
 
 Aquí se captura en tres sitios distintos, y llamarlos a todos *grabar* era la
@@ -296,6 +319,7 @@ Funcionando:
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
+- Rescatar los últimos cuatro compases del máster a un pad
 - Cortar un sonido a los pads: por transitorios, en 8 o en 16
 - Deshacer hasta veinte pasos: vaciar pad, cambiar sonido y borrar patrón
 - Swing por sesión: recto, suave o tresillo

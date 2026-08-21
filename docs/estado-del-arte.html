@@ -534,6 +534,111 @@ footer .fuentes { display: flex; flex-wrap: wrap; justify-content: center; gap: 
 footer .fuentes a { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.58rem; letter-spacing: 0.11em; text-transform: uppercase; text-decoration: none; color: var(--tinta-flo); }
 footer .fuentes a:hover { color: var(--fosforo); }
 
+
+/* ── Pruebas ─────────────────────────────────────────────────── */
+.mapa {
+  border: 1px solid var(--linea); border-radius: var(--radio);
+  background: var(--panel); padding: 18px 20px; margin-bottom: 12px;
+  overflow-x: auto;
+}
+.mapa h3 { margin: 0 0 4px; color: var(--tinta); font-variation-settings: 'wdth' 118, 'wght' 700; font-size: 1.05rem; }
+.mapa p { margin: 0 0 14px; font-size: 0.83rem; }
+.mapa table { min-width: 430px; border-collapse: separate; border-spacing: 5px; }
+.mapa td {
+  text-align: center; padding: 9px 6px; border-radius: 8px;
+  border: 1px solid var(--linea); background: var(--pozo);
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--tinta-media); white-space: nowrap;
+}
+.mapa td em {
+  display: block; font-style: normal; font-size: 0.5rem;
+  letter-spacing: 0.1em; color: var(--tinta-flo); margin-bottom: 3px;
+}
+.mapa td.hat { border-color: var(--fosforo); color: var(--tinta); }
+
+.gestos { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 26px; }
+.gesto-card {
+  border: 1px solid var(--linea); border-radius: var(--radio);
+  background: var(--panel); padding: 16px 18px;
+}
+.gesto-card b {
+  display: block; font-family: var(--mono);
+  font-variation-settings: 'wdth' 75, 'wght' 700;
+  font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--fosforo); margin-bottom: 6px;
+}
+.gesto-card p { margin: 0; font-size: 0.84rem; line-height: 1.55; }
+.gesto-card p + p { margin-top: 6px; color: var(--tinta-flo); }
+
+.pruebas { display: grid; gap: 14px; }
+.prueba {
+  border: 1px solid var(--linea); border-left: 3px solid var(--linea-viva);
+  border-radius: var(--radio); background: var(--panel);
+  padding: 20px 22px; display: grid; gap: 13px;
+}
+.prueba.probada { border-left-color: var(--fosforo); opacity: 0.6; }
+.prueba.clave { border-left-color: var(--laser); }
+.prueba-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.prueba-head .n {
+  font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700;
+  font-size: 0.95rem; color: var(--tinta-flo); font-variant-numeric: tabular-nums;
+}
+.prueba-head h3 {
+  flex: 1; min-width: 190px; margin: 0; color: var(--tinta);
+  font-variation-settings: 'wdth' 100, 'wght' 600; font-size: 1.02rem; line-height: 1.3;
+}
+.chip {
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600;
+  font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid var(--linea); border-radius: 999px; padding: 4px 9px;
+  color: var(--tinta-flo); white-space: nowrap;
+}
+.chip.ok { border-color: var(--fosforo); color: var(--fosforo); }
+.chip.urgente { border-color: var(--laser); color: var(--laser); }
+.prueba > p { margin: 0; font-size: 0.86rem; line-height: 1.55; }
+
+ol.pasos-num {
+  margin: 0; padding: 0; list-style: none;
+  counter-reset: paso; display: grid; gap: 9px;
+}
+ol.pasos-num li {
+  display: grid; grid-template-columns: 21px 1fr; gap: 11px;
+  font-size: 0.875rem; line-height: 1.5;
+}
+ol.pasos-num li::before {
+  counter-increment: paso; content: counter(paso);
+  font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700;
+  font-size: 0.68rem; color: var(--suelo); background: var(--tinta-flo);
+  width: 18px; height: 18px; border-radius: 5px;
+  display: grid; place-items: center; margin-top: 2px;
+}
+ol.pasos-num kbd {
+  font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 700;
+  font-size: 0.72em; letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--alto); border: 1px solid var(--linea-viva);
+  border-radius: 5px; padding: 2px 6px; color: var(--tinta);
+  white-space: nowrap;
+}
+
+.esperado, .ojo {
+  border-left: 3px solid; border-radius: 0 9px 9px 0;
+  padding: 11px 15px; font-size: 0.85rem; line-height: 1.55;
+}
+.esperado { border-color: var(--fosforo); background: rgba(180, 236, 92, 0.06); }
+.ojo { border-color: var(--laser); background: rgba(255, 79, 160, 0.06); }
+.esperado b, .ojo b {
+  display: block; font-family: var(--mono);
+  font-variation-settings: 'wdth' 75, 'wght' 700;
+  font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.esperado b { color: var(--fosforo); }
+.ojo b { color: var(--laser); }
+
+.bloque-pruebas { margin-top: 34px; }
+.bloque-pruebas:first-of-type { margin-top: 0; }
+
 /* ── Revelado ────────────────────────────────────────────────── */
 .rev { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
 .rev.visto { opacity: 1; transform: none; }
@@ -565,6 +670,7 @@ footer .fuentes a:hover { color: var(--fosforo); }
       <a href="#interfaz">Interfaz</a>
       <a href="#pantallas">Pantallas</a>
       <a href="#prioridad">Por dónde</a>
+      <a href="#pruebas">Pruebas</a>
     </div>
   </div>
 </nav>
@@ -1561,6 +1667,433 @@ footer .fuentes a:hover { color: var(--fosforo); }
         entrada</strong>. <code>flutter_midi_command</code> entró sin romper ninguna de
         las versiones que este proyecto tiene fijadas a la fuerza, y el APK de Android
         compila con él dentro.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 PRUEBAS ══════════════════════════════════════════════ -->
+<section id="pruebas">
+  <div class="wrap">
+    <div class="cap-head rev">
+      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Catorce pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
+      <h2 class="cap-title">Lo que falta probar</h2>
+      <p class="lede">
+        Todo lo de este documento pasa sus tests, pero un test no oye. Estas son
+        las pruebas que solo se pueden hacer con el móvil en la mano, escritas
+        para hacerlas sin nadie al lado: qué apretar, dónde está, qué tienes que
+        ver, qué tienes que oír, y qué significaría que estuviera roto.
+      </p>
+      <p class="lede">
+        Están ordenadas por lo que más duele si falla. Las tres primeras tocan
+        subsistemas enteros que ningún dedo ha rozado todavía.
+      </p>
+    </div>
+
+    <div class="mapa rev">
+      <h3>El banco A, tal cual lo ves</h3>
+      <p>Toda prueba que nombre un pad se refiere a esta rejilla. Es la que sale al abrir la app.</p>
+      <table>
+        <tr>
+          <td><em>f1 · c1</em>Bombo</td><td><em>f1 · c2</em>Caja</td>
+          <td class="hat"><em>f1 · c3</em>Hat</td><td><em>f1 · c4</em>Palma</td>
+        </tr>
+        <tr>
+          <td><em>f2 · c1</em>Snap</td><td><em>f2 · c2</em>Tom</td>
+          <td><em>f2 · c3</em>Rim</td><td><em>f2 · c4</em>Shaker</td>
+        </tr>
+        <tr>
+          <td><em>f3 · c1</em>Bajo</td><td><em>f3 · c2</em>Acorde</td>
+          <td><em>f3 · c3</em>Campana</td><td><em>f3 · c4</em>Pad</td>
+        </tr>
+        <tr>
+          <td><em>f4 · c1</em>Voz 1</td><td><em>f4 · c2</em>Voz 2</td>
+          <td><em>f4 · c3</em>Botella</td><td><em>f4 · c4</em>Vinilo</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="gestos rev">
+      <div class="gesto-card">
+        <b>Mantener</b>
+        <p>Dedo apoyado hasta que <em>vibra</em>, luego levantar.</p>
+        <p>Con SEQ encendido significa «voy a editar la casilla de este pad». Dice <strong>dónde</strong>, no qué.</p>
+      </div>
+      <div class="gesto-card">
+        <b>Tocar</b>
+        <p>Toque rápido, dedo dentro y fuera.</p>
+        <p>Con una casilla elegida significa «pon este sonido ahí». Dice <strong>qué</strong>, no dónde. Tocarlo dos veces lo borra.</p>
+      </div>
+      <div class="gesto-card">
+        <b>Dónde está cada cosa</b>
+        <p><strong>Arriba:</strong> nombre de sesión · deshacer ↶ · reloj ⟲ · biblioteca · micro · piano.</p>
+        <p><strong>Transport:</strong> Parar · Roll · Seq · Ajustar · Metro · Mute · Exportar.</p>
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 1 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Lo que nadie ha tocado nunca</h3><span class="cuenta">3 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">01</span>
+            <h3>El controlador MIDI</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Un subsistema entero sin una sola prueba real. El APK compila con el paquete dentro, pero eso no dice nada de si llega una nota.</p>
+          <ol class="pasos-num">
+            <li>Enchufa el <strong>M-Vave FM-1</strong> por USB.</li>
+            <li>Toca el icono del <kbd>piano</kbd>, el último de la barra de arriba.</li>
+            <li>El FM-1 debe aparecer en la lista. Tócalo para <kbd>conectar</kbd>.</li>
+            <li>Vuelve atrás con la flecha.</li>
+            <li>Toca los pads del FM-1.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El icono del piano se queda <strong>encendido en verde</strong>. Cada pad del FM-1 suena el pad de Looper que le toca en orden — el primero de arriba a la izquierda es el Bombo. Pegar más fuerte suena más fuerte.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Notas que se quedan sonando sin parar: el Note Off no se está leyendo. Un redoble rápido que suena una vez y luego basura: el estado heredado falla. Todo a la misma fuerza: no llega la velocidad.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">02</span>
+            <h3>Rescatar lo que acaba de sonar</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Toda la ruta de audio del grifo del mezclador, sin verificar. Si algo falla aquí, falla también EXPORTAR.</p>
+          <ol class="pasos-num">
+            <li>Mantén pulsado el <strong>Bombo</strong> hasta que vibre: se queda en bucle.</li>
+            <li>Mantén pulsado el <strong>Hat</strong>: otro bucle encima.</li>
+            <li>Déjalos sonar unos <strong>diez segundos</strong>.</li>
+            <li>Toca el icono del <kbd>reloj ⟲</kbd> de la barra de arriba.</li>
+            <li>Toca <kbd>Parar</kbd> y busca el pad nuevo que ha aparecido en el banco <strong>C</strong>.</li>
+            <li>Tócalo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Un aviso diciendo en qué pad ha caído. Al tocarlo suena <strong>la mezcla de los dos bucles</strong>, cuatro compases, con los efectos que tuvieras puestos.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Un chasquido al principio: la cabecera WAV se está colando como audio. Que suene grave y lento: el formato del mezclador se está leyendo mal. Silencio: el grifo no se abrió.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">03</span>
+            <h3>Cortar un sonido a los pads</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>La prueba importante no es que corte: es el <strong>paso 6</strong>. Los trozos comparten fichero con el original, y borrar uno no puede llevarse el audio de los otros.</p>
+          <ol class="pasos-num">
+            <li>Toca el icono de <kbd>biblioteca</kbd> en la barra de arriba.</li>
+            <li>Busca <strong>Vinilo</strong> en la lista y tócalo.</li>
+            <li>Toca <kbd>Cortar</kbd>.</li>
+            <li>Prueba las tres solapas: <kbd>Transitorios</kbd>, <kbd>En 8</kbd>, <kbd>En 16</kbd>.</li>
+            <li>Con «En 8» puesto, toca <kbd>Cortar en 8</kbd>.</li>
+            <li>Vuelve a la biblioteca, abre <strong>Vinilo 3</strong> y bórralo. Luego toca <strong>Vinilo 4</strong>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Líneas verticales sobre la onda que se mueven al cambiar de solapa. Ocho pads seguidos en el banco C, cada uno con su trozo en orden. Y en el paso 6, lo que importa: <strong>Vinilo 4 sigue sonando</strong> después de borrar el 3.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que Vinilo 4 se quede mudo tras borrar el 3 significa que el fichero compartido se ha borrado con el primer trozo. Eso es pérdida de datos, y quiero saberlo enseguida.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 2 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>En el secuenciador</h3><span class="cuenta">5 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">04</span>
+            <h3>La cuenta atrás antes de escribir</h3>
+            <span class="chip">Sin probar</span><span class="chip">40 s</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Enciende <kbd>Seq</kbd> en el transport.</li>
+            <li>Asegúrate de que <kbd>Metro</kbd> está <strong>apagado</strong>.</li>
+            <li>Toca <kbd>Rec</kbd> en la barra del secuenciador.</li>
+            <li>Escucha sin tocar nada.</li>
+            <li>Vuelve a tocar <kbd>Rec</kbd> mientras cuenta.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Cuatro clics, y <strong>el primero más agudo</strong> que los otros tres. El botón cuenta <code>1… 2… 3… 4…</code> y solo entonces empieza a escribir. En el paso 5 la cuenta se cancela.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Si los cuatro clics suenan iguales, el acento del uno no funciona — y el metrónomo tampoco lo tendrá.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">05</span>
+            <h3>Ratchet: partir un paso en cuatro</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Usa el patrón de ocho hats que ya tienes escrito. Si lo borraste, vuelve a la prueba del swing.</p>
+          <ol class="pasos-num">
+            <li>Con <kbd>Seq</kbd> encendido, toca <kbd>Play</kbd>.</li>
+            <li>Mantén pulsado el <strong>Hat</strong> (f1 · c3) para elegir su casilla.</li>
+            <li>En la barra, toca el rótulo <kbd>P3 · Acento ▸</kbd> hasta que ponga <strong>Ratchet</strong>.</li>
+            <li>Arrastra el deslizador hasta <strong>×4</strong>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Ese hat concreto pasa de un golpe a un <strong>redoble de cuatro</strong> dentro del mismo tiempo. Los otros siete no cambian.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">06</span>
+            <h3>Micro-timing: adelantar un golpe</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Lo más difícil de toda la tanda. Retrasar es un temporizador; <strong>adelantar</strong> obliga al secuenciador a mandar el paso un pulso antes y acordarse de no repetirlo.</p>
+          <ol class="pasos-num">
+            <li>Con el patrón sonando, mantén pulsado un pad con notas.</li>
+            <li>Toca el rótulo del deslizador hasta que ponga <strong>Micro</strong>.</li>
+            <li>Arrástralo del todo a la <strong>derecha</strong> (+50): ese golpe se retrasa.</li>
+            <li>Arrástralo del todo a la <strong>izquierda</strong> (−50): ese golpe se adelanta.</li>
+            <li>Déjalo en el centro (0) y comprueba que vuelve a su sitio.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El golpe se despega del resto en las dos direcciones, y suena <strong>una sola vez</strong> en cada vuelta.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que el golpe adelantado suene <strong>dos veces</strong> —una adelantada y otra a tiempo— significa que el apunte de «ya lo mandé» falla. Que desaparezca del todo, lo mismo al revés.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">07</span>
+            <h3>Probabilidad: que no se repita idéntico</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Con el patrón sonando, mantén pulsado un pad con notas.</li>
+            <li>Toca el rótulo del deslizador hasta que ponga <strong>Prob</strong>.</li>
+            <li>Bájalo a la mitad (<strong>50 %</strong>).</li>
+            <li>Escucha cuatro o cinco vueltas del compás.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Ese golpe suena <strong>unas veces sí y otras no</strong>, sin patrón fijo. Los demás, siempre.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Si al dejarlo al 100 % sigue fallando alguna vez, el dado se está tirando cuando no debería.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">08</span>
+            <h3>Copiar un patrón</h3>
+            <span class="chip">Sin probar</span><span class="chip">40 s</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Con <kbd>Seq</kbd> encendido, <strong>mantén pulsado</strong> el número de patrón <kbd>P1</kbd>, arriba a la izquierda de la barra.</li>
+            <li>Sale un aviso: «P1 copiado».</li>
+            <li>Toca la flecha <kbd>›</kbd> para ir a <strong>P2</strong>, que estará vacío.</li>
+            <li>Toca <kbd>Pegar</kbd> en el aviso, antes de que se vaya.</li>
+            <li>Toca <kbd>Play</kbd>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            P2 suena igual que P1, con sus acentos y sus capas. Y aparece el icono de <strong>deshacer</strong> arriba.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 3 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>En la grilla y la franja</h3><span class="cuenta">4 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">09</span>
+            <h3>La rejilla como escala</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Apaga <kbd>Seq</kbd> antes de empezar.</p>
+          <ol class="pasos-num">
+            <li>Toca el <strong>Bajo</strong> (f3 · c1) una vez, para que quede elegido.</li>
+            <li>En la franja de mandos, elige la solapa <kbd>Escala</kbd>.</li>
+            <li>Sube el mando <kbd>Teclado</kbd> a ON.</li>
+            <li>Toca varios pads seguidos, de izquierda a derecha.</li>
+            <li>Toca <strong>dos pads a la vez</strong>, uno con cada dedo.</li>
+            <li>Gira el mando <kbd>Escala</kbd> y prueba otra.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Los dieciséis pads pasan a decir <strong>nombres de nota</strong> (La, Do, Re…) y todos tocan el bajo, cada uno a su altura. En el paso 5, las dos notas suenan <strong>juntas</strong>.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Si al tocar dos pads a la vez el primero se corta, el teclado salió monofónico. Si al cambiar de banco los pads siguen diciendo notas, el modo no se está apagando.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">10</span>
+            <h3>El roll en corcheas</h3>
+            <span class="chip">Sin probar</span><span class="chip">30 s</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Toca <kbd>Ajustar</kbd> en el transport: la grilla entera se enciende.</li>
+            <li>Toca <kbd>Roll</kbd>. El rótulo cambia de <strong>1/16 a 1/8</strong>.</li>
+            <li><strong>Mantén pulsado</strong> Roll y, sin soltarlo, toca el Hat.</li>
+            <li>Sin soltar Roll, toca el Bombo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El redoble sale a <strong>la mitad de velocidad</strong> que antes. En el paso 4 el redoble se muda al bombo sin cortarse.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">11</span>
+            <h3>Panorama por pad</h3>
+            <span class="chip">Sin probar</span><span class="chip">40 s</span>
+          </div>
+          <p>Con auriculares, o no se oye nada de esto.</p>
+          <ol class="pasos-num">
+            <li>Mantén pulsado el <strong>Bajo</strong> (f3 · c1) hasta que vibre: se queda en bucle, y al mantenerlo también queda elegido.</li>
+            <li>Comprueba que la franja de mandos dice <strong>A · 09 · Bajo</strong> arriba: eso confirma a qué pad apuntan los mandos.</li>
+            <li>Solapa <kbd>Sonido</kbd> de la franja, mando <kbd>Pan</kbd>.</li>
+            <li>Gíralo del todo a la izquierda: pone <strong>L100</strong>.</li>
+            <li>Gíralo del todo a la derecha: <strong>R100</strong>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El bucle se mueve de oreja a oreja <strong>mientras suena</strong>, sin cortarse. En el centro pone <strong>C</strong> y hay una zona muerta para encontrarlo con el pulgar.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">12</span>
+            <h3>Deshacer y copiar un pad</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Toca <kbd>Ajustar</kbd> y luego el <strong>Bombo</strong>: se abre su hoja.</li>
+            <li>Toca <kbd>Copiar</kbd>. La hoja se cierra y la grilla se enciende.</li>
+            <li>Toca un pad vacío del banco <strong>D</strong>.</li>
+            <li>Toca <kbd>Ajustar</kbd> y el Bombo otra vez, y ahora <kbd>Vaciar pad</kbd>.</li>
+            <li>Toca <kbd>Deshacer</kbd> en el aviso que sale.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El bombo aparece en el pad de destino con sus ajustes. Y en el paso 5, el bombo <strong>vuelve</strong> a su sitio, con el icono ↶ de arriba desapareciendo cuando ya no queda nada que deshacer.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 4 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Fuera del instrumento</h3><span class="cuenta">2 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">13</span>
+            <h3>Puntos de guardado</h3>
+            <span class="chip">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>La regla que hay que verificar es la del paso 7: restaurar devuelve el <strong>contenido</strong>, nunca la identidad.</p>
+          <ol class="pasos-num">
+            <li>Toca el <strong>nombre de la sesión</strong>, arriba a la izquierda.</li>
+            <li><strong>Mantén pulsada</strong> la sesión abierta en la lista.</li>
+            <li>Elige <kbd>Puntos de guardado</kbd>.</li>
+            <li>Toca <kbd>Guardar este momento</kbd>. Sale un punto con la hora.</li>
+            <li>Cierra, vuelve al instrumento y <strong>cambia cosas</strong>: sube el tempo a 160, vacía dos pads, borra el patrón.</li>
+            <li>Vuelve a los puntos de guardado y toca <kbd>Volver</kbd>.</li>
+            <li>Mira el nombre de la sesión y la lista de sesiones.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Vuelven el tempo, los pads y el patrón tal y como estaban. Y en el paso 7: <strong>la sesión se sigue llamando igual y sigue siendo una sola</strong> en la lista.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que aparezca una sesión duplicada, o que cambie de nombre, significa que la identidad ha vuelto con el contenido. Eso dejaría la lista apuntando a un fantasma.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">14</span>
+            <h3>Que nada de esto se pierda al cerrar</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Cinco cosas nuevas se guardan en disco esta semana. La prueba es que la app las lea de vuelta.</p>
+          <ol class="pasos-num">
+            <li>Deja puestos: un swing en <strong>Tresillo</strong>, un paso con <strong>ratchet ×4</strong>, otro con <strong>prob 50 %</strong>, un pad con <strong>pan L100</strong> y una escala que no sea la de fábrica.</li>
+            <li>Espera <strong>dos segundos</strong> sin tocar nada, para que se autoguarde.</li>
+            <li><strong>Cierra la app del todo</strong>, no solo al fondo.</li>
+            <li>Vuelve a abrirla.</li>
+            <li>Comprueba las cinco cosas del paso 1.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Las cinco siguen puestas, y la sesión abre en silencio — los bucles no se guardan a propósito.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que la app abra con una sesión vacía sería lo peor posible: querría decir que el fichero de sesiones no se puede leer y todo lo anterior se ha perdido.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <div class="techo rev">
+      <b>Ya probadas, y lo que enseñaron</b>
+      <p>
+        <strong>Swing</strong>, <strong>acento por paso</strong> y las <strong>luces
+        de paso</strong> están verificadas en un móvil. Las tres primeras versiones de
+        las instrucciones de la prueba del swing estaban mal escritas: daban por
+        supuesto que mantener un pad «armaba» algo para tocar al ritmo, cuando en
+        realidad elige una casilla. De ahí salen las dos tarjetas de gestos de arriba,
+        y de ahí salió también la idea de las luces por sonido — una sola luz no sabía
+        decir si un tiempo llevaba una voz o tres.
       </p>
     </div>
   </div>

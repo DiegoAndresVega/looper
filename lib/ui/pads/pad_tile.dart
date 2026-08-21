@@ -60,6 +60,7 @@ class PadTile extends StatefulWidget {
     required this.onLongPress,
     this.stepLight = StepLight.off,
     this.stepNotes = 0,
+    this.labelOverride,
     this.accent,
   });
 
@@ -70,6 +71,10 @@ class PadTile extends StatefulWidget {
 
   /// How many voices fire on this pad's step. One light each.
   final int stepNotes;
+
+  /// What to print instead of the sound's name. The grid played as a scale
+  /// says which note each pad is, not sixteen copies of one sound's name.
+  final String? labelOverride;
 
   /// How hard this pad's step hits, 0..1, or null when the sequencer is not
   /// on or the step carries no notes. Drawn as a bar along the bottom edge:
@@ -259,7 +264,7 @@ class _PadTileState extends State<PadTile> {
   }
 
   Widget _label() {
-    final name = widget.sound?.name ?? 'Vacío';
+    final name = widget.labelOverride ?? widget.sound?.name ?? 'Vacío';
     final bright = widget.state == PadVisualState.looping ||
         widget.state == PadVisualState.firing ||
         widget.state == PadVisualState.queued ||

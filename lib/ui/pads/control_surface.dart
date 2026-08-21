@@ -4,7 +4,7 @@ import '../../core/palette.dart';
 import '../../core/type.dart';
 
 /// Which set of four knobs the surface is showing.
-enum SurfaceTab { sound, fx, loop }
+enum SurfaceTab { sound, fx, loop, scale }
 
 /// One knob's live value and label.
 class KnobSpec {
@@ -105,6 +105,7 @@ class ControlSurface extends StatelessWidget {
       SurfaceTab.sound: 'Sonido',
       SurfaceTab.fx: 'FX',
       SurfaceTab.loop: 'Loop',
+      SurfaceTab.scale: 'Escala',
     };
     final on = t == tab;
     return Padding(

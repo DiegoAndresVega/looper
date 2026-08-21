@@ -11,6 +11,7 @@ import '../../core/type.dart';
 import '../../data/factory_kit.dart';
 import '../../domain/loop_length.dart';
 import '../../domain/pad_config.dart';
+import '../../domain/scale.dart';
 import '../../state/session_controller.dart';
 import 'bank_tabs.dart';
 import 'control_surface.dart';
@@ -234,17 +235,22 @@ class _PadsScreenState extends State<PadsScreen> {
         childAspectRatio: aspectRatio,
       ),
       itemBuilder: (context, slot) {
-        final pad = c.padAt(slot);
+        // As a keyboard, every pad wears the source sound — same colour, same
+        // wash — and says which note it is. The pad it came from keeps the
+        // selected border so it is obvious what is being played.
+        final source = c.scaleSource;
+        final pad = source == null ? c.padAt(slot) : c.padAt(source);
         final sound = c.soundFor(pad);
         return PadTile(
           pad: pad,
           sound: sound,
-          state: _stateFor(slot, pad),
+          state: _stateFor(source ?? slot, pad),
           stepLight: _stepLightFor(slot),
           stepNotes: c.sequencer.isOn ? c.sequencer.pattern.at(slot).length : 0,
           accent: _accentFor(slot),
+          labelOverride: source == null ? null : c.scaleLabelFor(slot),
           progress: c.loopProgress(c.activeBank, slot),
-          selected: c.selectedSlot == slot,
+          selected: source == null ? c.selectedSlot == slot : slot == source,
           onTap: () => _tapPad(slot),
           onLongPress: () => _holdPad(slot),
         );
@@ -343,7 +349,8 @@ class _PadsScreenState extends State<PadsScreen> {
 
     final label = sound == null
         ? 'Maestro'
-        : '${kBankIds[c.activeBank]} · ${(slot! + 1).toString().padLeft(2, '0')} · ${sound.name}';
+        : '${kBankIds[c.activeBank]} · ${(slot! + 1).toString().padLeft(2, '0')} · ${sound.name}'
+            '${c.isScaleOn ? ' · TECLADO' : ''}';
 
     return ControlSurface(
       targetLabel: label,
@@ -412,6 +419,8 @@ class _PadsScreenState extends State<PadsScreen> {
             },
           ),
         ];
+      case SurfaceTab.scale:
+        return _scaleKnobs(slot);
       case SurfaceTab.fx:
         return _fxKnobs(includeResonance: true);
       case SurfaceTab.loop:
@@ -444,6 +453,55 @@ class _PadsScreenState extends State<PadsScreen> {
           ),
         ];
     }
+  }
+
+  /// The grid as a keyboard. The pad picked before opening this tab is the
+  /// one whose sound gets played at every degree — the same bargain the rest
+  /// of the surface makes, where the knobs point at whatever is selected.
+  List<KnobSpec> _scaleKnobs(int slot) {
+    final scales = Scale.values;
+    final atScale = scales.indexOf(c.scale);
+    const octaves = [-2, -1, 0, 1, 2];
+    final atOctave = octaves.indexOf(c.scaleOctave);
+
+    return [
+      KnobSpec(
+        label: 'Teclado',
+        display: c.isScaleOn ? 'ON' : 'OFF',
+        value: c.isScaleOn ? 1 : 0,
+        accent: c.isScaleOn,
+        onChanged: (v) {
+          final wanted = v > 0.5;
+          if (wanted == c.isScaleOn) return;
+          setState(() => c.toggleScale(wanted ? slot : null));
+        },
+      ),
+      KnobSpec(
+        label: 'Tónica',
+        display: noteName(c.scaleRoot),
+        value: c.scaleRoot / 11,
+        onChanged: (v) =>
+            setState(() => c.setScaleRoot((v * 11).round().clamp(0, 11))),
+      ),
+      KnobSpec(
+        label: 'Escala',
+        display: c.scale.label,
+        value: atScale / (scales.length - 1),
+        onChanged: (v) => setState(() {
+          final i = (v * (scales.length - 1)).round().clamp(0, scales.length - 1);
+          c.setScale(scales[i]);
+        }),
+      ),
+      KnobSpec(
+        label: 'Octava',
+        display: c.scaleOctave > 0 ? '+${c.scaleOctave}' : '${c.scaleOctave}',
+        value: (atOctave < 0 ? 2 : atOctave) / (octaves.length - 1),
+        onChanged: (v) => setState(() {
+          final i = (v * (octaves.length - 1)).round().clamp(0, octaves.length - 1);
+          c.setScaleOctave(octaves[i]);
+        }),
+      ),
+    ];
   }
 
   /// The performance effects. They sit on the master output, so the same

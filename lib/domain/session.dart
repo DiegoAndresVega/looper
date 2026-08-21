@@ -16,6 +16,7 @@ class Session {
     required this.patterns,
     this.activePattern = 0,
     this.chainLength = 1,
+    this.swing = kSwingDefault,
   });
 
   final String id;
@@ -32,6 +33,10 @@ class Session {
 
   /// How many patterns play back to back, 1..16 bars.
   final int chainLength;
+
+  /// How much the off-beat sixteenths lag. It belongs to the session because
+  /// it is part of how the pattern is meant to be felt, like the tempo.
+  final double swing;
 
   factory Session.blank({required String id, required String name}) {
     final now = DateTime.now();
@@ -99,6 +104,7 @@ class Session {
       patterns: patterns,
       activePattern: activePattern,
       chainLength: chainLength,
+      swing: swing,
       createdAt: now,
       updatedAt: now,
     );
@@ -111,6 +117,7 @@ class Session {
     List<Pattern>? patterns,
     int? activePattern,
     int? chainLength,
+    double? swing,
     DateTime? updatedAt,
   }) {
     return Session(
@@ -121,6 +128,7 @@ class Session {
       patterns: patterns ?? this.patterns,
       activePattern: activePattern ?? this.activePattern,
       chainLength: chainLength ?? this.chainLength,
+      swing: swing ?? this.swing,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -134,6 +142,7 @@ class Session {
         'patterns': patterns.map((p) => p.toJson()).toList(),
         'activePattern': activePattern,
         'chainLength': chainLength,
+        'swing': swing,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -150,15 +159,20 @@ class Session {
         patterns: _patternsFrom(json['patterns'] as List<dynamic>?),
         activePattern: json['activePattern'] as int? ?? 0,
         chainLength: json['chainLength'] as int? ?? 1,
+        // A session written before swing existed was played straight.
+        swing: (json['swing'] as num?)?.toDouble() ?? kSwingDefault,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );
 
+  /// No cast on the way in: a pattern is a bare list in sessions written
+  /// before accents existed and a map in the ones written since, and
+  /// [Pattern.fromJson] is the one place that knows the difference.
   static List<Pattern> _patternsFrom(List<dynamic>? raw) {
     return List.generate(
       kPatternCount,
       (i) => raw != null && i < raw.length
-          ? Pattern.fromJson(raw[i] as List<dynamic>)
+          ? Pattern.fromJson(raw[i])
           : Pattern.empty(),
     );
   }

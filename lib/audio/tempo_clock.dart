@@ -22,12 +22,50 @@ ElapsedReader _stopwatchReader() {
 /// they can never disagree about where a step falls.
 double stepMsAt(int bpm) => 60000 / bpm / kStepsPerBeat;
 
+/// How long the 16th note at [stepIndex] lasts once swing is applied.
+///
+/// Roger Linn's rule, unchanged since the MPC-60: hold the first sixteenth of
+/// each eighth note back for longer and let the second one arrive late. The
+/// pair always adds up to two straight steps, which is why every quarter note
+/// — and so the metronome, and every loop a beat long or longer — lands
+/// exactly where it would with no swing at all.
+double swungStepMs({
+  required double stepMs,
+  required double swing,
+  required int stepIndex,
+}) {
+  final share = swing.clamp(kSwingMin, kSwingMax);
+  final long = stepIndex % 2 == 0;
+  return stepMs * 2 * (long ? share : 1 - share);
+}
+
+/// How long [count] steps last starting at [fromStep], swing included. Used
+/// when the grid has to jump rather than walk — coming back from the
+/// background — so the jump lands on the beat instead of near it.
+double swungSpanMs({
+  required double stepMs,
+  required double swing,
+  required int fromStep,
+  required int count,
+}) {
+  var total = 0.0;
+  for (var i = 0; i < count; i++) {
+    total += swungStepMs(stepMs: stepMs, swing: swing, stepIndex: fromStep + i);
+  }
+  return total;
+}
+
 /// How often the roll retriggers, in [steps] sixteenth notes per hit.
 ///
 /// Kept in microseconds because a 16th at 220 BPM is 68 ms: rounding to whole
 /// milliseconds would drag the fill behind the grid it is played over.
 Duration rollIntervalFor({required int bpm, required int steps}) =>
     Duration(microseconds: (stepMsAt(bpm) * steps * 1000).round());
+
+/// Whether this step of the shared grid is the first beat of its bar — the
+/// one the metronome accents. Without it the click sounds identical four
+/// times a bar and never says where the bar begins.
+bool isDownbeat(int stepIndex) => stepIndex % kStepsPerBar == 0;
 
 /// How a roll division reads on a button: the note value it repeats at.
 /// The instrument is 4/4 throughout, so a bar is a whole note and the
@@ -65,15 +103,33 @@ class TempoClock {
   ElapsedReader? _elapsed;
 
   int _bpm = kDefaultBpm;
+  double _swing = kSwingDefault;
   int _stepIndex = 0;
   double _nextStepMs = 0;
 
   int get bpm => _bpm;
+
+  /// Which 16th of the shared grid is sounding. Read by the metronome so it
+  /// knows whether this click is the one of the bar.
+  int get stepIndex => _stepIndex;
+
   bool get isRunning => _timer != null;
   bool get hasEntries => _entries.isNotEmpty;
 
-  /// Milliseconds per 16th note at the current tempo.
+  /// Milliseconds per 16th note at the current tempo, before swing. It is the
+  /// average step: two swung steps always add up to two of these.
   double get stepMs => stepMsAt(_bpm);
+
+  /// How much the off-beat sixteenths lag, 0.5 (straight) to 0.75.
+  double get swing => _swing;
+
+  set swing(double value) {
+    _swing = value.clamp(kSwingMin, kSwingMax);
+  }
+
+  /// How long the step at [index] actually lasts right now.
+  double _stepDuration(int index) =>
+      swungStepMs(stepMs: stepMs, swing: _swing, stepIndex: index);
 
   /// Where the grid is right now, in fractional 16th notes since the downbeat.
   /// It is read off the step index rather than off raw milliseconds so that
@@ -81,7 +137,11 @@ class TempoClock {
   double get position {
     final elapsed = _elapsed;
     if (elapsed == null) return 0;
-    final remaining = (_nextStepMs - elapsed()) / stepMs;
+    // Divided by the length of the step actually sounding, not the average
+    // one: with swing a long step would otherwise saturate at 1 and the
+    // progress rings would stall for a moment every other sixteenth.
+    final sounding = _stepIndex - 1;
+    final remaining = (_nextStepMs - elapsed()) / _stepDuration(sounding);
     return _stepIndex - remaining.clamp(0.0, 1.0);
   }
 
@@ -176,9 +236,18 @@ class TempoClock {
     // steps, so nothing loses its place on the grid.
     final behind = (now - _nextStepMs) / stepMs;
     if (behind > _maxCatchUpSteps) {
-      final skipped = behind.floor();
-      _stepIndex += skipped;
-      _nextStepMs += skipped * stepMs;
+      // An even jump keeps the swing in phase: land on an off-beat and every
+      // step after it would carry the wrong half of the pair.
+      final skipped = behind.floor() ~/ 2 * 2;
+      if (skipped > 0) {
+        _nextStepMs += swungSpanMs(
+          stepMs: stepMs,
+          swing: _swing,
+          fromStep: _stepIndex,
+          count: skipped,
+        );
+        _stepIndex += skipped;
+      }
     }
 
     while (_nextStepMs <= now) {
@@ -189,7 +258,7 @@ class TempoClock {
           onStep(entry.key);
         }
       }
-      _nextStepMs += stepMs;
+      _nextStepMs += _stepDuration(_stepIndex);
       _stepIndex++;
     }
   }

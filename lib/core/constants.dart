@@ -54,8 +54,31 @@ const Duration kPadLongPress = Duration(milliseconds: 320);
 /// Roll (retrigger) divisions offered while the ROLL button is held, in steps.
 const List<int> kRollDivisions = [2, 1]; // 1/8 and 1/16 of a bar
 
+/// Swing: the share of each eighth note the first of its two sixteenths takes.
+/// A half is dead straight; two thirds is a triplet. Past three quarters the
+/// second note is so late it stops reading as a subdivision at all.
+const double kSwingMin = 0.5;
+const double kSwingMax = 0.75;
+const double kSwingDefault = kSwingMin;
+
+/// The swing settings worth naming on the way up: straight, the MPC's own
+/// hip-hop feel, and the triplet.
+const List<double> kSwingMarks = [0.5, 0.58, 2 / 3];
+
+/// How hard a step hits. Full is the default — accents are made by holding
+/// steps back, never by pushing one past the rest. The floor is not zero: a
+/// step that makes no sound is a step you meant to erase.
+const double kVelocityMin = 0.1;
+const double kVelocityMax = 1.0;
+
 /// The click sits under the music: loud enough to follow, never to lead.
 const double kMetronomeVolume = 0.55;
+
+/// The one of the bar, a fifth up and a touch louder. Same 50 ms sine played
+/// faster — how drum machines have made this accent since they had one sound
+/// to spare.
+const double kMetronomeAccentRate = 1.5;
+const double kMetronomeAccentVolume = 0.7;
 
 /// Audio format used for every rendered and recorded sound.
 const int kSampleRate = 44100;

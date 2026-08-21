@@ -23,6 +23,7 @@ import '../data/storage.dart';
 import 'sequencer.dart';
 import 'undo_stack.dart';
 import '../domain/pad_config.dart';
+import '../domain/midi.dart';
 import '../domain/scale.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
@@ -523,6 +524,67 @@ class SessionController extends ChangeNotifier {
   double _rateForSemitones(int semitones) =>
       semitones == 0 ? 1.0 : math.pow(2, semitones / 12.0).toDouble();
 
+  // ------------------------------------------------------------------ MIDI
+
+  StreamSubscription<MidiEvent>? _midiSubscription;
+
+  /// Which pads are being held down from the controller, so a released note
+  /// silences the one it started rather than whatever is sounding now.
+  final Set<int> _midiHeld = {};
+
+  /// Points the instrument at a controller. Notes 36 upwards play the sixteen
+  /// pads of the bank on screen — the layout every pad controller already
+  /// ships with, so plugging one in works before anyone opens a settings
+  /// screen.
+  void listenToMidi(Stream<MidiEvent> events) {
+    _midiSubscription?.cancel();
+    _midiSubscription = events.listen(_onMidiEvent);
+  }
+
+  Future<void> stopListeningToMidi() async {
+    await _midiSubscription?.cancel();
+    _midiSubscription = null;
+    _midiHeld.clear();
+  }
+
+  void _onMidiEvent(MidiEvent event) {
+    switch (event) {
+      case MidiNoteOn(:final note, :final velocity):
+        final slot = padForNote(note);
+        if (slot == null || padAt(slot).isEmpty) return;
+        _midiHeld.add(slot);
+        // A key played from a controller does the same as a finger: it sounds
+        // the pad, writes into the pattern if the sequencer is listening, and
+        // plays a degree when the grid is a keyboard.
+        final source = _scaleSource;
+        if (source != null && !padAt(source).isEmpty) {
+          _fireOnce(_activeBank, source,
+              velocity: velocityFromMidi(velocity),
+              transpose: scaleSemitonesFor(slot));
+        } else {
+          if (sequencer.isWriting) sequencer.tap(padKey(_activeBank, slot));
+          _fireOnce(_activeBank, slot, velocity: velocityFromMidi(velocity));
+        }
+        notifyListeners();
+
+      case MidiNoteOff(:final note):
+        final slot = padForNote(note);
+        if (slot != null) _midiHeld.remove(slot);
+
+      case MidiStart():
+        if (!sequencer.isPlaying) toggleSequencerPlay();
+
+      case MidiStop():
+        if (sequencer.isPlaying) toggleSequencerPlay();
+
+      case MidiControlChange():
+      case MidiClock():
+        // Reading the clock means following someone else's tempo, which is a
+        // bigger decision than this. Control changes wait for MIDI learn.
+        break;
+    }
+  }
+
   // ------------------------------------------------------------- scale mode
 
   /// The pad whose sound the grid is playing as a scale, or null when the
@@ -788,6 +850,7 @@ class SessionController extends ChangeNotifier {
     if (!_rollHeld) return;
     _rollHeld = false;
     _rollTarget = null;
+    _midiSubscription?.cancel();
     _rollTimer?.cancel();
     _rollTimer = null;
     notifyListeners();

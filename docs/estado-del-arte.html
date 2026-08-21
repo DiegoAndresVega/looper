@@ -230,6 +230,28 @@ section { padding-block: clamp(64px, 9vw, 116px); }
   background: linear-gradient(150deg, color-mix(in srgb, var(--familia) 7%, transparent), transparent 46%);
 }
 .card:hover { border-color: var(--linea-viva); transform: translateY(-2px); }
+.card.hecha { border-color: color-mix(in srgb, var(--fosforo) 45%, var(--linea)); }
+.card.hecha::after { background: linear-gradient(150deg, rgba(180,236,92,0.10), transparent 46%); }
+.tag.hecho { color: var(--suelo); background: var(--fosforo); padding: 3px 7px; border-radius: 5px; }
+.fallo.resuelto { border-left-color: var(--fosforo); opacity: 0.72; }
+.fallo.resuelto .num { color: var(--fosforo); }
+.fallo.resuelto h3 { text-decoration: line-through; text-decoration-color: var(--tinta-flo); }
+.fallo.fantasma { border-left-color: var(--tinta-flo); opacity: 0.6; }
+.fallo.fantasma .num { color: var(--tinta-flo); }
+.estado-barra {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  border: 1px solid var(--linea); border-left: 3px solid var(--fosforo);
+  border-radius: var(--radio); background: var(--panel);
+  padding: 16px 20px; margin-bottom: 26px;
+}
+.estado-barra div { display: grid; gap: 3px; padding-right: 18px; }
+.estado-barra div + div { border-left: 1px solid var(--linea); padding-left: 18px; }
+.estado-barra b { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 1.05rem; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.estado-barra span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--tinta-flo); }
+@media (max-width: 700px) {
+  .estado-barra div { width: 100%; padding-right: 0; }
+  .estado-barra div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--linea); padding-top: 10px; }
+}
 @media (prefers-reduced-motion: reduce) { .card:hover { transform: none; } }
 .card > * { position: relative; z-index: 1; }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -555,14 +577,15 @@ footer .fuentes a:hover { color: var(--fosforo); }
     <h1 class="hero-title">Estado del arte</h1>
     <p class="hero-sub">
       Siete apps y máquinas del oficio, desmontadas para decidir qué le falta a Looper.
-      <em>39 funciones nuevas, 10 defectos que ya están en el código y seis patrones de
-      interacción</em> que merece la pena robarle a quien los inventó.
+      <em>39 funciones nuevas, nueve defectos reales y seis patrones de interacción</em>
+      que merece la pena robarle a quien los inventó. Actualizado con lo que ya está
+      construido: los cinco pasos priorizados están hechos.
     </p>
     <div class="cifras">
       <div class="cifra"><b>7</b><span>Referencias</span></div>
-      <div class="cifra"><b>39</b><span>Funciones nuevas</span></div>
-      <div class="cifra"><b>10</b><span>Correcciones</span></div>
-      <div class="cifra"><b>5</b><span>Pantallas</span></div>
+      <div class="cifra"><b>6 / 39</b><span>Funciones hechas</span></div>
+      <div class="cifra"><b>5 / 9</b><span>Correcciones</span></div>
+      <div class="cifra"><b>3 / 5</b><span>Pantallas</span></div>
     </div>
   </div>
 </header>
@@ -668,14 +691,14 @@ footer .fuentes a:hover { color: var(--fosforo); }
       </div>
       <div class="rejilla">
 
-        <article class="card">
-          <div class="card-top"><h3>Swing / shuffle</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Swing / shuffle</h3><span class="tag hecho">✓ Hecho</span>Motor listo</span></div>
           <p>Lo inventó el MPC-60 en 1988 y sigue igual: retrasar <em>solo</em> las semicorcheas pares. 50 % es recto, 54–58 % es el hip-hop de toda la vida, 66 % ya es tresillo.</p>
           <p class="como"><b>En Looper:</b> <code>TempoClock</code> ya calcula <code>stepMs</code>; el swing es desplazar el disparo de los pasos impares. Estuvo en la franja y se quitó por ser un mando muerto.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Acento y velocidad por paso</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Acento y velocidad por paso</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p>El MPC lo resolvió con «16 Levels»: un pad se convierte en dieciséis niveles del mismo sonido. Elektron: mantener el paso y girar el mando.</p>
           <p class="como"><b>En Looper:</b> hoy no existe la velocidad en ninguna parte de la app. Mantener el paso y arrastrar en vertical es el gesto natural sobre la rejilla que ya hay.</p>
         </article>
@@ -754,20 +777,20 @@ footer .fuentes a:hover { color: var(--fosforo); }
       </div>
       <div class="rejilla">
 
-        <article class="card">
-          <div class="card-top"><h3>Chop a los 16 pads</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Chop a los 16 pads</h3><span class="tag hecho">✓ Hecho</span>Piezas sueltas</span></div>
           <p>Koala corta hasta 32 trozos, por transitorios o por divisiones iguales. El SP-404 lo llama auto-chop. Es cómo un sampler convierte un disco en un instrumento.</p>
           <p class="como"><b>En Looper:</b> encaje perfecto — la rejilla 4×4 <em>es</em> el destino. Las envolventes de picos ya se calculan para dibujar la forma de onda; detectar transitorios es reutilizarlas.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Resampling</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Resampling</h3><span class="tag hecho">✓ Hecho</span>Motor listo</span></div>
           <p>La salida del mezclador, con los efectos puestos, vuelve a caer en un pad. Es el bucle central de trabajo del SP-404 y de Koala: capa sobre capa sin gastar voces.</p>
           <p class="como"><b>En Looper:</b> <code>MixdownRecorder</code> ya hace <code>startMixerOutputStream</code>. Es dirigirlo a un buffer corto en vez de a disco. <em>No abre el micrófono</em>, así que la regla de oro sigue intacta.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Captura retrospectiva</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Captura retrospectiva</h3><span class="tag hecho">✓ Hecho</span>Motor listo</span></div>
           <p>El SP-404 guarda siempre los últimos 25–40 segundos. Loopy Pro la llama <em>retrospective recording</em>. Ableton Note va más lejos: detecta el tempo y la longitud sola.</p>
           <p class="como"><b>En Looper:</b> un buffer circular sobre el mismo stream del mezclador. Mucho valor por poco código, y resuelve el momento «esto estaba bien y no le di al botón».</p>
         </article>
@@ -922,8 +945,8 @@ footer .fuentes a:hover { color: var(--fosforo); }
       </div>
       <div class="rejilla">
 
-        <article class="card">
-          <div class="card-top"><h3>Deshacer</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Deshacer</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p><em>La petición número uno en las reseñas de loopers.</em> Existe una app entera —UndoLooper— construida solo sobre el deshacer ilimitado, porque el hardware da un único nivel y eso arruina una toma de diez capas.</p>
           <p class="como"><b>En Looper:</b> no hay ninguno. <code>grep</code> da cero. VACIAR PAD y BORRAR PATRÓN son irreversibles, y la sesión se autoguarda 800 ms después, así que el error se persiste solo.</p>
         </article>
@@ -973,30 +996,30 @@ footer .fuentes a:hover { color: var(--fosforo); }
 
     <div class="fallos">
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">01</span>
         <div>
           <h3>El solo destruye los silencios y los guarda así</h3>
           <p><code>toggleSolo</code> implementa el solo escribiendo <code>muted: true</code> en todos los demás pads. Al quitarlo, escribe <code>muted: false</code> en todos. Los silencios que el usuario hubiera puesto a mano <em>desaparecen</em>, y el destrozo se persiste a disco con el autoguardado.</p>
-          <p class="arreglo"><b>Arreglo · lib/state/session_controller.dart</b>Guardar el pad en solo como estado aparte y aplicarlo al mezclar, sin tocar nunca <code>PadConfig.muted</code>. Testeable sin dispositivo.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado. El solo vive en <code>_soloKey</code>, fuera de los pads, y nunca llega al disco.<br><b>Arreglo original</b><b>Arreglo · lib/state/session_controller.dart</b>Guardar el pad en solo como estado aparte y aplicarlo al mezclar, sin tocar nunca <code>PadConfig.muted</code>. Testeable sin dispositivo.</p>
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">02</span>
         <div>
           <h3>Duplicar una sesión pierde la cadena de patrones</h3>
           <p><code>duplicate()</code> copia bancos, patrones y <code>activePattern</code>, pero se deja <code>chainLength</code>. La copia vuelve a un compás: el usuario duplica una sesión de 8 compases y le suena otra cosa, sin ningún aviso.</p>
-          <p class="arreglo"><b>Arreglo · lib/data/session_store.dart</b>Una línea. Y un test que compare el objeto entero, no campo a campo, para que no vuelva a pasar con el siguiente campo que se añada.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado con <code>Session.duplicateAs</code>, y un test que compara el JSON entero para que el próximo campo no se caiga solo.<br><b>Arreglo original</b><b>Arreglo · lib/data/session_store.dart</b>Una línea. Y un test que compare el objeto entero, no campo a campo, para que no vuelva a pasar con el siguiente campo que se añada.</p>
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">03</span>
         <div>
           <h3>El metrónomo no sirve para entrar a tiempo</h3>
           <p>Un click fijo de 1760 Hz, volumen clavado en 0,55, <em>sin acento en el uno, sin cuenta atrás y sin control de volumen</em>. Un click sin acento no dice dónde empieza el compás, que es justo para lo que se enciende un metrónomo.</p>
-          <p class="arreglo"><b>Arreglo · lib/data/metronome.dart</b>Acentuar el paso 0 (otra voz sintetizada más aguda) y añadir cuenta atrás de un compás antes del REC. Van juntos con el defecto 09.</p>
+          <p class="arreglo"><b>Estado</b>Medio arreglado: acento en el uno y cuenta atrás, sí. Control de volumen, todavía no.<br><b>Arreglo original</b><b>Arreglo · lib/data/metronome.dart</b>Acentuar el paso 0 (otra voz sintetizada más aguda) y añadir cuenta atrás de un compás antes del REC. Van juntos con el defecto 09.</p>
         </div>
       </article>
 
@@ -1027,12 +1050,12 @@ footer .fuentes a:hover { color: var(--fosforo); }
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">07</span>
         <div>
           <h3>Constantes muertas</h3>
           <p><code>kRollDivisions = [2, 1]</code> declara corcheas y semicorcheas, pero el ROLL está clavado a semicorcheas. <code>kLowSpaceBytes</code> y <code>kPadLongPress</code> no los referencia nadie.</p>
-          <p class="arreglo"><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
+          <p class="arreglo"><b>Estado</b>Medio arreglado: <code>kRollDivisions</code> ya manda en el ROLL. <code>kLowSpaceBytes</code> y <code>kPadLongPress</code> siguen muertas.<br><b>Arreglo original</b><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
         </div>
       </article>
 
@@ -1045,21 +1068,21 @@ footer .fuentes a:hover { color: var(--fosforo); }
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">09</span>
         <div>
           <h3>El REC del secuenciador no da margen</h3>
           <p>Se empieza a escribir en el paso actual, sin cuenta atrás. Para escribir un patrón en vivo hay que anticiparse al botón, que es exactamente lo que ninguna caja de ritmos pide.</p>
-          <p class="arreglo"><b>Arreglo · lib/state/sequencer.dart</b>Un compás de cuenta atrás antes de armar la escritura, con el acento del defecto 03 marcando el uno.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado. Un compás de cortesía, audible aunque el metrónomo esté apagado.<br><b>Arreglo original</b><b>Arreglo · lib/state/sequencer.dart</b>Un compás de cuenta atrás antes de armar la escritura, con el acento del defecto 03 marcando el uno.</p>
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev fantasma">
         <span class="num">10</span>
         <div>
-          <h3>La franja de tres pestañas esconde a qué apunta</h3>
-          <p>Sonido / FX / Loop cambian de objetivo según haya o no un pad seleccionado —con pad apuntan al pad, sin pad al máster— y eso no se lee en ninguna parte de la pantalla. El mismo mando hace dos cosas distintas sin decirlo.</p>
-          <p class="arreglo"><b>Arreglo · lib/ui/pads/control_surface.dart</b>Un rótulo permanente con el objetivo: <code>A · 03</code> o <code>MÁSTER</code>. Es una línea de texto y resuelve la única ambigüedad de estado que le queda a la app.</p>
+          <h3>Este defecto no existía</h3>
+          <p>Dije que la franja no decía a qué pad apunta. Sí lo dice: <code>ControlSurface</code> ya tenía un <code>targetLabel</code> permanente con un punto del color de la familia. El diagnóstico salió de leer la estructura de pestañas sin abrir el widget.</p>
+          <p class="arreglo"><b>Estado</b>Retirado del catálogo. Se queda aquí porque un informe que borra sus propios errores deja de servir para fiarse de él.</p>
         </div>
       </article>
 
@@ -1395,82 +1418,99 @@ footer .fuentes a:hover { color: var(--fosforo); }
   </div>
 </section>
 
-<!-- ══ 06 PRIORIDAD ════════════════════════════════════════════ -->
+<!-- ══ 06 ESTADO ══════════════════════════════════════════════ -->
 <section id="prioridad" style="background: var(--pozo); border-block: 1px solid var(--linea);">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Una secuencia, no una lista</span><span class="rule"></span></div>
-      <h2 class="cap-title">Por dónde empezar</h2>
+      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Los cinco pasos, hechos</span><span class="rule"></span></div>
+      <h2 class="cap-title">Dónde está</h2>
       <p class="lede">
-        Ordenado por valor entregado dividido entre coste, aprovechando lo que ya está
-        construido. Aquí los números sí significan orden: cada paso deja el terreno
-        preparado para el siguiente.
+        Los cinco pasos que este documento priorizó están construidos, con tests y
+        probados en un móvil los dos primeros. Lo que sigue es el estado real contra
+        el catálogo entero, que es bastante más grande que esos cinco pasos.
       </p>
     </div>
 
-    <div class="pasos">
+    <div class="estado-barra rev">
+      <div><b>5 / 5</b><span>Pasos priorizados</span></div>
+      <div><b>6 / 39</b><span>Funciones del catálogo</span></div>
+      <div><b>213</b><span>Tests</span></div>
+      <div><b>3 / 5</b><span>Pantallas maquetadas</span></div>
+    </div>
 
+    <div class="pasos">
       <article class="paso rev">
         <span class="n">1</span>
         <div class="cuerpo">
-          <h3 class="paso-title">Los tres arreglos que no pueden esperar</h3>
-          <p>Defectos <strong>01</strong> (el solo destruye los silencios), <strong>02</strong> (duplicar pierde la cadena) y <strong>07</strong> (el roll multi-división). Los dos primeros corrompen datos guardados; el tercero es conectar una constante que ya existe.</p>
+          <h3 class="paso-title">Los tres arreglos que no podían esperar</h3>
+          <p>El solo ya no destruye los silencios manuales ni los persiste. Duplicar una sesión se lleva la cadena de patrones. El ROLL rueda en corcheas o semicorcheas con AJUSTAR + toque.</p>
         </div>
-        <span class="coste">Una tarde</span>
+        <span class="coste">Hecho</span>
       </article>
 
       <article class="paso rev">
         <span class="n">2</span>
         <div class="cuerpo">
-          <h3 class="paso-title">Swing, acento por paso y cuenta atrás con acento</h3>
-          <p>El salto de calidad más grande por línea escrita. <code>TempoClock</code> ya tiene la rejilla de 16avos; el swing la desplaza, el acento la enriquece y el metrónomo acentuado por fin dice dónde está el uno.</p>
+          <h3 class="paso-title">Swing, acento por paso y cuenta atrás</h3>
+          <p>Swing como tres sensaciones con nombre —recto, suave, tresillo— en vez de un decimal, y las negras no se mueven. Acento por paso con barra en el pad. Un compás de cortesía antes de escribir, audible aunque el metrónomo esté apagado.</p>
         </div>
-        <span class="coste">Dos o tres días</span>
+        <span class="coste">Hecho</span>
       </article>
 
       <article class="paso rev">
         <span class="n">3</span>
         <div class="cuerpo">
           <h3 class="paso-title">Deshacer</h3>
-          <p>Al menos en VACIAR PAD, BORRAR PATRÓN y la edición de sonido. Es la petición número uno documentada de los usuarios de loopers, y hoy es exactamente cero. El autoguardado a los 800 ms lo hace más urgente, no menos.</p>
+          <p>Veinte pasos atrás sobre instantáneas de una sesión inmutable. Cubre vaciar un pad, cambiarle el sonido, borrar un patrón y cortar. Se limpia al cambiar de sesión y al borrar un sonido de la biblioteca, porque ahí desaparece un fichero.</p>
         </div>
-        <span class="coste">Dos días</span>
+        <span class="coste">Hecho</span>
       </article>
 
       <article class="paso rev">
         <span class="n">4</span>
         <div class="cuerpo">
-          <h3 class="paso-title">Resampling y captura retrospectiva</h3>
-          <p><code>MixdownRecorder</code> ya captura la salida del mezclador con los efectos puestos. Las dos funciones salen del mismo stream y ninguna abre el micrófono, así que la regla de oro del proyecto sigue intacta.</p>
+          <h3 class="paso-title">Resampling y rescate</h3>
+          <p>Un solo grifo del mezclador reparte a todos: el motor no da dos. Siempre hay treinta segundos del máster guardados, y un botón se lleva los últimos cuatro compases a un pad. El micrófono no se abre nunca.</p>
         </div>
-        <span class="coste">Tres o cuatro días</span>
+        <span class="coste">Hecho</span>
       </article>
 
       <article class="paso rev">
         <span class="n">5</span>
         <div class="cuerpo">
-          <h3 class="paso-title">Cortar un sonido a los 16 pads</h3>
-          <p>La rejilla 4×4 ya es el destino natural y las envolventes de picos ya se calculan para dibujar la forma de onda. Es la función que convierte la biblioteca en un instrumento.</p>
+          <h3 class="paso-title">Cortar a los pads</h3>
+          <p>Por transitorios, en 8 o en 16, con vista previa sobre la onda. Un corte no copia audio: los trozos comparten fichero con distinto recorte, lo que obligó a que el fichero solo se borre cuando ya no lo usa nadie.</p>
         </div>
-        <span class="coste">Tres días</span>
+        <span class="coste">Hecho</span>
       </article>
-
     </div>
 
     <div class="despues rev">
-      <b>Y después, en este orden:</b> modo escala en los pads · efectos por familia con
-      envío compartido · MIDI de entrada con MIDI learn · escenas · modo canción. Cada uno
-      depende de que el anterior esté en pie.
+      <b>Lo siguiente, en este orden:</b> modo escala en los pads · efectos por familia
+      con envío compartido · MIDI de entrada con MIDI learn · escenas · modo canción.
+      Las dos pantallas que faltan de las cinco maquetadas —modo escala y MIDI learn—
+      salen de ahí, no de los cinco pasos.
+    </div>
+
+    <div class="techo rev">
+      <b>Lo que salió por el camino y no estaba aquí</b>
+      <p>
+        Tres cosas que este documento no previó. <strong>Una luz por sonido</strong> en
+        cada paso, que salió de probar el swing en un móvil y descubrir que una sola luz
+        no sabía decir si un tiempo llevaba una voz o tres. El <strong>grifo único del
+        mezclador</strong>, que no es una función sino la pieza sin la cual exportar y
+        rescatar se pisaban. Y que <strong>resamplear y rescatar son la misma
+        función</strong> preguntada en dos momentos distintos.
+      </p>
     </div>
 
     <div class="techo rev">
       <b>El único techo que no se puede saltar</b>
       <p>
-        Todo lo anterior es viable en Flutter con lo que ya hay montado. Lo que
-        <em>no</em> lo es, siendo Android primero, es convertir Looper en plugin de otras
-        apps: AUv3 no existe fuera de Apple, y en Android el proyecto AAP sigue sin una API
-        estable según su propia documentación. Ableton Link sí es posible, pero exige
-        envolver la librería C++ de Ableton a mano — no hay binding de Flutter hecho.
+        Convertir Looper en plugin de otras apps. AUv3 no existe fuera de Apple, y en
+        Android el proyecto AAP sigue sin una API estable según su propia documentación.
+        Ableton Link sí es posible, pero exige envolver la librería C++ de Ableton a
+        mano — no hay binding de Flutter hecho.
       </p>
     </div>
   </div>

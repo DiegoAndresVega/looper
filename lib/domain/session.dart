@@ -1,5 +1,6 @@
 import '../core/constants.dart';
 import 'pad_config.dart';
+import 'scale.dart';
 import 'pattern.dart';
 
 /// Everything a saved session remembers: which sound sits on each of the 64
@@ -17,6 +18,9 @@ class Session {
     this.activePattern = 0,
     this.chainLength = 1,
     this.swing = kSwingDefault,
+    this.scale = Scale.pentatonicMinor,
+    this.root = 0,
+    this.octave = 0,
   });
 
   final String id;
@@ -37,6 +41,13 @@ class Session {
   /// How much the off-beat sixteenths lag. It belongs to the session because
   /// it is part of how the pattern is meant to be felt, like the tempo.
   final double swing;
+
+  /// What the grid plays when it is being used as a keyboard: which scale,
+  /// which note it starts on, and how high. Kept with the session because a
+  /// key is part of a piece, not a knob position.
+  final Scale scale;
+  final int root;
+  final int octave;
 
   factory Session.blank({required String id, required String name}) {
     final now = DateTime.now();
@@ -105,6 +116,9 @@ class Session {
       activePattern: activePattern,
       chainLength: chainLength,
       swing: swing,
+      scale: scale,
+      root: root,
+      octave: octave,
       createdAt: now,
       updatedAt: now,
     );
@@ -118,6 +132,9 @@ class Session {
     int? activePattern,
     int? chainLength,
     double? swing,
+    Scale? scale,
+    int? root,
+    int? octave,
     DateTime? updatedAt,
   }) {
     return Session(
@@ -129,6 +146,9 @@ class Session {
       activePattern: activePattern ?? this.activePattern,
       chainLength: chainLength ?? this.chainLength,
       swing: swing ?? this.swing,
+      scale: scale ?? this.scale,
+      root: root ?? this.root,
+      octave: octave ?? this.octave,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -143,6 +163,9 @@ class Session {
         'activePattern': activePattern,
         'chainLength': chainLength,
         'swing': swing,
+        'scale': scale.name,
+        'root': root,
+        'octave': octave,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -161,6 +184,12 @@ class Session {
         chainLength: json['chainLength'] as int? ?? 1,
         // A session written before swing existed was played straight.
         swing: (json['swing'] as num?)?.toDouble() ?? kSwingDefault,
+        // A session written before the grid could play a scale opens on the
+        // one that cannot sound wrong.
+        scale: Scale.values.asNameMap()[json['scale'] as String?] ??
+            Scale.pentatonicMinor,
+        root: json['root'] as int? ?? 0,
+        octave: json['octave'] as int? ?? 0,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );

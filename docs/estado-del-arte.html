@@ -583,7 +583,7 @@ footer .fuentes a:hover { color: var(--fosforo); }
     </p>
     <div class="cifras">
       <div class="cifra"><b>7</b><span>Referencias</span></div>
-      <div class="cifra"><b>8 / 39</b><span>Funciones hechas</span></div>
+      <div class="cifra"><b>14 / 39</b><span>Funciones hechas</span></div>
       <div class="cifra"><b>5 / 9</b><span>Correcciones</span></div>
       <div class="cifra"><b>4½ / 5</b><span>Pantallas</span></div>
     </div>
@@ -687,7 +687,7 @@ footer .fuentes a:hover { color: var(--fosforo); }
     <!-- A1 GROOVE -->
     <div class="bloque b-groove rev">
       <div class="bloque-head">
-        <h3>Groove</h3><span class="cuenta">6 funciones</span><span class="rule"></span>
+        <h3>Groove</h3><span class="cuenta">5 de 6 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -703,20 +703,20 @@ footer .fuentes a:hover { color: var(--fosforo); }
           <p class="como"><b>En Looper:</b> hoy no existe la velocidad en ninguna parte de la app. Mantener el paso y arrastrar en vertical es el gesto natural sobre la rejilla que ya hay.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Probabilidad por paso</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Probabilidad por paso</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p>Patterning lo pinta como una «capa» encima de la rejilla. Elektron lo llama <em>trig conditions</em>: 1:2, 3:4, «solo en el fill». Un patrón deja de repetirse idéntico.</p>
           <p class="como"><b>En Looper:</b> una capa más sobre la misma rejilla 4×4, exactamente como ya se hace con la segunda luz de la esquina.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Micro-timing</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Micro-timing</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p>Elektron permite ±1/384 de compás por paso. Adelantar el bombo dos milisegundos es la diferencia entre una caja de ritmos y un batería.</p>
           <p class="como"><b>En Looper:</b> arrastre horizontal sobre el paso seleccionado. Mueve un golpe sin tocar el resto del patrón.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Ratchet por paso</h3><span class="tag"><span class="luz listo"></span>Motor listo</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Ratchet por paso</h3><span class="tag hecho">✓ Hecho</span>Motor listo</span></div>
           <p>Subdividir un paso en dos, tres o cuatro golpes. Patterning añade <em>decaimiento</em> al ratchet para que el redoble se apague solo.</p>
           <p class="como"><b>En Looper:</b> el ROLL <em>ya es esto</em>, solo que en vivo y clavado a semicorcheas. Falta poder fijarlo a un paso concreto del patrón.</p>
         </article>
@@ -865,10 +865,10 @@ footer .fuentes a:hover { color: var(--fosforo); }
           <p class="como"><b>En Looper:</b> hoy hay filtro con resonancia, eco (con un techo duro de 0,3 s porque su buffer se dimensiona en la primera pasada) y lofi. Falta reverb, que es la que más se echa en falta.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Panorama por pad</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Panorama por pad</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Loopy Pro da balance por canal. Separar dos elementos en el estéreo es la manera más barata de que una mezcla respire.</p>
-          <p class="como"><b>En Looper:</b> la app es mono de principio a fin (<code>kChannels = 1</code>). Esto no es un mando: es una decisión de arquitectura.</p>
+          <p class="como"><b>Corrección:</b> este documento decía que era «una decisión de arquitectura» porque la app es mono. Falso: mono son los <em>ficheros</em>; el motor arranca en <code>Channels.stereo</code> y SoLoud tiene <code>setPan</code>. Eran unas líneas, no una reforma. Un mando en la solapa Sonido, con zona muerta en el centro para que el pulgar encuentre el medio.</p>
         </article>
 
         <article class="card">
@@ -951,14 +951,14 @@ footer .fuentes a:hover { color: var(--fosforo); }
           <p class="como"><b>En Looper:</b> no hay ninguno. <code>grep</code> da cero. VACIAR PAD y BORRAR PATRÓN son irreversibles, y la sesión se autoguarda 800 ms después, así que el error se persiste solo.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Puntos de guardado</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Puntos de guardado</h3><span class="tag hecho">✓ Hecho</span>Piezas sueltas</span></div>
           <p>Loopy Pro los llama <em>save points</em>: instantáneas dentro del proyecto a las que se puede volver. Es el deshacer de sesión entera.</p>
           <p class="como"><b>En Looper:</b> <code>SessionStore</code> ya sabe duplicar una sesión completa. Un punto de guardado es esa misma operación con otro nombre y otra pantalla.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Copiar y duplicar</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Copiar y duplicar</h3><span class="tag hecho">✓ Hecho</span>De cero</span></div>
           <p>Copiar un pad a otro banco, duplicar un patrón para variarlo. Universal en grooveboxes, y lo primero que se echa de menos al segundo patrón.</p>
           <p class="como"><b>En Looper:</b> quedó sin responder en el alcance de v1. Hoy hay que reconstruir un patrón nota a nota para hacerle una variación.</p>
         </article>
@@ -1435,9 +1435,9 @@ footer .fuentes a:hover { color: var(--fosforo); }
 
     <div class="estado-barra rev">
       <div><b>5 / 5</b><span>Pasos priorizados</span></div>
-      <div><b>+2</b><span>De la cola siguiente</span></div>
-      <div><b>8 / 39</b><span>Funciones del catálogo</span></div>
-      <div><b>247</b><span>Tests</span></div>
+      <div><b>+8</b><span>De la cola siguiente</span></div>
+      <div><b>14 / 39</b><span>Funciones del catálogo</span></div>
+      <div><b>278</b><span>Tests</span></div>
       <div><b>4½ / 5</b><span>Pantallas maquetadas</span></div>
     </div>
 
@@ -1505,13 +1505,23 @@ footer .fuentes a:hover { color: var(--fosforo); }
         </div>
         <span class="coste">Hecho</span>
       </article>
+
+      <article class="paso rev">
+        <span class="n">8</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Las capas del paso, copiar y puntos de guardado</h3>
+          <p>Probabilidad, micro-timing y ratchet, con un solo deslizador que cicla entre las cuatro capas para que editar un paso nunca cueste más de una fila. Copiar pads y patrones. Ocho instantáneas con nombre por sesión. Y el panorama por pad, que este documento había dado por imposible.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
     </div>
 
     <div class="despues rev">
       <b>Lo siguiente, en este orden:</b> efectos por familia con envío compartido ·
       MIDI learn de los mandos · escenas · modo canción. La primera es la que más
       cambia el sonido y la que más riesgo de CPU trae; la segunda es lo único que le
-      falta a las cinco láminas de arriba.
+      falta a las cinco láminas de arriba. El bloque de <em>Groove</em> del catálogo
+      queda cerrado salvo la longitud por pista, que reestructura el patrón entero.
     </div>
 
     <div class="techo rev">
@@ -1525,7 +1535,16 @@ footer .fuentes a:hover { color: var(--fosforo); }
         función</strong> preguntada en dos momentos distintos. Y que el teclado
         <strong>salía monofónico</strong> hasta que la transposición pasó a formar parte
         de la identidad de cada voz: sin eso, un do y un mi del mismo sonido se cortaban
-        el uno al otro.
+        el uno al otro. Y el <strong>panorama</strong>, que este documento archivó como
+        imposible por leer <code>kChannels = 1</code> sin mirar cómo arranca el motor:
+        eran unas líneas.
+      </p>
+      <p>
+        Lo más caro de la última tanda no fue ninguna de las seis funciones, sino el
+        <strong>adelanto del micro-timing</strong>. Retrasar un golpe es un temporizador;
+        adelantarlo obliga al secuenciador a mirar siempre un pulso por delante y a
+        acordarse de lo que ya mandó, para no tocarlo dos veces — y a hacerlo bien
+        cruzando la línea de compás con la cadena de patrones puesta.
       </p>
     </div>
 

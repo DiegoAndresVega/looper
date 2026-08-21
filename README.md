@@ -105,6 +105,25 @@ pads dibujan esa fuerza como una barra en su borde inferior: dieciséis barras
 seguidas se leen como la dinámica del compás escrita. Un patrón donde todos los
 golpes pegan igual suena a máquina; esto es lo que lo devuelve a una mano.
 
+Además del acento, cada paso guarda otras tres cosas, y **un solo deslizador
+sirve para las cuatro**: tocar su rótulo cicla entre ACENTO, PROB, MICRO y
+RATCHET, así que editar un paso nunca le cuesta a la pantalla más de una fila.
+
+- **Probabilidad**: cuántas veces de cada diez suena ese paso. Es lo que hace
+  que un patrón deje de repetirse idéntico. Un paso al 100 % no tira el dado
+  siquiera, así que un patrón sin tocar suena igual pase lo que pase con el azar.
+- **Micro-timing**: adelanta o atrasa el golpe media semicorchea sin mover el
+  resto. Adelantar es lo caro de implementar —hay que enviar el paso un pulso
+  antes, montado sobre el anterior— y por eso el secuenciador mira siempre un
+  pulso por delante.
+- **Ratchet**: parte el paso en 2, 3 o 4 golpes iguales. El motor ya existía en
+  el ROLL; aquí se fija a un paso del patrón.
+
+**Copiar.** COPIAR en la hoja de un pad lo levanta —sonido y ajustes— y arma la
+grilla: el siguiente pad que toques lo recibe. Mantener pulsado el número de
+patrón (P1) copia el patrón entero; luego vas al patrón de destino y PEGAR lo
+suelta ahí. Las dos cosas pasan por deshacer.
+
 El **swing** vive en la misma barra, como tres sensaciones con nombre en vez de
 un número: RECTO, SUAVE y TRESILLO. Es la regla que inventó el MPC-60 en 1988 —
 retrasar solo las semicorcheas pares— y tiene una propiedad que conviene no
@@ -178,6 +197,29 @@ hace que suene a solo y no a ejercicio.
 Dos reglas que sostienen esto: **tocar una nota no cambia el pad elegido** —si
 no, la franja dejaría de apuntar al sonido que está sonando— y **el teclado se
 apaga al cambiar de banco**, porque la rejilla es siempre el banco que se ve.
+
+## Puntos de guardado
+
+La sesión se escribe sola 800 ms después de cada edición, así que sin nada más
+no hay forma de volver a un estado que valía la pena. Deshacer camina hacia
+atrás paso a paso; un **punto de guardado** es lo otro: «así sonaba antes de
+ponerme a cambiarlo todo».
+
+Están en la lista de sesiones, manteniendo pulsada una y eligiendo **Puntos de
+guardado**. Ocho por sesión, y el tope es por sesión y no en total, así que
+llenar una nunca borra los de otra. Guardar solo se ofrece para la sesión
+abierta: el instrumento sostiene una a la vez, y una foto de una sesión que no
+estás tocando sería una copia de lo que ya hay en disco.
+
+**Restaurar devuelve el contenido, nunca la identidad.** Vuelven pads, patrones,
+tempo, swing y escala; el id, el nombre y la fecha de nacimiento siguen siendo
+los de la sesión abierta. Si volviera también la identidad, la lista de sesiones
+se quedaría apuntando a un fantasma. Restaurar pasa por deshacer, así que volver
+al punto equivocado está a un toque de arreglarse.
+
+Viven en su propio fichero (`savepoints.json`) y no dentro de cada sesión: un
+documento de sesión que cargara ocho copias de su propio pasado se reescribiría
+entero, y ocho veces más gordo, en cada autoguardado.
 
 ## Rescatar lo que acaba de sonar
 
@@ -364,6 +406,10 @@ Funcionando:
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
 - Controlador MIDI por USB y Bluetooth, sin mapeo que configurar
+- Probabilidad, micro-timing y ratchet por paso
+- Copiar pads y patrones
+- Puntos de guardado: ocho instantáneas con nombre por sesión
+- Panorama por pad
 - La rejilla como escala: seis escalas, tónica y octava
 - Rescatar los últimos cuatro compases del máster a un pad
 - Cortar un sonido a los pads: por transitorios, en 8 o en 16

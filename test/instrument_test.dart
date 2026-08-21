@@ -204,4 +204,29 @@ void main() {
       expect(updated.pads[5].soundId, 's1');
     });
   });
+
+  group('panorama por pad', () {
+    test('un pad nuevo nace en el centro', () {
+      expect(const PadConfig().pan, 0);
+    });
+
+    test('viaja en el JSON', () {
+      final pad = const PadConfig(soundId: 'x', pan: -0.6);
+
+      expect(PadConfig.fromJson(pad.toJson()).pan, closeTo(-0.6, 0.001));
+    });
+
+    test('un pad guardado antes del panorama se abre centrado', () {
+      final viejo = {
+        'soundId': 'x',
+        'volume': 0.8,
+        'semitones': 0,
+        'loopSteps': 16,
+        'sync': true,
+        'muted': false,
+      };
+
+      expect(PadConfig.fromJson(viejo).pan, 0);
+    });
+  });
 }

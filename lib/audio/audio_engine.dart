@@ -70,6 +70,7 @@ class AudioEngine {
     required double volume,
     required double rate,
     bool looping = false,
+    double pan = 0,
   }) {
     final source = _sources[sound.id];
     if (source == null || !_ready) return null;
@@ -88,6 +89,9 @@ class AudioEngine {
     );
     if (rate != 1.0) {
       _soloud.setRelativePlaySpeed(handle, rate);
+    }
+    if (pan != 0) {
+      setHandlePan(handle, pan);
     }
 
     // Trimming is non-destructive: the file keeps its tail, playback just
@@ -108,6 +112,14 @@ class AudioEngine {
   void setHandleVolume(SoundHandle handle, double volume) {
     if (!_ready) return;
     _soloud.setVolume(handle, volume.clamp(0.0, 1.0));
+  }
+
+  /// Where a voice sits in the stereo field, -1 hard left to 1 hard right.
+  /// The engine has always run in stereo — only the files are mono — so this
+  /// costs nothing but the call.
+  void setHandlePan(SoundHandle handle, double pan) {
+    if (!_ready) return;
+    _soloud.setPan(handle, pan.clamp(-1.0, 1.0));
   }
 
   Future<void> stopHandle(SoundHandle handle) async {

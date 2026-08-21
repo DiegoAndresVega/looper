@@ -13,6 +13,7 @@ class PadConfig {
     this.loopSteps = kStepsPerBar,
     this.synced = true,
     this.muted = false,
+    this.pan = 0,
   });
 
   static const PadConfig empty = PadConfig();
@@ -30,6 +31,11 @@ class PadConfig {
   final bool synced;
   final bool muted;
 
+  /// Where the pad sits across the stereo field, -1 left to 1 right. The
+  /// files are mono, but the engine is not: separating two parts is the
+  /// cheapest way to let a mix breathe.
+  final double pan;
+
   bool get isEmpty => soundId == null;
 
   PadConfig copyWith({
@@ -40,6 +46,7 @@ class PadConfig {
     int? loopSteps,
     bool? synced,
     bool? muted,
+    double? pan,
   }) {
     return PadConfig(
       soundId: clearSound ? null : (soundId ?? this.soundId),
@@ -48,6 +55,7 @@ class PadConfig {
       loopSteps: loopSteps ?? this.loopSteps,
       synced: synced ?? this.synced,
       muted: muted ?? this.muted,
+      pan: pan ?? this.pan,
     );
   }
 
@@ -58,6 +66,7 @@ class PadConfig {
         'loopSteps': loopSteps,
         'sync': synced,
         'muted': muted,
+        'pan': pan,
       };
 
   /// Sessions saved before the gesture rewrite carry a 'mode' key, and ones
@@ -73,6 +82,8 @@ class PadConfig {
         loopSteps: json['loopSteps'] as int? ?? kStepsPerBar,
         synced: json['sync'] as bool? ?? true,
         muted: json['muted'] as bool? ?? false,
+        // A pad written before panning existed sat in the middle.
+        pan: (json['pan'] as num?)?.toDouble() ?? 0,
       );
 }
 

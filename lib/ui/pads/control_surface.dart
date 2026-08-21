@@ -182,6 +182,8 @@ class _Knob extends StatelessWidget {
           ),
           Text(
             spec.display,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Brand.readout(
               9,
               weight: 600,

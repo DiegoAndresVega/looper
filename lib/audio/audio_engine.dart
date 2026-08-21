@@ -129,8 +129,4 @@ class AudioEngine {
   }
 
   void stopMixdownCapture() => _soloud.stopMixerOutputStream();
-
-  /// The real WAV header, only known once the capture has stopped: the one
-  /// that opened the stream carries placeholder sizes.
-  Uint8List mixdownWavHeader() => _soloud.getMixerOutputWavHeader();
 }

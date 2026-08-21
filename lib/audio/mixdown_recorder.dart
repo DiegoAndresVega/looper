@@ -4,23 +4,27 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import '../data/storage.dart';
-import 'audio_engine.dart';
+import 'mixer_tap.dart';
+import 'wav_encoder.dart';
 
 /// Records the performance: what comes out of the mixer, not what the
 /// microphone hears. It can run while the grid is being played, which is the
 /// whole difference between this and capturing a sound.
 class MixdownRecorder {
-  MixdownRecorder({required AudioEngine engine, required Storage storage})
-      : _engine = engine,
+  MixdownRecorder({required MixerTap tap, required Storage storage})
+      : _tap = tap,
         _storage = storage;
 
-  final AudioEngine _engine;
+  /// The shared tap, not the engine: the mixer hands out one stream, and the
+  /// skip-back buffer is already holding it.
+  final MixerTap _tap;
   final Storage _storage;
 
-  StreamSubscription<Uint8List>? _subscription;
   IOSink? _sink;
   File? _file;
   DateTime? _startedAt;
+  int _dataBytes = 0;
+  void Function(Uint8List)? _listener;
 
   bool get isRecording => _startedAt != null;
 
@@ -37,17 +41,27 @@ class MixdownRecorder {
       await _storage.mixdowns.create(recursive: true);
     }
 
+    _tap.open();
+
     final file = File('${_storage.mixdowns.path}/${_mixdownName()}');
     final sink = file.openWrite();
     _file = file;
     _sink = sink;
     _startedAt = DateTime.now();
+    _dataBytes = 0;
 
-    _subscription = _engine.startMixdownCapture().listen(
-      sink.add,
-      onError: (Object error) => debugPrint('Fallo capturando la mezcla: $error'),
-      cancelOnError: false,
-    );
+    // A blank header goes down first and the real one is stamped over it on
+    // stop. It cannot come from the engine any more: that header describes the
+    // whole stream, and the tap may have been open long before this take.
+    sink.add(Uint8List(kWavHeaderBytes));
+
+    void onPcm(Uint8List pcm) {
+      _dataBytes += pcm.length;
+      sink.add(pcm);
+    }
+
+    _listener = onPcm;
+    _tap.addSink(onPcm);
   }
 
   /// Stops the capture and returns the finished file, or null when nothing
@@ -55,26 +69,33 @@ class MixdownRecorder {
   Future<File?> stop() async {
     if (!isRecording) return null;
 
-    _engine.stopMixdownCapture();
-    await _subscription?.cancel();
+    final listener = _listener;
+    if (listener != null) _tap.removeSink(listener);
     await _sink?.flush();
     await _sink?.close();
 
     final file = _file;
-    _subscription = null;
+    final dataBytes = _dataBytes;
+    _listener = null;
     _sink = null;
     _file = null;
     _startedAt = null;
+    _dataBytes = 0;
     if (file == null) return null;
 
-    // The header written at the start carries placeholder sizes; the real one
-    // only exists once the engine knows how much audio there was.
-    final header = _engine.mixdownWavHeader();
-    final length = await file.length();
-    if (length <= _wavHeaderBytes || header.length != _wavHeaderBytes) {
+    if (dataBytes <= 0) {
       await file.delete();
       return null;
     }
+
+    // The size is this take's, not the stream's: the tap keeps running for
+    // everyone else and its own header would claim far more audio than is
+    // actually in this file.
+    final header = wavHeader(
+      dataBytes: dataBytes,
+      sampleRate: _tap.format.sampleRate,
+      channels: _tap.format.channels,
+    );
 
     final handle = await file.open(mode: FileMode.writeOnlyAppend);
     try {
@@ -94,4 +115,3 @@ class MixdownRecorder {
   }
 }
 
-const int _wavHeaderBytes = 44;

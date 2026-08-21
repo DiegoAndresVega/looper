@@ -1,12 +1,15 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../data/sound_import.dart';
 import '../../data/sound_library.dart';
 import '../../data/storage.dart';
 import '../../domain/sound.dart';
+import '../../audio/chopper.dart';
+import 'chop_sheet.dart';
 import 'sound_list.dart';
 import 'sound_sheet.dart';
 
@@ -20,6 +23,8 @@ class LibraryScreen extends StatefulWidget {
     required this.storage,
     required this.onPreview,
     required this.onDelete,
+    required this.slicesFor,
+    required this.onChop,
   });
 
   final SoundLibrary library;
@@ -30,6 +35,15 @@ class LibraryScreen extends StatefulWidget {
 
   /// Removes the sound and empties any pad that was holding it.
   final Future<void> Function(Sound sound) onDelete;
+
+  /// Where the cuts would fall, for the sheet to draw before committing.
+  final Future<List<Slice>> Function(Sound sound, ChopMode mode) slicesFor;
+
+  /// Cuts the sound across the grid. Null when no bank has room.
+  final Future<({int bank, int slot, int count})?> Function(
+    Sound sound,
+    List<Slice> slices,
+  ) onChop;
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -159,9 +173,41 @@ class _LibraryScreenState extends State<LibraryScreen> {
         onChanged: _library.update,
         onPreview: widget.onPreview,
         onDelete: () => _delete(sound),
+        onChop: () {
+          Navigator.of(context).pop();
+          _openChop(sound);
+        },
       ),
     );
     if (mounted) setState(() {});
+  }
+
+  /// Cutting is a preview until it is confirmed: the sheet hands back the
+  /// slices it drew and only then is anything created.
+  Future<void> _openChop(Sound sound) async {
+    final peaks = await _library.peaksFor(sound);
+    if (!mounted) return;
+
+    final slices = await showModalBottomSheet<List<Slice>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => ChopSheet(
+        sound: sound,
+        peaks: peaks,
+        slicesFor: (mode) => widget.slicesFor(sound, mode),
+      ),
+    );
+    if (slices == null || !mounted) return;
+
+    final landed = await widget.onChop(sound, slices);
+    if (!mounted) return;
+    setState(() {
+      _message = landed == null
+          ? 'No hay ${slices.length} pads libres seguidos en ningún banco.'
+          : '${sound.name} en ${landed.count} pads del banco '
+              '${kBankIds[landed.bank]}.';
+    });
   }
 
   Future<void> _delete(Sound sound) async {

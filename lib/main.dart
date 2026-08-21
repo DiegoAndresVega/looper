@@ -299,6 +299,8 @@ class _BootState extends State<Boot> {
             await controller.clearPadsUsing(sound.id);
             await library.remove(sound.id);
           },
+          slicesFor: controller.previewChop,
+          onChop: controller.chop,
         ),
       ),
     );

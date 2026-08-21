@@ -19,6 +19,7 @@ class SoundSheet extends StatefulWidget {
     required this.onChanged,
     required this.onPreview,
     required this.onDelete,
+    required this.onChop,
   });
 
   final Sound sound;
@@ -26,6 +27,10 @@ class SoundSheet extends StatefulWidget {
   final ValueChanged<Sound> onChanged;
   final ValueChanged<Sound> onPreview;
   final VoidCallback onDelete;
+
+  /// Cut this sound into pieces across the grid. Closes the sheet first: the
+  /// pads it lands on are behind it.
+  final VoidCallback onChop;
 
   @override
   State<SoundSheet> createState() => _SoundSheetState();
@@ -265,6 +270,24 @@ class _SoundSheetState extends State<SoundSheet> {
               child: Text(
                 'ESCUCHAR',
                 style: Brand.label(10, weight: 700, color: Palette.onAccent),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: GestureDetector(
+            onTap: widget.onChop,
+            child: Container(
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Palette.line),
+              ),
+              child: Text(
+                'CORTAR',
+                style: Brand.label(10, weight: 700, color: Palette.ink),
               ),
             ),
           ),

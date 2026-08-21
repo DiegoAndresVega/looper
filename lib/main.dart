@@ -246,6 +246,9 @@ class _BootState extends State<Boot> {
     if (controller == null || library == null || storage == null) return;
 
     await controller.stopAllLoops();
+    // The microphone needs the engine to itself, so the tap has to let go
+    // first — and what it held belongs to before the break.
+    await controller.stopListeningToMaster();
     await _engine.release();
 
     if (!mounted) return;
@@ -261,6 +264,7 @@ class _BootState extends State<Boot> {
 
     await _engine.init();
     await controller.reloadSounds();
+    controller.listenToMaster();
     if (!mounted) return;
     if (sound == null) {
       setState(() {});

@@ -11,8 +11,11 @@ import '../audio/audio_engine.dart';
 import '../audio/chopper.dart';
 import '../audio/master_fx.dart';
 import '../audio/mixdown_recorder.dart';
+import '../audio/mixer_tap.dart';
+import '../audio/wav_decoder.dart';
 import '../audio/tempo_clock.dart';
 import '../core/constants.dart';
+import '../core/palette.dart';
 import '../data/metronome.dart';
 import '../data/session_store.dart';
 import '../data/sound_library.dart';
@@ -82,10 +85,15 @@ class SessionController extends ChangeNotifier {
   /// dragging a knob does not hit the file on every frame.
   Timer? _saveTimer;
 
+  /// The one listener on the mixer output. Exporting a take, resampling the
+  /// master back onto a pad and rescuing what just played all read from here,
+  /// because the engine only hands out one such stream.
+  late final MixerTap tap = MixerTap(engine: _engine);
+
   /// Recording the performance — the mixer output, never the microphone — so
   /// it can run while the grid is being played.
   late final MixdownRecorder mixdown =
-      MixdownRecorder(engine: _engine, storage: Storage.instance);
+      MixdownRecorder(tap: tap, storage: Storage.instance);
 
   Session? _session;
   int _activeBank = 0;
@@ -330,6 +338,54 @@ class SessionController extends ChangeNotifier {
     _touch();
     notifyListeners();
     return (bank: room.bank, slot: room.slot, count: pieces.length);
+  }
+
+  // ------------------------------------------------------- master capture
+
+  /// Opens the tap so the last [kSkipBackSeconds] of the master are always
+  /// within reach. Called when the instrument comes on screen.
+  void listenToMaster() => tap.open();
+
+  /// Closes it. The microphone needs the engine to itself, and audio from
+  /// before that break must not be spliced onto audio from after it.
+  Future<void> stopListeningToMaster() async {
+    await tap.close();
+  }
+
+  /// True while there is enough of the master held to be worth rescuing.
+  bool get canCaptureMaster =>
+      tap.isOpen && tap.buffered > const Duration(milliseconds: 400);
+
+  /// Puts the last [window] of the master on the first free pad — effects
+  /// included, microphone never opened. With no window, everything held.
+  ///
+  /// This is both features at once: asked for right after something good,
+  /// it is a rescue; asked for while a loop runs, it is a resample that folds
+  /// several layers into one pad.
+  Future<({int bank, int slot})?> captureMaster({
+    Duration? window,
+    String name = 'Mezcla',
+  }) async {
+    final bytes = tap.recentWav(window: window);
+    if (bytes == null) return null;
+
+    final storage = Storage.instance;
+    final fileName = '${_uuid.v4()}.wav';
+    final file = storage.soundFile(fileName);
+    await file.writeAsBytes(bytes);
+
+    final decoded = decodeWav(bytes);
+    final sound = await _library.add(Sound(
+      id: _uuid.v4(),
+      name: name,
+      family: SoundFamily.texture,
+      fileName: fileName,
+      origin: SoundOrigin.recorded,
+      durationMs: (decoded.samples.length / decoded.sampleRate * 1000).round(),
+      sizeBytes: bytes.length,
+    ));
+
+    return placeSound(sound);
   }
 
   void selectBank(int index) {

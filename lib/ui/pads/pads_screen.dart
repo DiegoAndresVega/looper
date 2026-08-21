@@ -54,6 +54,10 @@ class _PadsScreenState extends State<PadsScreen> {
   @override
   void initState() {
     super.initState();
+    // From here on the last half-minute of the master is always within reach,
+    // so something worth keeping can be rescued after it happened rather than
+    // having to be armed for beforehand.
+    c.listenToMaster();
     // The loop rings need a steady repaint; the controller only notifies on
     // real state changes, which is not often enough for a moving ring.
     _ringTicker = Timer.periodic(const Duration(milliseconds: 33), (_) {
@@ -151,6 +155,11 @@ class _PadsScreenState extends State<PadsScreen> {
           _iconButton(Icons.undo, _undo),
           const SizedBox(width: 6),
         ],
+        // The fourth capture: the master, effects and all, onto a pad. The
+        // microphone is never opened, which is what separates it from
+        // SAMPLEAR next door.
+        _iconButton(Icons.history, _resample),
+        const SizedBox(width: 6),
         _iconButton(Icons.library_music_outlined, widget.onOpenLibrary),
         const SizedBox(width: 6),
         _iconButton(Icons.mic_none, widget.onOpenSampler),
@@ -672,6 +681,39 @@ class _PadsScreenState extends State<PadsScreen> {
           content: Text('Deshecho: $label'),
           backgroundColor: Palette.panelHigh,
           duration: const Duration(milliseconds: 1800),
+        ),
+      );
+  }
+
+  /// Rescues the last four bars of the master onto a free pad.
+  ///
+  /// Four bars rather than a fixed number of seconds: a piece cut to the grid
+  /// drops back onto it in time. Whatever is held is used when less than that
+  /// has gone by.
+  Future<void> _resample() async {
+    if (!c.canCaptureMaster) {
+      _notYet('Todavía no ha sonado nada que rescatar');
+      return;
+    }
+
+    final barMs = (60000 / c.bpm * kStepsPerBeat).round();
+    final landed = await c.captureMaster(
+      window: Duration(milliseconds: barMs * 4),
+      name: 'Mezcla ${c.bpm}',
+    );
+    if (!mounted) return;
+
+    setState(() {});
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(landed == null
+              ? 'No queda ningún pad libre donde ponerlo'
+              : 'Cuatro compases en ${kBankIds[landed.bank]} · '
+                  '${(landed.slot + 1).toString().padLeft(2, '0')}'),
+          backgroundColor: Palette.panelHigh,
+          duration: const Duration(seconds: 3),
         ),
       );
   }

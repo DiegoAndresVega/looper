@@ -44,6 +44,14 @@ El gesto decide cómo suena un pad; el pad no guarda ningún «modo».
 | AJUSTAR y luego un pad | Abre la hoja del pad: cambiar sonido, sincronía, largo y vaciar |
 | AJUSTAR y luego ROLL | Cambia la división del roll entre corchea y semicorchea |
 
+**Deshacer** vive arriba, junto a la biblioteca, y solo aparece cuando hay algo
+que retirar. Guarda hasta veinte pasos atrás de lo que se puede perder de
+verdad: vaciar un pad, cambiarle el sonido y borrar un patrón. Los mandos
+continuos —volumen, tono, acento— no entran: se deshacen moviéndolos otra vez, y
+una instantánea por fotograma de arrastre enterraría lo que sí cuesta rehacer.
+Al borrar un sonido de la biblioteca se va también su fichero, así que ahí el
+historial se limpia entero en vez de ofrecer una vuelta atrás rota.
+
 AJUSTAR es el único estado modal del instrumento y dura un solo toque: al
 encenderlo la grilla entera se enciende en fósforo para avisar de que el
 siguiente toque no va a sonar. El mismo trato vale fuera de la grilla: armado,
@@ -268,6 +276,7 @@ Funcionando:
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
+- Deshacer hasta veinte pasos: vaciar pad, cambiar sonido y borrar patrón
 - Swing por sesión: recto, suave o tresillo
 - Acento por paso, con barra en el pad y deslizador en la barra
 - Compás de cuenta atrás antes de escribir el patrón
@@ -277,6 +286,7 @@ Funcionando:
 Pendiente:
 
 - Elegir licencia del repositorio
+- Verificar en el móvil la cuenta atrás del REC y las divisiones del roll
 
 ## Fuera de alcance
 

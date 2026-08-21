@@ -115,6 +115,26 @@ swing viaja con la sesión, como el tempo.
 El patrón corre sobre el mismo reloj de semicorcheas que los loops
 sincronizados, así que nunca se separa de ellos, y cambiar el tempo no lo corta.
 
+## Cortar un sonido a los dieciséis pads
+
+Desde la hoja de un sonido, **CORTAR** lo parte en trozos y los reparte por pads
+seguidos, en el orden en que suenan. Tres maneras: por **transitorios** —los
+golpes que encuentra en la propia onda—, **en 8** o **en 16** partes iguales.
+La hoja dibuja los cortes encima de la onda antes de crear nada.
+
+Un corte **no copia audio**. `Sound` ya llevaba recorte no destructivo, así que
+los dieciséis trozos son dieciséis sonidos apuntando al mismo fichero con
+distintos `trimStartMs`/`trimEndMs`. Partir un WAV de un minuto no ocupa un byte
+más en el móvil.
+
+Eso obligó a una regla nueva: **el fichero solo se borra cuando ya no lo usa
+nadie**. Antes, borrar un sonido se llevaba su WAV siempre, lo que habría dejado
+a sus hermanos apuntando a un fichero inexistente.
+
+Los trozos caen en el primer banco con esos pads libres **seguidos**, buscando
+C, D, A y B en ese orden: lo tuyo primero, el kit de fábrica lo último que se
+pisa. Si no hay sitio seguido en ninguno, no corta y lo dice.
+
 ## Las tres capturas, y por qué ninguna se llama «grabar»
 
 Aquí se captura en tres sitios distintos, y llamarlos a todos *grabar* era la
@@ -276,6 +296,7 @@ Funcionando:
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
+- Cortar un sonido a los pads: por transitorios, en 8 o en 16
 - Deshacer hasta veinte pasos: vaciar pad, cambiar sonido y borrar patrón
 - Swing por sesión: recto, suave o tresillo
 - Acento por paso, con barra en el pad y deslizador en la barra

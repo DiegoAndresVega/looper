@@ -228,6 +228,7 @@ class _PadsScreenState extends State<PadsScreen> {
           sound: sound,
           state: _stateFor(slot, pad),
           stepLight: _stepLightFor(slot),
+          stepNotes: c.sequencer.isOn ? c.sequencer.pattern.at(slot).length : 0,
           accent: _accentFor(slot),
           progress: c.loopProgress(c.activeBank, slot),
           selected: c.selectedSlot == slot,

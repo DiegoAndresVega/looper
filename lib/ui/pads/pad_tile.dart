@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../domain/pad_config.dart';
@@ -31,6 +32,22 @@ enum StepLight {
 
 /// One square of the grid. Everything it needs to say fits here: which sound,
 /// which mode, whether it is sounding, and how far the loop has run.
+/// How many step lights to draw. One per voice landing on that step, so a
+/// step with a kick and a clap reads as two.
+///
+/// An empty step still shows a single light in two cases: while it is the one
+/// being edited, or picking an empty slot would look like nothing happened;
+/// and while the head is on it, so the playhead can be watched crossing the
+/// whole bar instead of blinking out over every rest.
+int stepDotsFor({
+  required int notes,
+  required bool editing,
+  required bool head,
+}) {
+  if (notes <= 0) return editing || head ? 1 : 0;
+  return notes.clamp(1, kMaxStepDots);
+}
+
 class PadTile extends StatefulWidget {
   const PadTile({
     super.key,
@@ -42,6 +59,7 @@ class PadTile extends StatefulWidget {
     required this.onTap,
     required this.onLongPress,
     this.stepLight = StepLight.off,
+    this.stepNotes = 0,
     this.accent,
   });
 
@@ -49,6 +67,9 @@ class PadTile extends StatefulWidget {
   final Sound? sound;
   final PadVisualState state;
   final StepLight stepLight;
+
+  /// How many voices fire on this pad's step. One light each.
+  final int stepNotes;
 
   /// How hard this pad's step hits, 0..1, or null when the sequencer is not
   /// on or the step carries no notes. Drawn as a bar along the bottom edge:
@@ -128,7 +149,7 @@ class _PadTileState extends State<PadTile> {
                     ),
                   ),
                 if (!_isEmpty) _modeDot(color, looping),
-                if (widget.stepLight != StepLight.off) _stepDot(),
+                if (widget.stepLight != StepLight.off) _stepDots(),
                 if (widget.accent != null) _accentBar(widget.accent!),
                 _label(),
                 if (widget.state == PadVisualState.blocked)
@@ -169,31 +190,51 @@ class _PadTileState extends State<PadTile> {
     );
   }
 
-  /// The step light, top right. The head is a filled dot with a halo, a
-  /// written step is a quiet one, and the step being edited wears a ring so it
-  /// cannot be mistaken for the head.
-  Widget _stepDot() {
-    final playing = widget.stepLight == StepLight.playing;
+  /// The step lights, top right — one per voice on that step, so two sounds
+  /// landing on the same sixteenth read as two. The head is filled with a
+  /// halo, a written step is quiet, and the step being edited wears rings so
+  /// it cannot be mistaken for the head.
+  Widget _stepDots() {
     final editing = widget.stepLight == StepLight.editing;
-    final color = editing ? Palette.ink : Palette.accent;
+    final count = stepDotsFor(
+      notes: widget.stepNotes,
+      editing: editing,
+      head: widget.stepLight == StepLight.playing,
+    );
+    if (count == 0) return const SizedBox.shrink();
 
     return Positioned(
       top: 8,
       right: 8,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 70),
-        width: playing ? 9 : 7,
-        height: playing ? 9 : 7,
-        decoration: BoxDecoration(
-          color: editing
-              ? Colors.transparent
-              : color.withValues(alpha: playing ? 1.0 : 0.4),
-          shape: BoxShape.circle,
-          border: editing ? Border.all(color: color, width: 1.5) : null,
-          boxShadow: playing
-              ? [BoxShadow(color: color.withValues(alpha: 0.45), spreadRadius: 3.5)]
-              : null,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < count; i++) ...[
+            if (i > 0) const SizedBox(width: 2.5),
+            _stepDot(editing),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _stepDot(bool editing) {
+    final playing = widget.stepLight == StepLight.playing;
+    final color = editing ? Palette.ink : Palette.accent;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 70),
+      width: playing ? 7 : 6,
+      height: playing ? 7 : 6,
+      decoration: BoxDecoration(
+        color: editing
+            ? Colors.transparent
+            : color.withValues(alpha: playing ? 1.0 : 0.4),
+        shape: BoxShape.circle,
+        border: editing ? Border.all(color: color, width: 1.4) : null,
+        boxShadow: playing
+            ? [BoxShadow(color: color.withValues(alpha: 0.45), spreadRadius: 3)]
+            : null,
       ),
     );
   }

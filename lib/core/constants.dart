@@ -71,6 +71,11 @@ const List<double> kSwingMarks = [0.5, 0.58, 2 / 3];
 const double kVelocityMin = 0.1;
 const double kVelocityMax = 1.0;
 
+/// How many step lights fit in a pad's corner before they reach the family
+/// dot on the other side. A step with more voices than this still reads as
+/// «a lot», which is all the number is for at that point.
+const int kMaxStepDots = 4;
+
 /// The click sits under the music: loud enough to follow, never to lead.
 const double kMetronomeVolume = 0.55;
 

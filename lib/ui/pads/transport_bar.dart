@@ -46,9 +46,11 @@ class TransportBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
         border: Border.all(color: Palette.line),
       ),
+      // Equal shares rather than spaceBetween: a caption that carries a value
+      // — ROLL 1/16 — is wider than its button, and left free it would push
+      // the row off a narrow screen.
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [for (final a in actions) _button(a)],
+        children: [for (final a in actions) Expanded(child: _button(a))],
       ),
     );
   }
@@ -91,14 +93,20 @@ class TransportBar extends StatelessWidget {
             child: Icon(action.icon, size: 17, color: foreground),
           ),
           const SizedBox(height: 3),
-          Text(
-            action.label.toUpperCase(),
-            style: Brand.label(
-              6.5,
-              width: 75,
-              color: action.active || action.recording
-                  ? Palette.inkDim
-                  : Palette.inkFaint,
+          // Scaled down rather than clipped: the caption is the only place a
+          // held control says what it is set to.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              action.label.toUpperCase(),
+              maxLines: 1,
+              style: Brand.label(
+                6.5,
+                width: 75,
+                color: action.active || action.recording
+                    ? Palette.inkDim
+                    : Palette.inkFaint,
+              ),
             ),
           ),
         ],

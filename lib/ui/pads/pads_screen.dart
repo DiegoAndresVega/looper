@@ -367,13 +367,16 @@ class _PadsScreenState extends State<PadsScreen> {
               if ((v > 0.5) != pad.muted) setState(() => c.toggleMute(slot));
             },
           ),
+          // Solo points at this pad, not at the session: with another pad
+          // soloed this knob reads OFF, because this one is not the one
+          // being heard.
           KnobSpec(
             label: 'Solo',
-            display: c.isSoloActive ? 'ON' : 'OFF',
-            value: c.isSoloActive ? 1 : 0,
-            accent: c.isSoloActive,
+            display: c.isSoloOn(slot) ? 'ON' : 'OFF',
+            value: c.isSoloOn(slot) ? 1 : 0,
+            accent: c.isSoloOn(slot),
             onChanged: (v) {
-              if ((v > 0.5) != c.isSoloActive) {
+              if ((v > 0.5) != c.isSoloOn(slot)) {
                 setState(() => c.toggleSolo(slot));
               }
             },
@@ -491,15 +494,24 @@ class _PadsScreenState extends State<PadsScreen> {
             if (mounted) setState(() {});
           },
         ),
-        // Held, not tapped: while ROLL is down every pad you touch repeats
-        // in 16th notes, and touching another pad walks the fill across.
+        // Held, not tapped: while ROLL is down every pad you touch repeats at
+        // its division, and touching another pad walks the fill across.
+        //
+        // AJUSTAR + tap changes that division instead of rolling, which is the
+        // same bargain the grid already makes: armed, the next touch settles
+        // the control rather than playing it.
         TransportAction(
           icon: Icons.repeat,
-          label: 'Roll',
+          label: 'Roll ${c.rollLabel}',
           active: c.isRolling,
-          onTap: () {},
-          onPressStart: () => setState(c.startRoll),
-          onPressEnd: () => setState(c.stopRoll),
+          onTap: _editArmed
+              ? () => setState(() {
+                    c.cycleRollDivision();
+                    _editArmed = false;
+                  })
+              : () {},
+          onPressStart: _editArmed ? null : () => setState(c.startRoll),
+          onPressEnd: _editArmed ? null : () => setState(c.stopRoll),
         ),
         TransportAction(
           icon: Icons.grid_view,
@@ -522,13 +534,22 @@ class _PadsScreenState extends State<PadsScreen> {
             if (mounted) setState(() {});
           },
         ),
+        // One button, two gestures: tap silences the pad, holding it solos it.
+        // With a solo up the caption says so — otherwise a solo left on in
+        // another bank would read as an instrument that stopped working.
         TransportAction(
-          icon: Icons.volume_off_outlined,
-          label: 'Mute',
-          active: pad?.muted ?? false,
-          onTap: slot == null
-              ? () => _notYet('Elige un pad para silenciarlo')
-              : () => setState(() => c.toggleMute(slot)),
+          icon: c.isSoloActive
+              ? Icons.headphones_outlined
+              : Icons.volume_off_outlined,
+          label: c.isSoloActive ? 'Solo' : 'Mute',
+          active: c.isSoloActive || (pad?.muted ?? false),
+          // Lit and reading SOLO, a tap lifts it — including a solo left on a
+          // pad in another bank, which is otherwise unreachable from here.
+          onTap: c.isSoloActive
+              ? () => setState(c.clearSolo)
+              : slot == null
+                  ? () => _notYet('Elige un pad para silenciarlo')
+                  : () => setState(() => c.toggleMute(slot)),
           onLongPress: slot == null ? null : () => setState(() => c.toggleSolo(slot)),
         ),
         // The laser dot belongs to the sequencer and only to the sequencer.

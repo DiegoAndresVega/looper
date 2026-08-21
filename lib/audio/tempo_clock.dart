@@ -17,6 +17,23 @@ ElapsedReader _stopwatchReader() {
   return () => watch.elapsedMilliseconds;
 }
 
+/// Milliseconds of one 16th note at [bpm]. The single definition of the grid:
+/// the clock, the roll and anything else that repeats in time read it here so
+/// they can never disagree about where a step falls.
+double stepMsAt(int bpm) => 60000 / bpm / kStepsPerBeat;
+
+/// How often the roll retriggers, in [steps] sixteenth notes per hit.
+///
+/// Kept in microseconds because a 16th at 220 BPM is 68 ms: rounding to whole
+/// milliseconds would drag the fill behind the grid it is played over.
+Duration rollIntervalFor({required int bpm, required int steps}) =>
+    Duration(microseconds: (stepMsAt(bpm) * steps * 1000).round());
+
+/// How a roll division reads on a button: the note value it repeats at.
+/// The instrument is 4/4 throughout, so a bar is a whole note and the
+/// denominator is simply how many of these fit in one.
+String rollDivisionLabel(int steps) => '1/${kStepsPerBar ~/ steps}';
+
 /// One entry in the clock: something that fires every [steps] sixteenth notes,
 /// counting from [startStep] of the shared grid.
 class _ClockEntry {
@@ -56,7 +73,7 @@ class TempoClock {
   bool get hasEntries => _entries.isNotEmpty;
 
   /// Milliseconds per 16th note at the current tempo.
-  double get stepMs => 60000 / _bpm / kStepsPerBeat;
+  double get stepMs => stepMsAt(_bpm);
 
   /// Where the grid is right now, in fractional 16th notes since the downbeat.
   /// It is read off the step index rather than off raw milliseconds so that

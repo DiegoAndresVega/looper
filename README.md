@@ -135,6 +135,26 @@ Los trozos caen en el primer banco con esos pads libres **seguidos**, buscando
 C, D, A y B en ese orden: lo tuyo primero, el kit de fábrica lo último que se
 pisa. Si no hay sitio seguido en ninguno, no corta y lo dice.
 
+## La rejilla como escala
+
+Elige un pad, abre la solapa **ESCALA** de la franja y enciende **TECLADO**: los
+dieciséis pads dejan de ser dieciséis sonidos y pasan a ser dieciséis grados de
+una escala, tocando ese sonido a esas alturas. Cada pad dice qué nota es.
+
+La escala está bloqueada, así que **no hay nota falsa posible** — que es la
+promesa del README aplicada a la melodía en vez de al ritmo. Seis escalas: las
+dos pentatónicas, que no pueden sonar mal; mayor, menor y dórica; y cromática
+para cuando la escala estorba. Tónica, escala y octava viajan con la sesión,
+como el tempo; qué pad la toca, no.
+
+Al pasarse del último grado sigue una octava más arriba en vez de parar, así que
+una pentatónica de cinco grados cubre tres octavas en la grilla. Eso es lo que
+hace que suene a solo y no a ejercicio.
+
+Dos reglas que sostienen esto: **tocar una nota no cambia el pad elegido** —si
+no, la franja dejaría de apuntar al sonido que está sonando— y **el teclado se
+apaga al cambiar de banco**, porque la rejilla es siempre el banco que se ve.
+
 ## Rescatar lo que acaba de sonar
 
 Mientras el instrumento está en pantalla, la app **siempre tiene guardada la
@@ -319,6 +339,7 @@ Funcionando:
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
+- La rejilla como escala: seis escalas, tónica y octava
 - Rescatar los últimos cuatro compases del máster a un pad
 - Cortar un sonido a los pads: por transitorios, en 8 o en 16
 - Deshacer hasta veinte pasos: vaciar pad, cambiar sonido y borrar patrón

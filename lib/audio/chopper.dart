@@ -128,7 +128,10 @@ List<Sound> chopSound({
         name: '${source.name} ${i + 1}',
         family: source.family,
         fileName: source.fileName,
-        origin: source.origin,
+        // Always yours, whatever it was cut from. Inheriting the origin made
+        // chops of a factory sound undeletable and filed them under «Kit»,
+        // which is not where something you made an hour ago belongs.
+        origin: SoundOrigin.recorded,
         durationMs: source.durationMs,
         sizeBytes: source.sizeBytes,
         trimStartMs: origin + slices[i].startMs,

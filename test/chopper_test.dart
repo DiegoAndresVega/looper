@@ -296,4 +296,54 @@ void main() {
       expect(hueco?.slot, 1, reason: 'sigue habiendo quince seguidos detrás');
     });
   });
+
+  group('de quién son los trozos', () {
+    Sound factorySound() => Sound(
+          id: 'f',
+          name: 'Vinilo',
+          family: SoundFamily.texture,
+          fileName: 'vinilo.wav',
+          origin: SoundOrigin.factory_,
+          durationMs: 800,
+          sizeBytes: 1,
+        );
+
+    test('un corte es tuyo aunque salga del kit de fábrica', () {
+      // Heredar el origen dejaba los cortes sin botón de borrar y listados
+      // bajo «Kit», que no es donde va algo que acabas de hacer.
+      final trozos = chopSound(
+        source: factorySound(),
+        slices: sliceEvenly(durationMs: 800, count: 4),
+        idFor: (i) => 'c$i',
+      );
+
+      for (final t in trozos) {
+        expect(t.origin, SoundOrigin.recorded);
+      }
+    });
+
+    test('sigue apuntando al fichero de fábrica, sin copiarlo', () {
+      final trozos = chopSound(
+        source: factorySound(),
+        slices: sliceEvenly(durationMs: 800, count: 2),
+        idFor: (i) => 'c$i',
+      );
+
+      expect(trozos.first.fileName, 'vinilo.wav');
+    });
+
+    test('borrar un corte no puede llevarse el fichero de fábrica', () {
+      // El sonido de origen sigue en la biblioteca, así que el fichero no
+      // está huérfano por mucho que se borre un trozo.
+      final origen = factorySound();
+      final trozos = chopSound(
+        source: origen,
+        slices: sliceEvenly(durationMs: 800, count: 2),
+        idFor: (i) => 'c$i',
+      );
+
+      final quedan = [origen, trozos[1]];
+      expect(isFileOrphaned('vinilo.wav', quedan), isFalse);
+    });
+  });
 }

@@ -16,6 +16,7 @@ import '../data/session_store.dart';
 import '../data/sound_library.dart';
 import '../data/storage.dart';
 import 'sequencer.dart';
+import 'undo_stack.dart';
 import '../domain/pad_config.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
@@ -95,11 +96,22 @@ class SessionController extends ChangeNotifier {
   /// The last one-shot fired by each pad, kept so the next tap can cut it.
   final Map<String, SoundHandle> _hits = {};
 
+  /// One step back for each destructive edit. Only the session goes in here:
+  /// deleting a sound from the library takes its file with it, and an undo
+  /// that restored a pad pointing at a file that no longer exists would be
+  /// worse than no undo at all.
+  final UndoStack<Session> _undo = UndoStack<Session>();
+
   Timer? _rollTimer;
   bool _metronome = false;
   Sound? _click;
 
   Session? get session => _session;
+
+  bool get canUndo => _undo.canUndo;
+
+  /// What the next undo would take back, for the button to say it out loud.
+  String? get undoLabel => _undo.topLabel;
   int get activeBank => _activeBank;
   int? get selectedSlot => _selectedSlot;
   int get bpm => _session?.bpm ?? kDefaultBpm;
@@ -151,6 +163,9 @@ class SessionController extends ChangeNotifier {
   Future<void> open(Session session) async {
     await stopAllLoops();
     _session = session;
+    // Steps back belong to the session they were taken in: undoing into
+    // another session's pads would be worse than not undoing at all.
+    _undo.clear();
     _clock.setBpm(session.bpm);
     _clock.swing = session.swing;
     _activeBank = 0;
@@ -175,6 +190,37 @@ class SessionController extends ChangeNotifier {
         }
       }
     }
+  }
+
+  /// Files the session as it stands before something destroys part of it.
+  /// Continuous controls — volume, pitch, accent — deliberately do not come
+  /// through here: they are undone by moving the knob back, and a snapshot per
+  /// frame of a drag would bury the edits that actually cannot be retyped.
+  void _remember(String label) {
+    final session = _session;
+    if (session == null) return;
+    _undo.push(session, label);
+  }
+
+  /// Steps back to the session as it was before the last destructive edit.
+  /// Returns what was taken back, so the screen can say so.
+  Future<String?> undo() async {
+    final entry = _undo.undo();
+    if (entry == null) return null;
+
+    _session = entry.state;
+    sequencer.load(
+      entry.state.patterns,
+      entry.state.activePattern,
+      chainLength: entry.state.chainLength,
+    );
+    _clock.setBpm(entry.state.bpm);
+    _clock.swing = entry.state.swing;
+    // A pad coming back may point at a sound no pad has held for a while.
+    await _preloadSession();
+    _touch();
+    notifyListeners();
+    return entry.label;
   }
 
   /// Marks the session as dirty. The write lands once the edits stop, so
@@ -402,6 +448,14 @@ class SessionController extends ChangeNotifier {
       chainLength: sequencer.chainLength,
     );
     _touch();
+  }
+
+  /// Wipes the pattern on screen, with a step back first: it is sixteen steps
+  /// of work and there is no other way to get them again.
+  void clearPattern() {
+    _remember('borrar el patrón');
+    sequencer.clearPattern();
+    notifyListeners();
   }
 
   /// Bars in the chain: 1 loops the pattern on screen, N walks P1..PN.
@@ -633,6 +687,14 @@ class SessionController extends ChangeNotifier {
   Future<void> updatePad(int bank, int slot, PadConfig pad) async {
     final session = _session;
     if (session == null) return;
+
+    // Only when the sound itself changes hands. Volume and pitch arrive here
+    // too and are not worth a step back.
+    final before = session.padAt(bank, slot);
+    if (before.soundId != pad.soundId) {
+      _remember(pad.isEmpty ? 'vaciar el pad' : 'cambiar el sonido del pad');
+    }
+
     final wasLooping = isLooping(bank, slot);
     if (wasLooping) await _stopLoop(padKey(bank, slot));
 
@@ -661,6 +723,9 @@ class SessionController extends ChangeNotifier {
       }
     }
     await _engine.unload(soundId);
+    // The file is gone. Any snapshot taken before this could put a pad back
+    // on a sound that no longer exists, so the history goes with it.
+    _undo.clear();
     _touch();
     notifyListeners();
   }

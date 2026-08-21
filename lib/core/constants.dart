@@ -81,6 +81,11 @@ const int kMaxStepDots = 4;
 /// is there to bound it at all, not because twenty is expensive.
 const int kUndoLimit = 20;
 
+/// How much of the master is always kept in reach. Thirty seconds of stereo
+/// at 44.1 kHz is about five megabytes — cheap enough to hold forever, long
+/// enough to cover the loop you just played and liked.
+const int kSkipBackSeconds = 30;
+
 /// The click sits under the music: loud enough to follow, never to lead.
 const double kMetronomeVolume = 0.55;
 

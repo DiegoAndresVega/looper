@@ -86,6 +86,11 @@ const int kUndoLimit = 20;
 /// enough to cover the loop you just played and liked.
 const int kSkipBackSeconds = 30;
 
+/// The note the first pad answers to. 36 is C1 in the convention Akai,
+/// Novation and the M-Vave all share, so a pad controller works the moment it
+/// is plugged in without anyone opening a settings screen.
+const int kMidiPadBaseNote = 36;
+
 /// The click sits under the music: loud enough to follow, never to lead.
 const double kMetronomeVolume = 0.55;
 

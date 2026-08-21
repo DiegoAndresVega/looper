@@ -42,10 +42,22 @@ El gesto decide cómo suena un pad; el pad no guarda ningún «modo».
 | Toque en un pad que está en loop | Lo apaga |
 | Mantener pulsado | Lo deja en loop, con una vibración corta al arrancar |
 | AJUSTAR y luego un pad | Abre la hoja del pad: cambiar sonido, sincronía, largo y vaciar |
+| AJUSTAR y luego ROLL | Cambia la división del roll entre corchea y semicorchea |
 
 AJUSTAR es el único estado modal del instrumento y dura un solo toque: al
 encenderlo la grilla entera se enciende en fósforo para avisar de que el
-siguiente toque no va a sonar.
+siguiente toque no va a sonar. El mismo trato vale fuera de la grilla: armado,
+el siguiente botón del transport se configura en vez de usarse.
+
+**El roll** se mantiene pulsado y repite el pad que toques. Su división se lee
+en el propio botón (ROLL 1/8, ROLL 1/16) y cambiarla mientras rueda retima el
+fill sobre la marcha.
+
+**Silenciar y solo** comparten botón: un toque silencia el pad elegido, mantener
+pulsado lo pone en solo. El solo no escribe nada en los demás pads —manda
+mientras está puesto y al quitarlo vuelven exactamente los silencios que
+hubieras puesto a mano—. Con un solo activo el botón lo dice, aunque el pad esté
+en otro banco, y tocarlo lo levanta.
 
 ## El secuenciador de dieciséis pasos
 
@@ -66,11 +78,27 @@ siempre cuentan la verdad.
 
 Hay dos maneras de escribir, las mismas que trae una caja de ritmos:
 
-- **En vivo (GRABAR):** cada pad que tocas cae en el paso actual y el cabezal
-  avanza solo. Los pads que toques casi a la vez se quedan en el mismo paso, así
-  que un acorde sigue siendo un acorde. SILENCIO avanza dejando el paso vacío.
+- **En vivo (REC):** primero suena **un compás de cuenta atrás** —cuatro clics,
+  con acento en el uno, aunque el metrónomo esté apagado— y solo entonces
+  empieza a escribir, desde el paso uno. Cada pad que tocas cae en el paso
+  actual y el cabezal avanza solo. Los pads que toques casi a la vez se quedan
+  en el mismo paso, así que un acorde sigue siendo un acorde. SILENCIO avanza
+  dejando el paso vacío. Volver a pulsar REC durante la cuenta la cancela.
 - **Dirigida:** mantén pulsado un pad para elegir *su* paso; a partir de ahí
   cada pad pone o quita su nota en ese paso y nada avanza hasta que tú quieras.
+
+Cada paso guarda además **con qué fuerza pega**. Con un paso elegido, la barra
+del secuenciador cambia el texto de estado por un deslizador de ACENTO, y los
+pads dibujan esa fuerza como una barra en su borde inferior: dieciséis barras
+seguidas se leen como la dinámica del compás escrita. Un patrón donde todos los
+golpes pegan igual suena a máquina; esto es lo que lo devuelve a una mano.
+
+El **swing** vive en la misma barra, como tres sensaciones con nombre en vez de
+un número: RECTO, SUAVE y TRESILLO. Es la regla que inventó el MPC-60 en 1988 —
+retrasar solo las semicorcheas pares— y tiene una propiedad que conviene no
+romper: cada par sigue sumando lo mismo, así que las negras no se mueven y ni el
+metrónomo ni un bucle de una negra o más se enteran de que hay swing puesto. El
+swing viaja con la sesión, como el tempo.
 
 El patrón corre sobre el mismo reloj de semicorcheas que los loops
 sincronizados, así que nunca se separa de ellos, y cambiar el tempo no lo corta.
@@ -228,13 +256,17 @@ Funcionando:
 - Biblioteca con editor: recorte, tono, volumen, familia, borrar e importar WAV
 - Lista de sesiones: abrir, crear, renombrar, duplicar y borrar
 - Grabar la interpretación y compartir el WAV
-- Roll manteniendo pulsado y metrónomo
+- Roll manteniendo pulsado, en corcheas o semicorcheas
+- Metrónomo con acento en el uno del compás
 - Secuenciador de dieciséis pasos con dieciséis patrones, grabación en vivo y
   edición paso a paso
 
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
+- Swing por sesión: recto, suave o tresillo
+- Acento por paso, con barra en el pad y deslizador en la barra
+- Compás de cuenta atrás antes de escribir el patrón
 - Licencias de código abierto desde la lista de sesiones
 - Logo e iconos generados por código (`tool/make_icon.py`)
 

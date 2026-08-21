@@ -23,6 +23,7 @@ import '../data/storage.dart';
 import 'sequencer.dart';
 import 'undo_stack.dart';
 import '../domain/pad_config.dart';
+import '../domain/scale.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
 
@@ -390,6 +391,9 @@ class SessionController extends ChangeNotifier {
 
   void selectBank(int index) {
     if (index == _activeBank) return;
+    // The grid is always the bank on screen: a keyboard sourced from a pad in
+    // another bank would leave every pad here playing something invisible.
+    _scaleSource = null;
     _activeBank = index;
     _selectedSlot = null;
     notifyListeners();
@@ -412,6 +416,15 @@ class SessionController extends ChangeNotifier {
   /// it fires again, so hitting the pad in a rhythm plays that rhythm. On a
   /// pad that is already looping, the tap switches the loop off.
   void tapPad(int slot) {
+    // A pad played as a note does not become the selected pad: the surface
+    // has to keep pointing at the sound being played, not at the last key hit.
+    final source = _scaleSource;
+    if (source != null && !padAt(source).isEmpty) {
+      _fireOnce(_activeBank, source, transpose: scaleSemitonesFor(slot));
+      notifyListeners();
+      return;
+    }
+
     _selectedSlot = slot;
     final pad = padAt(slot);
     if (pad.isEmpty) {
@@ -446,6 +459,12 @@ class SessionController extends ChangeNotifier {
   /// A long press leaves the pad looping. Holding again does nothing: the way
   /// out is a tap, the same finger that started it.
   void holdPad(int slot) {
+    // As a keyboard the pads are notes, and a note held is still just a note:
+    // looping one degree of a scale is a different feature, not this one.
+    if (_scaleSource != null) {
+      tapPad(slot);
+      return;
+    }
     _selectedSlot = slot;
 
     // With the sequencer on, the grid doubles as the sixteen steps: holding a
@@ -468,12 +487,23 @@ class SessionController extends ChangeNotifier {
   /// Fires a pad once. A new hit cuts the previous one from the same pad, so
   /// fast tapping reads as a roll instead of piling voices on top of one
   /// another. Loops are untouched: they have their own handle.
-  void _fireOnce(int bank, int slot, {double velocity = kVelocityMax}) {
+  void _fireOnce(
+    int bank,
+    int slot, {
+    double velocity = kVelocityMax,
+    int transpose = 0,
+  }) {
     final pad = _session!.banks[bank].pads[slot];
     final sound = _library.byId(pad.soundId);
     if (sound == null || _isSilenced(bank, slot, pad)) return;
 
-    final key = padKey(bank, slot);
+    // The transposition is part of the voice's identity: without it, playing
+    // a C and then an E on the same source sound would cut the C off, and the
+    // grid-as-keyboard would come out monophonic. Repeating the *same* note
+    // still cuts its own previous hit, which is what the kit does too.
+    final key = transpose == 0
+        ? padKey(bank, slot)
+        : '${padKey(bank, slot)}@$transpose';
     final previous = _hits.remove(key);
     if (previous != null) {
       _engine.stopHandle(previous);
@@ -482,15 +512,67 @@ class SessionController extends ChangeNotifier {
     final handle = _engine.fire(
       sound,
       volume: pad.volume * sound.volume * velocity,
-      rate: sound.playbackRate * _rateFor(pad),
+      rate: sound.playbackRate * _rateFor(pad) * _rateForSemitones(transpose),
     );
     if (handle != null) _hits[key] = handle;
   }
 
   /// Tape-style: the pad's own pitch offset stacks on the sound's.
-  double _rateFor(PadConfig pad) => pad.semitones == 0
-      ? 1.0
-      : math.pow(2, pad.semitones / 12.0).toDouble();
+  double _rateFor(PadConfig pad) => _rateForSemitones(pad.semitones);
+
+  double _rateForSemitones(int semitones) =>
+      semitones == 0 ? 1.0 : math.pow(2, semitones / 12.0).toDouble();
+
+  // ------------------------------------------------------------- scale mode
+
+  /// The pad whose sound the grid is playing as a scale, or null when the
+  /// grid is a kit again. Which pad it is belongs to the performance, not to
+  /// the session: the scale and key are saved, the finger on them is not.
+  int? _scaleSource;
+
+  bool get isScaleOn => _scaleSource != null;
+  int? get scaleSource => _scaleSource;
+
+  Scale get scale => _session?.scale ?? Scale.pentatonicMinor;
+  int get scaleRoot => _session?.root ?? 0;
+  int get scaleOctave => _session?.octave ?? 0;
+
+  /// Turns the grid into a keyboard playing [slot]'s sound. Passing the pad
+  /// already sourcing it, or null, hands the grid back to the kit.
+  void toggleScale(int? slot) {
+    if (slot == null || slot == _scaleSource || padAt(slot).isEmpty) {
+      _scaleSource = null;
+    } else {
+      _scaleSource = slot;
+    }
+    notifyListeners();
+  }
+
+  /// How far above the root the pad at [slot] plays right now.
+  int scaleSemitonesFor(int slot) => semitonesForPad(
+        slot,
+        scale: scale,
+        root: scaleRoot,
+        octave: scaleOctave,
+      );
+
+  /// What that pad should be called while the grid is a keyboard.
+  String scaleLabelFor(int slot) =>
+      padLabel(scaleSemitonesFor(slot), root: scaleRoot);
+
+  void setScale(Scale value) => _setKey(scale: value);
+
+  void setScaleRoot(int value) => _setKey(root: value % 12);
+
+  void setScaleOctave(int value) => _setKey(octave: value.clamp(-2, 2));
+
+  void _setKey({Scale? scale, int? root, int? octave}) {
+    final session = _session;
+    if (session == null) return;
+    _session = session.copyWith(scale: scale, root: root, octave: octave);
+    _touch();
+    notifyListeners();
+  }
 
   /// Whether this pad is silent right now. The rule itself lives in the
   /// domain, next to [PadConfig], because it is the half worth testing.

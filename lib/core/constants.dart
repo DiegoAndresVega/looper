@@ -76,6 +76,11 @@ const double kVelocityMax = 1.0;
 /// «a lot», which is all the number is for at that point.
 const int kMaxStepDots = 4;
 
+/// How many steps back the instrument remembers. Every entry is a snapshot of
+/// an immutable session, so the cost is references rather than data; the cap
+/// is there to bound it at all, not because twenty is expensive.
+const int kUndoLimit = 20;
+
 /// The click sits under the music: loud enough to follow, never to lead.
 const double kMetronomeVolume = 0.55;
 

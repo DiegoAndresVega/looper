@@ -7,7 +7,7 @@ import 'package:looper/state/sequencer.dart';
   final fired = <Set<String>>[];
   final saves = <int>[];
   final seq = Sequencer(
-    onNotes: (notes, _) => fired.add(notes),
+    onNotes: (play) => fired.add(play.notes),
     onPatternsChanged: () => saves.add(1),
     chordWindow: const Duration(milliseconds: 20),
   );

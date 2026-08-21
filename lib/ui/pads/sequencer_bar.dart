@@ -4,10 +4,15 @@ import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 
+/// The four things a selected step can say about itself. One slider serves
+/// them all — tapping its label cycles through — so editing a step never
+/// costs the screen more than one row.
+enum _StepParam { accent, probability, nudge, ratchet }
+
 /// The sequencer's own controls, only on screen while SEQ is lit. Everything
 /// about the pattern that is not a pad lives here: transport, the rest key,
 /// wiping it and which of the sixteen patterns is loaded.
-class SequencerBar extends StatelessWidget {
+class SequencerBar extends StatefulWidget {
   const SequencerBar({
     super.key,
     required this.isPlaying,
@@ -19,10 +24,17 @@ class SequencerBar extends StatelessWidget {
     required this.chainLength,
     required this.swing,
     required this.editingVelocity,
+    required this.editingProbability,
+    required this.editingNudge,
+    required this.editingRatchet,
     required this.isCountingIn,
     required this.countInBeat,
     required this.onSwing,
     required this.onVelocity,
+    required this.onProbability,
+    required this.onNudge,
+    required this.onRatchet,
+    required this.onCopyPattern,
     required this.onPlay,
     required this.onRecord,
     required this.onRest,
@@ -47,12 +59,24 @@ class SequencerBar extends StatelessWidget {
   /// How hard the step being edited hits, 0..1.
   final double editingVelocity;
 
+  /// The other three layers of the step being edited.
+  final double editingProbability;
+  final double editingNudge;
+  final int editingRatchet;
+
   /// True during the courtesy bar between pressing REC and writing starting.
   final bool isCountingIn;
   final int countInBeat;
 
   final ValueChanged<double> onSwing;
   final ValueChanged<double> onVelocity;
+  final ValueChanged<double> onProbability;
+  final ValueChanged<double> onNudge;
+  final ValueChanged<int> onRatchet;
+
+  /// A long press on the pattern label lifts the pattern; where it lands is
+  /// the screen's business.
+  final VoidCallback onCopyPattern;
 
   final VoidCallback onPlay;
   final VoidCallback onRecord;
@@ -65,6 +89,13 @@ class SequencerBar extends StatelessWidget {
   static const List<int> _chainChoices = [1, 2, 4, 8, 16];
 
   @override
+  State<SequencerBar> createState() => _SequencerBarState();
+}
+
+class _SequencerBarState extends State<SequencerBar> {
+  _StepParam _param = _StepParam.accent;
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 9),
@@ -72,7 +103,7 @@ class SequencerBar extends StatelessWidget {
         color: Palette.panel,
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: isRecording || isCountingIn ? Palette.rec : Palette.line,
+          color: widget.isRecording || widget.isCountingIn ? Palette.rec : Palette.line,
         ),
       ),
       child: Column(
@@ -85,11 +116,12 @@ class SequencerBar extends StatelessWidget {
               const SizedBox(width: 5),
               _swingPill(),
               const SizedBox(width: 8),
-              // The accent slider takes the status line's place while a step
+              // The step slider takes the status line's place while a step
               // is selected: the screen never grows, and what is under the
-              // thumb is what is being used.
+              // thumb is what is being used. Tapping its label walks through
+              // the four layers of the step.
               Expanded(
-                child: editingStep == null ? _status() : _accentSlider(),
+                child: widget.editingStep == null ? _status() : _stepSlider(),
               ),
             ],
           ),
@@ -98,10 +130,10 @@ class SequencerBar extends StatelessWidget {
             children: [
               Expanded(
                 child: _button(
-                  label: isPlaying ? 'Stop' : 'Play',
-                  icon: isPlaying ? Icons.stop : Icons.play_arrow,
-                  active: isPlaying,
-                  onTap: onPlay,
+                  label: widget.isPlaying ? 'Stop' : 'Play',
+                  icon: widget.isPlaying ? Icons.stop : Icons.play_arrow,
+                  active: widget.isPlaying,
+                  onTap: widget.onPlay,
                 ),
               ),
               const SizedBox(width: 6),
@@ -109,11 +141,11 @@ class SequencerBar extends StatelessWidget {
               // pattern. Nothing else wears them.
               Expanded(
                 child: _button(
-                  label: isCountingIn ? '$countInBeat…' : 'Rec',
+                  label: widget.isCountingIn ? '$widget.countInBeat…' : 'Rec',
                   icon: Icons.fiber_manual_record,
-                  active: isRecording || isCountingIn,
+                  active: widget.isRecording || widget.isCountingIn,
                   danger: true,
-                  onTap: onRecord,
+                  onTap: widget.onRecord,
                 ),
               ),
               const SizedBox(width: 6),
@@ -122,8 +154,8 @@ class SequencerBar extends StatelessWidget {
                   label: 'Silencio',
                   icon: Icons.skip_next,
                   active: false,
-                  enabled: isRecording,
-                  onTap: onRest,
+                  enabled: widget.isRecording,
+                  onTap: widget.onRest,
                 ),
               ),
               const SizedBox(width: 6),
@@ -132,8 +164,8 @@ class SequencerBar extends StatelessWidget {
                   label: 'Borrar',
                   icon: Icons.backspace_outlined,
                   active: false,
-                  enabled: filledSteps > 0,
-                  onTap: onClear,
+                  enabled: widget.filledSteps > 0,
+                  onTap: widget.onClear,
                 ),
               ),
             ],
@@ -150,17 +182,20 @@ class SequencerBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _arrow(Icons.chevron_left,
-            () => onPattern((patternIndex - 1) % kPatternCount)),
-        SizedBox(
-          width: 34,
-          child: Text(
-            'P${patternIndex + 1}',
-            textAlign: TextAlign.center,
-            style: Brand.readout(13, weight: 700),
+            () => widget.onPattern((widget.patternIndex - 1) % kPatternCount)),
+        GestureDetector(
+          onLongPress: widget.onCopyPattern,
+          child: SizedBox(
+            width: 34,
+            child: Text(
+              'P${widget.patternIndex + 1}',
+              textAlign: TextAlign.center,
+              style: Brand.readout(13, weight: 700),
+            ),
           ),
         ),
         _arrow(Icons.chevron_right,
-            () => onPattern((patternIndex + 1) % kPatternCount)),
+            () => widget.onPattern((widget.patternIndex + 1) % kPatternCount)),
       ],
     );
   }
@@ -168,13 +203,13 @@ class SequencerBar extends StatelessWidget {
   /// One tap moves to the next musical length: 1, 2, 4, 8, 16 bars and back
   /// to 1. Lit while a real chain is on.
   Widget _chainPill() {
-    final active = chainLength > 1;
+    final active = widget.chainLength > 1;
     return GestureDetector(
       onTap: () {
-        final at = _chainChoices.indexOf(chainLength);
+        final at = SequencerBar._chainChoices.indexOf(widget.chainLength);
         final next =
-            _chainChoices[(at + 1) % _chainChoices.length];
-        onChain(next);
+            SequencerBar._chainChoices[(at + 1) % SequencerBar._chainChoices.length];
+        widget.onChain(next);
       },
       child: Container(
         height: 26,
@@ -186,7 +221,7 @@ class SequencerBar extends StatelessWidget {
           border: Border.all(color: active ? Palette.accent : Palette.line),
         ),
         child: Text(
-          '$chainLength ${chainLength == 1 ? 'compás' : 'compases'}'
+          '$widget.chainLength ${widget.chainLength == 1 ? 'compás' : 'compases'}'
               .toUpperCase(),
           style: Brand.label(
             8,
@@ -209,7 +244,7 @@ class SequencerBar extends StatelessWidget {
     const names = ['Recto', 'Suave', 'Tresillo'];
 
     return GestureDetector(
-      onTap: () => onSwing(kSwingMarks[(at + 1) % kSwingMarks.length]),
+      onTap: () => widget.onSwing(kSwingMarks[(at + 1) % kSwingMarks.length]),
       child: Container(
         height: 26,
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -233,28 +268,81 @@ class SequencerBar extends StatelessWidget {
     );
   }
 
-  /// Which named feel the session's swing is sitting on. Stored as a number,
+  /// Which named feel the session's widget.swing is sitting on. Stored as a number,
   /// so it is matched rather than looked up.
   int _nearestSwing() {
     var best = 0;
     for (var i = 1; i < kSwingMarks.length; i++) {
-      if ((kSwingMarks[i] - swing).abs() < (kSwingMarks[best] - swing).abs()) {
+      if ((kSwingMarks[i] - widget.swing).abs() < (kSwingMarks[best] - widget.swing).abs()) {
         best = i;
       }
     }
     return best;
   }
 
-  /// How hard the selected step hits. Full strength is the default, so the
-  /// slider reads as pulling a step back rather than pushing one forward.
-  Widget _accentSlider() {
+  /// One slider, four meanings: acento, probabilidad, micro y ratchet.
+  /// Tapping the label cycles through them, so a step's whole voice fits in
+  /// the row the status line already occupied.
+  Widget _stepSlider() {
+    final (label, display, value, min, max, divisions, onChanged) =
+        switch (_param) {
+      _StepParam.accent => (
+          'ACENTO',
+          '${(widget.editingVelocity * 100).round()}',
+          widget.editingVelocity.clamp(kVelocityMin, kVelocityMax),
+          kVelocityMin,
+          kVelocityMax,
+          null,
+          widget.onVelocity,
+        ),
+      _StepParam.probability => (
+          'PROB',
+          '${(widget.editingProbability * 100).round()}%',
+          widget.editingProbability.clamp(kProbabilityMin, 1.0),
+          kProbabilityMin,
+          1.0,
+          null,
+          widget.onProbability,
+        ),
+      _StepParam.nudge => (
+          'MICRO',
+          _nudgeDisplay(widget.editingNudge),
+          widget.editingNudge.clamp(-kNudgeMax, kNudgeMax),
+          -kNudgeMax,
+          kNudgeMax,
+          // Snapped to 5 % of a step, so «a tiempo» is reachable by feel.
+          20,
+          widget.onNudge,
+        ),
+      _StepParam.ratchet => (
+          'RATCHET',
+          '×${widget.editingRatchet}',
+          widget.editingRatchet.toDouble(),
+          1.0,
+          kRatchetMax.toDouble(),
+          kRatchetMax - 1,
+          (double v) => widget.onRatchet(v.round()),
+        ),
+    };
+
     return Row(
       children: [
-        // The step number, not the word «acento»: the slider takes the status
-        // line's place, so it has to keep saying which step is being edited.
-        Text(
-          'PASO ${(editingStep ?? 0) + 1}',
-          style: Brand.label(7.5, width: 75, weight: 700, color: Palette.ink),
+        // The step number plus which layer this slider is set to. Tapping it
+        // moves to the next layer.
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() {
+            final all = _StepParam.values;
+            _param = all[(all.indexOf(_param) + 1) % all.length];
+          }),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text(
+              'P${(widget.editingStep ?? 0) + 1} · $label ▸',
+              style:
+                  Brand.label(7.5, width: 75, weight: 700, color: Palette.ink),
+            ),
+          ),
         ),
         Expanded(
           child: SliderTheme(
@@ -267,23 +355,31 @@ class SequencerBar extends StatelessWidget {
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
             ),
             child: Slider(
-              value: editingVelocity.clamp(kVelocityMin, kVelocityMax),
-              min: kVelocityMin,
-              max: kVelocityMax,
-              onChanged: onVelocity,
+              value: value,
+              min: min,
+              max: max,
+              divisions: divisions,
+              onChanged: onChanged,
             ),
           ),
         ),
         SizedBox(
-          width: 30,
+          width: 34,
           child: Text(
-            '${(editingVelocity * 100).round()}',
+            display,
             textAlign: TextAlign.right,
-            style: Brand.readout(11, weight: 700, color: Palette.accent),
+            style: Brand.readout(10, weight: 700, color: Palette.accent),
           ),
         ),
       ],
     );
+  }
+
+  /// Early is a minus, late a plus, and zero reads as the machine it is.
+  String _nudgeDisplay(double nudge) {
+    final pct = (nudge * 100).round();
+    if (pct == 0) return '0';
+    return pct > 0 ? '+$pct' : '$pct';
   }
 
   Widget _arrow(IconData icon, VoidCallback onTap) {
@@ -304,24 +400,24 @@ class SequencerBar extends StatelessWidget {
   Widget _status() {
     final String text;
     final Color color;
-    if (isCountingIn) {
-      text = 'Preparado… entra en $countInBeat de $kStepsPerBeat';
+    if (widget.isCountingIn) {
+      text = 'Preparado… entra en $widget.countInBeat de $kStepsPerBeat';
       color = Palette.rec;
-    } else if (editingStep != null) {
-      text = 'Editando el paso ${editingStep! + 1} · toca pads para ponerlos';
+    } else if (widget.editingStep != null) {
+      text = 'Editando el paso ${widget.editingStep! + 1} · toca pads para ponerlos';
       color = Palette.ink;
-    } else if (isRecording) {
-      text = 'Escribiendo el paso ${currentStep + 1} de $kPatternSteps';
+    } else if (widget.isRecording) {
+      text = 'Escribiendo el paso ${widget.currentStep + 1} de $kPatternSteps';
       color = Palette.rec;
-    } else if (isPlaying) {
-      text = chainLength > 1
-          ? 'P${patternIndex + 1} de $chainLength · paso ${currentStep + 1}'
-          : 'Paso ${currentStep + 1} · $filledSteps con notas';
+    } else if (widget.isPlaying) {
+      text = widget.chainLength > 1
+          ? 'P${widget.patternIndex + 1} de $widget.chainLength · paso ${widget.currentStep + 1}'
+          : 'Paso ${widget.currentStep + 1} · $widget.filledSteps con notas';
       color = Palette.accent;
     } else {
-      text = filledSteps == 0
+      text = widget.filledSteps == 0
           ? 'Patrón vacío · mantén un pad para escribir en su paso'
-          : '$filledSteps pasos con notas';
+          : '$widget.filledSteps pasos con notas';
       color = Palette.inkDim;
     }
 

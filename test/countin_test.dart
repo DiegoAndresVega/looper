@@ -29,7 +29,7 @@ void main() {
 
   group('la cuenta atrás antes de escribir', () {
     Sequencer buildSequencer() => Sequencer(
-          onNotes: (_, _) {},
+          onNotes: (_) {},
           onPatternsChanged: () {},
         )..load([Pattern.empty()], 0);
 

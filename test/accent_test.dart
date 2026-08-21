@@ -159,10 +159,9 @@ void main() {
 
   group('el secuenciador toca con la fuerza del paso', () {
     test('entrega la fuerza del paso junto a sus notas', () {
-      final oidos = <({Set<String> notes, double velocity})>[];
+      final oidos = <StepPlay>[];
       final seq = Sequencer(
-        onNotes: (notes, velocity) =>
-            oidos.add((notes: notes, velocity: velocity)),
+        onNotes: oidos.add,
         onPatternsChanged: () {},
       );
 
@@ -186,7 +185,7 @@ void main() {
     test('escribe el acento en el paso que se está editando', () {
       var guardado = 0;
       final seq = Sequencer(
-        onNotes: (_, _) {},
+        onNotes: (_) {},
         onPatternsChanged: () => guardado++,
       );
       seq.load([Pattern.empty()], 0);
@@ -200,7 +199,7 @@ void main() {
     });
 
     test('sin paso en edición no escribe nada', () {
-      final seq = Sequencer(onNotes: (_, _) {}, onPatternsChanged: () {});
+      final seq = Sequencer(onNotes: (_) {}, onPatternsChanged: () {});
       seq.load([Pattern.empty()], 0);
 
       seq.setStepVelocity(0.2);

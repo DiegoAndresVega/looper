@@ -18,6 +18,7 @@ class PadSheet extends StatefulWidget {
     required this.sounds,
     required this.onChanged,
     required this.onPreview,
+    required this.onCopy,
   });
 
   final String title;
@@ -25,6 +26,9 @@ class PadSheet extends StatefulWidget {
   final List<Sound> sounds;
   final ValueChanged<PadConfig> onChanged;
   final ValueChanged<Sound> onPreview;
+
+  /// Lifts this pad — sound and settings — to be dropped on another one.
+  final VoidCallback onCopy;
 
   @override
   State<PadSheet> createState() => _PadSheetState();
@@ -98,6 +102,23 @@ class _PadSheetState extends State<PadSheet> {
         Expanded(
           child: Text(widget.title, style: Brand.title(16)),
         ),
+        if (!_pad.isEmpty) ...[
+          GestureDetector(
+            onTap: widget.onCopy,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: Palette.line),
+              ),
+              child: Text(
+                'COPIAR',
+                style: Brand.label(8.5, weight: 700, color: Palette.ink),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
         if (!_pad.isEmpty)
           GestureDetector(
             onTap: () => _apply(_pad.copyWith(clearSound: true)),

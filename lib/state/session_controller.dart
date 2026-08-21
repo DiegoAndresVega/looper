@@ -23,7 +23,9 @@ import '../data/storage.dart';
 import 'sequencer.dart';
 import 'undo_stack.dart';
 import '../domain/pad_config.dart';
+import '../domain/pattern.dart';
 import '../domain/midi.dart';
+import '../domain/save_point.dart';
 import '../domain/scale.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
@@ -514,6 +516,7 @@ class SessionController extends ChangeNotifier {
       sound,
       volume: pad.volume * sound.volume * velocity,
       rate: sound.playbackRate * _rateFor(pad) * _rateForSemitones(transpose),
+      pan: pad.pan,
     );
     if (handle != null) _hits[key] = handle;
   }
@@ -661,6 +664,7 @@ class SessionController extends ChangeNotifier {
         volume: _isSilenced(bank, slot, pad) ? 0 : pad.volume * sound.volume,
         rate: sound.playbackRate * _rateFor(pad),
         looping: true,
+        pan: pad.pan,
       );
       _loops[key] = ActiveLoop(bank: bank, slot: slot, handle: handle, synced: false);
     }
@@ -702,13 +706,52 @@ class SessionController extends ChangeNotifier {
 
   // ------------------------------------------------------------ sequencer
 
-  /// Plays every note of a step at the strength the step carries. A rest
-  /// arrives here as an empty set and correctly does nothing.
-  void _fireNotes(Set<String> notes, double velocity) {
-    for (final note in notes) {
-      final target = parsePadKey(note);
-      if (target == null) continue;
-      _fireOnce(target.bank, target.slot, velocity: velocity);
+  /// Timers holding back nudged notes and the tail of a ratchet. Cancelled
+  /// whenever the transport stops, so nothing straggles into the silence.
+  final Set<Timer> _stepTimers = {};
+
+  void _cancelStepTimers() {
+    for (final timer in _stepTimers) {
+      timer.cancel();
+    }
+    _stepTimers.clear();
+  }
+
+  void _afterStepDelay(double offsetSteps, void Function() fire) {
+    if (offsetSteps <= 0) {
+      fire();
+      return;
+    }
+    late final Timer timer;
+    timer = Timer(
+      Duration(microseconds: (offsetSteps * _clock.stepMs * 1000).round()),
+      () {
+        _stepTimers.remove(timer);
+        fire();
+      },
+    );
+    _stepTimers.add(timer);
+  }
+
+  /// Plays one step as the sequencer wrote it: after its nudge, at its
+  /// strength, subdivided into its ratchet. A rest arrives here as an empty
+  /// set and correctly does nothing.
+  void _fireNotes(StepPlay play) {
+    if (play.notes.isEmpty) return;
+
+    void fireAll() {
+      for (final note in play.notes) {
+        final target = parsePadKey(note);
+        if (target == null) continue;
+        _fireOnce(target.bank, target.slot, velocity: play.velocity);
+      }
+    }
+
+    _afterStepDelay(play.offsetSteps, fireAll);
+    // The extra hits of a ratchet split the step evenly: two hits are
+    // thirty-seconds, four are sixty-fourths of a bar.
+    for (var hit = 1; hit < play.ratchet; hit++) {
+      _afterStepDelay(play.offsetSteps + hit / play.ratchet, fireAll);
     }
   }
 
@@ -739,6 +782,7 @@ class SessionController extends ChangeNotifier {
   }
 
   void toggleSequencer() {
+    _cancelStepTimers();
     sequencer.toggleOn();
     if (!sequencer.isOn) _clock.remove(kSequencerKey);
     notifyListeners();
@@ -747,6 +791,7 @@ class SessionController extends ChangeNotifier {
   /// Play and stop for the pattern. The clock entry is what makes it run, so
   /// it is added and removed here rather than inside the sequencer.
   void toggleSequencerPlay() {
+    _cancelStepTimers();
     sequencer.togglePlay();
     if (sequencer.isPlaying) {
       // It ticks every step, but its first step waits for a bar line: that is
@@ -778,6 +823,89 @@ class SessionController extends ChangeNotifier {
 
   void setStepVelocity(double velocity) {
     sequencer.setStepVelocity(velocity);
+    notifyListeners();
+  }
+
+  void setStepProbability(double value) {
+    sequencer.setStepProbability(value);
+    notifyListeners();
+  }
+
+  void setStepNudge(double value) {
+    sequencer.setStepNudge(value);
+    notifyListeners();
+  }
+
+  void setStepRatchet(int value) {
+    sequencer.setStepRatchet(value);
+    notifyListeners();
+  }
+
+  /// Puts a snapshot's contents back on the session that is open, and brings
+  /// the instrument with them: the sequencer reloads its patterns, the clock
+  /// takes the restored tempo and swing.
+  ///
+  /// It goes through undo like any other destructive edit, so restoring the
+  /// wrong point is one tap away from being undone.
+  Future<void> restore(SavePoint point) async {
+    final session = _session;
+    if (session == null) return;
+
+    _remember('restaurar «${point.name}»');
+    await stopAllLoops();
+    _session = point.restoreOnto(session);
+    sequencer.load(
+      _session!.patterns,
+      _session!.activePattern,
+      chainLength: _session!.chainLength,
+    );
+    _clock.setBpm(_session!.bpm);
+    _clock.swing = _session!.swing;
+    _scaleSource = null;
+    await _preloadSession();
+    _touch();
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------------- clipboard
+
+  /// One pad and one pattern, held to be put down somewhere else. They are
+  /// performance state: copying is for building the next bar, not something a
+  /// session needs to remember overnight.
+  PadConfig? _padClipboard;
+  Pattern? _patternClipboard;
+
+  bool get hasPadCopied => _padClipboard != null;
+  bool get hasPatternCopied => _patternClipboard != null;
+
+  /// Lifts the pad — sound and settings both — without arming anything.
+  /// Where it lands is the screen's business.
+  void copyPad(int slot) {
+    final pad = padAt(slot);
+    if (pad.isEmpty) return;
+    _padClipboard = pad;
+    notifyListeners();
+  }
+
+  Future<void> pastePad(int slot) async {
+    final pad = _padClipboard;
+    if (pad == null) return;
+    _remember('pegar un pad');
+    await updatePad(_activeBank, slot, pad, remember: false);
+  }
+
+  void copyPattern() {
+    _patternClipboard = sequencer.pattern;
+    notifyListeners();
+  }
+
+  /// Drops the copied pattern onto whichever one is on screen now. The
+  /// clipboard survives, so one bar can seed several.
+  void pastePattern() {
+    final copied = _patternClipboard;
+    if (copied == null) return;
+    _remember('pegar el patrón');
+    sequencer.replacePattern(copied);
     notifyListeners();
   }
 
@@ -851,6 +979,7 @@ class SessionController extends ChangeNotifier {
     _rollHeld = false;
     _rollTarget = null;
     _midiSubscription?.cancel();
+    _cancelStepTimers();
     _rollTimer?.cancel();
     _rollTimer = null;
     notifyListeners();
@@ -958,14 +1087,15 @@ class SessionController extends ChangeNotifier {
   }
 
   /// Long press target: replaces the pad wholesale.
-  Future<void> updatePad(int bank, int slot, PadConfig pad) async {
+  Future<void> updatePad(int bank, int slot, PadConfig pad,
+      {bool remember = true}) async {
     final session = _session;
     if (session == null) return;
 
     // Only when the sound itself changes hands. Volume and pitch arrive here
     // too and are not worth a step back.
     final before = session.padAt(bank, slot);
-    if (before.soundId != pad.soundId) {
+    if (remember && before.soundId != pad.soundId) {
       _remember(pad.isEmpty ? 'vaciar el pad' : 'cambiar el sonido del pad');
     }
 
@@ -1064,6 +1194,8 @@ class SessionController extends ChangeNotifier {
         loop!.handle!,
         _isSilenced(bank, slot, pad) ? 0 : pad.volume * sound.volume,
       );
+      // Moving a running loop across the field is the point of the knob.
+      _engine.setHandlePan(loop.handle!, pad.pan);
     }
     _touch();
     notifyListeners();
@@ -1071,6 +1203,9 @@ class SessionController extends ChangeNotifier {
 
   void setPadVolume(int slot, double volume) =>
       _applyPadLive(_activeBank, slot, padAt(slot).copyWith(volume: volume));
+
+  void setPadPan(int slot, double pan) =>
+      _applyPadLive(_activeBank, slot, padAt(slot).copyWith(pan: pan));
 
   void setPadSemitones(int slot, int semitones) =>
       _applyPadLive(_activeBank, slot, padAt(slot).copyWith(semitones: semitones));

@@ -58,6 +58,10 @@ class _PadsScreenState extends State<PadsScreen> {
   /// grid says so out loud by lighting every pad as a target.
   bool _editArmed = false;
 
+  /// While armed, the next pad tapped receives the copied pad instead of
+  /// sounding. Same bargain as AJUSTAR: one modal state, one tap long.
+  bool _pasteArmed = false;
+
   SessionController get c => widget.controller;
 
   @override
@@ -276,6 +280,11 @@ class _PadsScreenState extends State<PadsScreen> {
   /// looping it switches the loop off. With AJUSTAR armed it opens the sheet
   /// instead, which is the one place a tap does not make a sound.
   void _tapPad(int slot) {
+    if (_pasteArmed) {
+      setState(() => _pasteArmed = false);
+      _pastePadOn(slot);
+      return;
+    }
     if (_editArmed) {
       setState(() => _editArmed = false);
       _openPadSheet(slot);
@@ -318,6 +327,11 @@ class _PadsScreenState extends State<PadsScreen> {
           if (!mounted || !soundChanged) return;
           _offerUndo(pad.isEmpty ? 'Pad vaciado' : 'Sonido cambiado');
         },
+        onCopy: () {
+          Navigator.of(context).pop();
+          c.copyPad(slot);
+          _armPastePad();
+        },
         onPreview: c.preview,
       ),
     );
@@ -348,7 +362,7 @@ class _PadsScreenState extends State<PadsScreen> {
   }
 
   PadVisualState _stateFor(int slot, PadConfig pad) {
-    if (_editArmed) return PadVisualState.target;
+    if (_editArmed || _pasteArmed) return PadVisualState.target;
     if (pad.isEmpty) return PadVisualState.empty;
     if (!c.isLooping(c.activeBank, slot)) return PadVisualState.loaded;
     return c.isQueued(c.activeBank, slot)
@@ -408,6 +422,21 @@ class _PadsScreenState extends State<PadsScreen> {
             value: (pad.semitones + 12) / 24,
             onChanged: (v) => setState(
                 () => c.setPadSemitones(slot, (v * 24 - 12).round())),
+          ),
+          KnobSpec(
+            label: 'Pan',
+            // L and R rather than a signed number: nobody thinks in −0,4.
+            display: pad.pan.abs() < 0.05
+                ? 'C'
+                : '${pad.pan < 0 ? 'L' : 'R'}${(pad.pan.abs() * 100).round()}',
+            value: (pad.pan + 1) / 2,
+            accent: pad.pan.abs() >= 0.05,
+            onChanged: (v) => setState(() {
+              final pan = v * 2 - 1;
+              // A dead zone in the middle: centre has to be findable with a
+              // thumb, and a pad two per cent off centre is centre.
+              c.setPadPan(slot, pan.abs() < 0.05 ? 0 : pan);
+            }),
           ),
           KnobSpec(
             label: 'Mute',
@@ -575,10 +604,17 @@ class _PadsScreenState extends State<PadsScreen> {
       chainLength: seq.chainLength,
       swing: c.swing,
       editingVelocity: seq.editingVelocity,
+      editingProbability: seq.editingProbability,
+      editingNudge: seq.editingNudge,
+      editingRatchet: seq.editingRatchet,
       isCountingIn: seq.isCountingIn,
       countInBeat: seq.countInBeat,
       onSwing: (v) => setState(() => c.setSwing(v)),
       onVelocity: (v) => setState(() => c.setStepVelocity(v)),
+      onProbability: (v) => setState(() => c.setStepProbability(v)),
+      onNudge: (v) => setState(() => c.setStepNudge(v)),
+      onRatchet: (v) => setState(() => c.setStepRatchet(v)),
+      onCopyPattern: _copyPattern,
       onPlay: () => setState(c.toggleSequencerPlay),
       onRecord: () async {
         await c.toggleSequencerRecord();
@@ -786,6 +822,60 @@ class _PadsScreenState extends State<PadsScreen> {
                   '${(landed.slot + 1).toString().padLeft(2, '0')}'),
           backgroundColor: Palette.panelHigh,
           duration: const Duration(seconds: 3),
+        ),
+      );
+  }
+
+  /// Copying a pad: the sheet lifts it, this arms the grid, and the next tap
+  /// puts it down. The snackbar is the way out for a copy started by mistake.
+  void _armPastePad() {
+    setState(() => _pasteArmed = true);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Pad copiado · toca el pad de destino'),
+          backgroundColor: Palette.panelHigh,
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: 'CANCELAR',
+            textColor: Palette.accent,
+            onPressed: () {
+              if (mounted) setState(() => _pasteArmed = false);
+            },
+          ),
+        ),
+      );
+  }
+
+  Future<void> _pastePadOn(int slot) async {
+    await c.pastePad(slot);
+    if (!mounted) return;
+    setState(() {});
+    _offerUndo('Pad pegado');
+  }
+
+  /// Copying a pattern: lift it here, walk to the destination with the
+  /// arrows, and PEGAR drops it on whatever pattern is on screen then.
+  void _copyPattern() {
+    c.copyPattern();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('P${c.sequencer.patternIndex + 1} copiado · '
+              've al patrón de destino'),
+          backgroundColor: Palette.panelHigh,
+          duration: const Duration(seconds: 10),
+          action: SnackBarAction(
+            label: 'PEGAR',
+            textColor: Palette.accent,
+            onPressed: () {
+              c.pastePattern();
+              if (mounted) setState(() {});
+              _offerUndo('Patrón pegado en P${c.sequencer.patternIndex + 1}');
+            },
+          ),
         ),
       );
   }

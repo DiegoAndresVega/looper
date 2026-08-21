@@ -14,6 +14,7 @@ import 'domain/sound.dart';
 import 'state/session_controller.dart';
 import 'ui/library/library_screen.dart';
 import 'data/midi_service.dart';
+import 'data/save_point_store.dart';
 import 'ui/midi/midi_screen.dart';
 import 'ui/pads/pads_screen.dart';
 import 'ui/sampler/sampler_screen.dart';
@@ -120,6 +121,7 @@ class _BootState extends State<Boot> {
   final AudioEngine _engine = AudioEngine();
   SessionController? _controller;
   Storage? _storage;
+  SavePointStore? _savePoints;
   final MidiService _midi = MidiService();
   SoundLibrary? _library;
   SessionStore? _store;
@@ -145,6 +147,8 @@ class _BootState extends State<Boot> {
 
       final store = SessionStore(storage);
       await store.load();
+      final savePoints = SavePointStore(storage);
+      await savePoints.load();
       final session = await store.firstOrCreate(library);
 
       final controller = SessionController(
@@ -157,6 +161,7 @@ class _BootState extends State<Boot> {
       if (!mounted) return;
       setState(() {
         _storage = storage;
+        _savePoints = savePoints;
         _library = library;
         _store = store;
         _controller = controller;
@@ -334,8 +339,13 @@ class _BootState extends State<Boot> {
     final controller = _controller;
     final store = _store;
     final library = _library;
+    final savePoints = _savePoints;
     final current = controller?.session;
-    if (controller == null || store == null || library == null || current == null) {
+    if (controller == null ||
+        store == null ||
+        library == null ||
+        savePoints == null ||
+        current == null) {
       return;
     }
 
@@ -348,6 +358,9 @@ class _BootState extends State<Boot> {
           store: store,
           library: library,
           currentId: current.id,
+          savePoints: savePoints,
+          currentSession: current,
+          onRestore: controller.restore,
         ),
       ),
     );

@@ -33,6 +33,10 @@ class Storage {
   File get libraryIndex => File('${root.path}/library.json');
   File get sessionsIndex => File('${root.path}/sessions.json');
 
+  /// Named snapshots, kept apart from the sessions themselves so a session
+  /// file never carries eight copies of its own history.
+  File get savePointsIndex => File('${root.path}/savepoints.json');
+
   Future<void> _ensureLayout() async {
     for (final dir in [root, sounds, mixdowns]) {
       if (!await dir.exists()) {

@@ -66,9 +66,13 @@ que suenan en él —ninguna, una o varias a la vez— y un paso vacío es un
 silencio. Una sesión lleva dieciséis patrones independientes.
 
 Como la grilla tiene dieciséis pads, **el pad número N es el paso número N**:
-cada pad estrena una segunda luz en la esquina opuesta, que se enciende floja
-si ese paso tiene notas y fuerte cuando el cabezal pasa por encima. El patrón se
-lee en la propia grilla, sin robarle sitio a nada.
+cada pad estrena unas luces en la esquina opuesta, que se encienden flojas si
+ese paso tiene notas y fuerte cuando el cabezal pasa por encima. Son **una por
+sonido**, hasta cuatro: un paso con bombo y palma enciende dos, así que se ve
+de un vistazo dónde hay una sola voz y dónde hay un acorde. El paso que estás
+editando las lleva huecas, y conserva una aunque esté vacío para que elegir una
+casilla en silencio se vea. El patrón se lee en la propia grilla, sin robarle
+sitio a nada.
 
 Un compás se queda corto enseguida, y la solución es la de siempre —las Volca,
 la Circuit y el FM-1 encadenan patrones en vez de estirarlos—: el botón de

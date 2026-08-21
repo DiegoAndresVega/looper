@@ -250,9 +250,11 @@ class SequencerBar extends StatelessWidget {
   Widget _accentSlider() {
     return Row(
       children: [
+        // The step number, not the word «acento»: the slider takes the status
+        // line's place, so it has to keep saying which step is being edited.
         Text(
-          'ACENTO',
-          style: Brand.label(7.5, width: 75, weight: 700),
+          'PASO ${(editingStep ?? 0) + 1}',
+          style: Brand.label(7.5, width: 75, weight: 700, color: Palette.ink),
         ),
         Expanded(
           child: SliderTheme(

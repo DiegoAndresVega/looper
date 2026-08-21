@@ -135,6 +135,30 @@ Los trozos caen en el primer banco con esos pads libres **seguidos**, buscando
 C, D, A y B en ese orden: lo tuyo primero, el kit de fábrica lo último que se
 pisa. Si no hay sitio seguido en ninguno, no corta y lo dice.
 
+## Un controlador MIDI, sin configurar nada
+
+El icono del piano de arriba lista los controladores: los de USB ya están ahí,
+los de Bluetooth se buscan con un botón. Se enciende en fósforo mientras hay uno
+conectado, así que es también un indicador y no solo una puerta.
+
+**No hay mapeo que montar.** Las notas a partir del do grave —la 36, el C1 que
+comparten Akai, Novation y el M-Vave— tocan los dieciséis pads del banco que
+tengas delante, en orden. Enchufar y tocar.
+
+Una nota que llega del cable hace lo mismo que un dedo: suena el pad, entra en
+el patrón si el secuenciador está escribiendo, y toca su grado si el teclado
+está encendido. La velocidad del golpe llega como fuerza, escalada desde el
+suelo y no desde cero: muchos pads baratos mandan siempre 100, y ninguno puede
+quedarse a cuatro quintos para siempre. START y STOP mueven el secuenciador.
+
+El reloj MIDI se reconoce y se ignora a propósito: seguir el tempo de otro es
+una decisión más grande que esta. Los controles de mando esperan a MIDI learn.
+
+Lo que se puede probar sin cable —el protocolo entero, con sus dos trampas: un
+Note On de velocidad cero es un Note Off, y un paquete puede traer varios
+mensajes de los que solo el primero lleva cabecera— vive en `domain/midi.dart`
+y está cubierto.
+
 ## La rejilla como escala
 
 Elige un pad, abre la solapa **ESCALA** de la franja y enciende **TECLADO**: los
@@ -339,6 +363,7 @@ Funcionando:
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
 - Cadena de patrones de 1 a 16 compases
+- Controlador MIDI por USB y Bluetooth, sin mapeo que configurar
 - La rejilla como escala: seis escalas, tónica y octava
 - Rescatar los últimos cuatro compases del máster a un pad
 - Cortar un sonido a los pads: por transitorios, en 8 o en 16
@@ -356,8 +381,10 @@ Pendiente:
 
 ## Fuera de alcance
 
-Colaboración, nube y cuentas, tienda de sonidos, MIDI externo, automatización
-por pistas y mezclador multipista completo.
+Colaboración, nube y cuentas, tienda de sonidos, automatización por pistas y
+mezclador multipista completo.
+
+*MIDI externo salió de esta lista el 2026-08-21: entra de verdad.*
 
 ## Notas de compilación
 

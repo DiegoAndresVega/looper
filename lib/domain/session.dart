@@ -82,6 +82,28 @@ class Session {
     return null;
   }
 
+  /// A copy of this session under a new identity. Everything else travels:
+  /// banks, patterns, tempo and how many bars the chain runs.
+  ///
+  /// It lives here, next to [copyWith], because the first version of this
+  /// listed the fields at the call site and quietly forgot [chainLength] — a
+  /// duplicated eight-bar session came back playing one. A field added to the
+  /// class now has to be added inches away from where a copy is made.
+  Session duplicateAs({required String id, required String name}) {
+    final now = DateTime.now();
+    return Session(
+      id: id,
+      name: name,
+      bpm: bpm,
+      banks: banks,
+      patterns: patterns,
+      activePattern: activePattern,
+      chainLength: chainLength,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
   Session copyWith({
     String? name,
     int? bpm,

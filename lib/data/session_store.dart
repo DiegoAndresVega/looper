@@ -62,15 +62,9 @@ class SessionStore extends ChangeNotifier {
   }
 
   Future<Session> duplicate(Session source) async {
-    final copy = Session(
+    final copy = source.duplicateAs(
       id: _uuid.v4(),
       name: '${source.name} copia',
-      bpm: source.bpm,
-      banks: source.banks,
-      patterns: source.patterns,
-      activePattern: source.activePattern,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
     );
     await save(copy);
     return copy;

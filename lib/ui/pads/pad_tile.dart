@@ -42,12 +42,18 @@ class PadTile extends StatefulWidget {
     required this.onTap,
     required this.onLongPress,
     this.stepLight = StepLight.off,
+    this.accent,
   });
 
   final PadConfig pad;
   final Sound? sound;
   final PadVisualState state;
   final StepLight stepLight;
+
+  /// How hard this pad's step hits, 0..1, or null when the sequencer is not
+  /// on or the step carries no notes. Drawn as a bar along the bottom edge:
+  /// sixteen of them read as the shape of the bar at a glance.
+  final double? accent;
 
   /// 0..1 around the border while looping.
   final double progress;
@@ -123,6 +129,7 @@ class _PadTileState extends State<PadTile> {
                   ),
                 if (!_isEmpty) _modeDot(color, looping),
                 if (widget.stepLight != StepLight.off) _stepDot(),
+                if (widget.accent != null) _accentBar(widget.accent!),
                 _label(),
                 if (widget.state == PadVisualState.blocked)
                   const Center(
@@ -186,6 +193,25 @@ class _PadTileState extends State<PadTile> {
           boxShadow: playing
               ? [BoxShadow(color: color.withValues(alpha: 0.45), spreadRadius: 3.5)]
               : null,
+        ),
+      ),
+    );
+  }
+
+  /// The accent, along the bottom edge. Full strength fills the width, so a
+  /// row of pads reads like the dynamics of the bar written out.
+  Widget _accentBar(double value) {
+    return Positioned(
+      left: 8,
+      right: 8,
+      bottom: 5,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(2),
+        child: LinearProgressIndicator(
+          value: value.clamp(0.0, 1.0),
+          minHeight: 2.5,
+          backgroundColor: Palette.lineLive,
+          valueColor: const AlwaysStoppedAnimation<Color>(Palette.accent),
         ),
       ),
     );

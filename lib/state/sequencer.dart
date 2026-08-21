@@ -24,9 +24,10 @@ class Sequencer extends ChangeNotifier {
     this.chordWindow = kChordWindow,
   });
 
-  /// Fires every note of a step. An empty set is a rest, and must stay silent
-  /// rather than repeating whatever sounded last.
-  final void Function(Set<String> notes) onNotes;
+  /// Fires every note of a step at the strength that step was written with.
+  /// An empty set is a rest, and must stay silent rather than repeating
+  /// whatever sounded last.
+  final void Function(Set<String> notes, double velocity) onNotes;
 
   /// The patterns changed and the session should be written to disk.
   final VoidCallback onPatternsChanged;
@@ -42,6 +43,11 @@ class Sequencer extends ChangeNotifier {
   bool _playing = false;
   bool _recording = false;
 
+  /// Steps left of the courtesy bar before writing actually begins, or null
+  /// when nothing is being counted. A groovebox gives you a bar to get your
+  /// hand ready; this app used to start writing under the finger.
+  int? _countIn;
+
   /// Where the head is. Starts at -1 on play so the first tick lands on 0.
   int _step = 0;
   int? _editingStep;
@@ -50,6 +56,18 @@ class Sequencer extends ChangeNotifier {
   bool get isOn => _on;
   bool get isPlaying => _playing;
   bool get isRecording => _recording;
+
+  /// True during the courtesy bar: armed, audible, not yet writing.
+  bool get isCountingIn => _countIn != null;
+
+  /// Which beat of the count-in is going by, 1..4. Something to read while
+  /// waiting, so the bar does not feel like the app hung.
+  int get countInBeat {
+    final left = _countIn;
+    if (left == null) return 1;
+    final gone = kStepsPerBar - left;
+    return gone ~/ kStepsPerBeat + 1;
+  }
   int get currentStep => _step < 0 ? 0 : _step;
   int? get editingStep => _editingStep;
   int get patternIndex => _index;
@@ -97,6 +115,7 @@ class Sequencer extends ChangeNotifier {
 
   void togglePlay() {
     _cancelChord();
+    _countIn = null;
     if (_playing) {
       _playing = false;
       _step = 0;
@@ -112,14 +131,20 @@ class Sequencer extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Arms writing. The first press starts a bar of count-in rather than
+  /// writing straight away; pressing again during that bar calls it off.
   void toggleRecord() {
     _cancelChord();
-    _recording = !_recording;
-    if (_recording) {
-      _playing = false;
-      _editingStep = null;
-      _step = 0;
+    if (_recording || _countIn != null) {
+      _recording = false;
+      _countIn = null;
+      notifyListeners();
+      return;
     }
+    _playing = false;
+    _editingStep = null;
+    _step = 0;
+    _countIn = kStepsPerBar;
     notifyListeners();
   }
 
@@ -174,6 +199,19 @@ class Sequencer extends ChangeNotifier {
 
   void clearStep(int step) => _write(pattern.clearedStep(step));
 
+  /// Sets how hard the step being edited hits. Only meaningful while a step is
+  /// selected by hand — the accent belongs to a step you are pointing at, not
+  /// to wherever the write head happens to be.
+  void setStepVelocity(double velocity) {
+    final step = _editingStep;
+    if (step == null) return;
+    _write(pattern.withVelocity(step, velocity));
+  }
+
+  /// How hard the step being edited hits, or full when none is selected.
+  double get editingVelocity =>
+      _editingStep == null ? kVelocityMax : pattern.velocityAt(_editingStep!);
+
   void clearPattern() => _write(pattern.cleared());
 
   void _write(Pattern next) {
@@ -187,6 +225,20 @@ class Sequencer extends ChangeNotifier {
   /// One 16th note went by. Called from the tempo clock so the pattern rides
   /// the same grid as the synced loops.
   void tick() {
+    final counting = _countIn;
+    if (counting != null) {
+      final left = counting - 1;
+      if (left <= 0) {
+        // The bar is up: the head sits on step one, ready for the first hit.
+        _countIn = null;
+        _recording = true;
+        _step = 0;
+      } else {
+        _countIn = left;
+      }
+      notifyListeners();
+      return;
+    }
     if (!_playing) return;
     final wrapped = _step == kPatternSteps - 1;
     if (wrapped && _chainLength > 1) {
@@ -195,7 +247,7 @@ class Sequencer extends ChangeNotifier {
       _index = (_index + 1) % _chainLength;
     }
     _advance();
-    onNotes(pattern.at(_step));
+    onNotes(pattern.at(_step), pattern.velocityAt(_step));
     notifyListeners();
   }
 
@@ -203,6 +255,7 @@ class Sequencer extends ChangeNotifier {
 
   void _stopEverything() {
     _cancelChord();
+    _countIn = null;
     _playing = false;
     _recording = false;
     _editingStep = null;

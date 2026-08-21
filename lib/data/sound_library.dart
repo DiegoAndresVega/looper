@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../audio/voices.dart';
+import '../audio/chopper.dart';
 import '../audio/wav_decoder.dart';
 import '../audio/wav_encoder.dart';
 import '../core/constants.dart';
@@ -42,6 +43,8 @@ class SoundLibrary extends ChangeNotifier {
 
   final Storage _storage;
   final Map<String, Sound> _byId = {};
+  /// Keyed by file name, not by sound id: a chop is many sounds over one
+  /// file, and the shape being drawn is the file's.
   final Map<String, Float32List> _peaks = {};
   int _sizeBytes = 0;
 
@@ -110,19 +113,51 @@ class SoundLibrary extends ChangeNotifier {
     return sound;
   }
 
+  /// Registers several at once. A chop adds sixteen sounds, and going through
+  /// [add] for each would rewrite the index and re-measure the folder sixteen
+  /// times over.
+  Future<void> addAll(Iterable<Sound> sounds) async {
+    for (final sound in sounds) {
+      _byId[sound.id] = sound;
+    }
+    _sizeBytes = await _storage.librarySizeBytes();
+    await _persist();
+    notifyListeners();
+  }
+
+  /// A one-off envelope at whatever resolution the caller needs, uncached.
+  ///
+  /// The drawing envelope is 96 buckets, which is plenty for a waveform and
+  /// far too coarse to find hits in: on a sixty-second import each bucket
+  /// covers half a second. Onset detection asks for its own.
+  Future<Float32List> detailedPeaksFor(Sound sound, int buckets) async {
+    final file = _storage.soundFile(sound.fileName);
+    if (!await file.exists()) return Float32List(buckets);
+    try {
+      final decoded = decodeWav(await file.readAsBytes());
+      return peakEnvelope(decoded.samples, buckets);
+    } on WavFormatException catch (e) {
+      debugPrint('No se pudo analizar ${sound.name}: $e');
+      return Float32List(buckets);
+    }
+  }
+
   Future<void> update(Sound sound) async {
     _byId[sound.id] = sound;
     await _persist();
     notifyListeners();
   }
 
+  /// Forgets a sound, and deletes its file only when nothing else points at
+  /// it. Chops are several sounds sharing one file, so deleting one of them
+  /// used to pull the audio out from under its siblings.
   Future<void> remove(String id) async {
     final sound = _byId.remove(id);
-    _peaks.remove(id);
     if (sound == null) return;
     final file = _storage.soundFile(sound.fileName);
-    if (await file.exists()) {
-      await file.delete();
+    if (isFileOrphaned(sound.fileName, _byId.values)) {
+      _peaks.remove(sound.fileName);
+      if (await file.exists()) await file.delete();
     }
     _sizeBytes = await _storage.librarySizeBytes();
     await _persist();
@@ -134,7 +169,7 @@ class SoundLibrary extends ChangeNotifier {
   /// The shape of a sound, for drawing. Read from disk once and kept, because
   /// the editor asks for the same sound on every frame of a drag.
   Future<Float32List> peaksFor(Sound sound) async {
-    final cached = _peaks[sound.id];
+    final cached = _peaks[sound.fileName];
     if (cached != null) return cached;
 
     final file = _storage.soundFile(sound.fileName);
@@ -142,7 +177,7 @@ class SoundLibrary extends ChangeNotifier {
     try {
       final decoded = decodeWav(await file.readAsBytes());
       final peaks = peakEnvelope(decoded.samples, kWaveformBuckets);
-      _peaks[sound.id] = peaks;
+      _peaks[sound.fileName] = peaks;
       return peaks;
     } on WavFormatException catch (e) {
       debugPrint('No se pudo dibujar ${sound.name}: $e');

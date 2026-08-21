@@ -7,26 +7,50 @@ import '../core/constants.dart';
 /// Notes are pad keys ('bank:slot'), so a pattern can pull a kick from bank A
 /// and an acid line from bank B without caring which bank is on screen.
 class Pattern {
-  Pattern(List<Set<String>> steps, [List<double>? velocities])
-      : steps = List.unmodifiable([
+  Pattern(
+    List<Set<String>> steps, {
+    List<double>? velocities,
+    List<double>? probabilities,
+    List<double>? nudges,
+    List<int>? ratchets,
+  })  : steps = List.unmodifiable([
           for (var i = 0; i < kPatternSteps; i++)
             Set<String>.unmodifiable(i < steps.length ? steps[i] : const {}),
         ]),
-        velocities = List.unmodifiable([
-          for (var i = 0; i < kPatternSteps; i++)
-            velocities != null && i < velocities.length
-                ? velocities[i].clamp(kVelocityMin, kVelocityMax)
-                : kVelocityMax,
-        ]);
+        velocities = _layer(velocities, kVelocityMax,
+            (v) => v.clamp(kVelocityMin, kVelocityMax)),
+        probabilities = _layer(probabilities, 1.0,
+            (v) => v.clamp(kProbabilityMin, 1.0)),
+        nudges = _layer(nudges, 0.0, (v) => v.clamp(-kNudgeMax, kNudgeMax)),
+        ratchets = _layer(ratchets, 1, (v) => v.clamp(1, kRatchetMax));
+
+  /// Sixteen values that always exist, each clamped to its range. Every layer
+  /// follows this shape so a step never has to be asked whether it has one.
+  static List<T> _layer<T>(List<T>? raw, T fallback, T Function(T) clamp) =>
+      List.unmodifiable([
+        for (var i = 0; i < kPatternSteps; i++)
+          raw != null && i < raw.length ? clamp(raw[i]) : fallback,
+      ]);
 
   factory Pattern.empty() =>
       Pattern(List.generate(kPatternSteps, (_) => <String>{}));
 
   final List<Set<String>> steps;
 
-  /// How hard each step hits, 0..1. Sixteen values that always exist, so a
-  /// step never has to be asked whether it has an accent before it can play.
+  /// How hard each step hits, 0..1.
   final List<double> velocities;
+
+  /// How likely each step is to sound this time round, [kProbabilityMin]..1.
+  /// One means certain, and certain steps never roll the dice.
+  final List<double> probabilities;
+
+  /// How far off the grid each step plays, in fractions of a step. Negative
+  /// is early, positive is late, zero is the machine.
+  final List<double> nudges;
+
+  /// How many hits each step packs, 1..[kRatchetMax]. One is a normal step;
+  /// more subdivides it into a roll.
+  final List<int> ratchets;
 
   Set<String> at(int step) =>
       _isValid(step) ? steps[step] : const <String>{};
@@ -48,11 +72,45 @@ class Pattern {
   /// bother drawing accent bars at all.
   bool get hasAccents => velocities.any((v) => v < kVelocityMax);
 
-  Pattern withVelocity(int step, double velocity) {
-    if (!_isValid(step)) return this;
-    final next = List<double>.of(velocities);
-    next[step] = velocity.clamp(kVelocityMin, kVelocityMax);
-    return Pattern(steps, next);
+  double probabilityAt(int step) =>
+      _isValid(step) ? probabilities[step] : 1.0;
+
+  double nudgeAt(int step) => _isValid(step) ? nudges[step] : 0.0;
+
+  int ratchetAt(int step) => _isValid(step) ? ratchets[step] : 1;
+
+  Pattern withVelocity(int step, double velocity) => !_isValid(step)
+      ? this
+      : _withLayers(velocities: _put(velocities, step, velocity));
+
+  Pattern withProbability(int step, double probability) => !_isValid(step)
+      ? this
+      : _withLayers(probabilities: _put(probabilities, step, probability));
+
+  Pattern withNudge(int step, double nudge) => !_isValid(step)
+      ? this
+      : _withLayers(nudges: _put(nudges, step, nudge));
+
+  Pattern withRatchet(int step, int ratchet) => !_isValid(step)
+      ? this
+      : _withLayers(ratchets: _put(ratchets, step, ratchet));
+
+  static List<T> _put<T>(List<T> layer, int step, T value) =>
+      List<T>.of(layer)..[step] = value;
+
+  Pattern _withLayers({
+    List<double>? velocities,
+    List<double>? probabilities,
+    List<double>? nudges,
+    List<int>? ratchets,
+  }) {
+    return Pattern(
+      steps,
+      velocities: velocities ?? this.velocities,
+      probabilities: probabilities ?? this.probabilities,
+      nudges: nudges ?? this.nudges,
+      ratchets: ratchets ?? this.ratchets,
+    );
   }
 
   Pattern withNote(int step, String note) {
@@ -68,15 +126,19 @@ class Pattern {
   Pattern toggled(int step, String note) =>
       has(step, note) ? withoutNote(step, note) : withNote(step, note);
 
-  /// Emptying a step takes its accent with it: the next note written there
-  /// starts from full, not from whatever the last one was set to.
+  /// Emptying a step takes its layers with it: the next note written there
+  /// starts from neutral, not from whatever the last one was set to.
   Pattern clearedStep(int step) {
     if (!_isValid(step)) return this;
-    final nextVelocities = List<double>.of(velocities);
-    nextVelocities[step] = kVelocityMax;
     final nextSteps = List<Set<String>>.of(steps);
     nextSteps[step] = <String>{};
-    return Pattern(nextSteps, nextVelocities);
+    return Pattern(
+      nextSteps,
+      velocities: _put(velocities, step, kVelocityMax),
+      probabilities: _put(probabilities, step, 1.0),
+      nudges: _put(nudges, step, 0.0),
+      ratchets: _put(ratchets, step, 1),
+    );
   }
 
   Pattern cleared() => Pattern.empty();
@@ -84,7 +146,13 @@ class Pattern {
   Pattern _replace(int step, Set<String> notes) {
     final next = List<Set<String>>.of(steps);
     next[step] = notes;
-    return Pattern(next, velocities);
+    return Pattern(
+      next,
+      velocities: velocities,
+      probabilities: probabilities,
+      nudges: nudges,
+      ratchets: ratchets,
+    );
   }
 
   bool _isValid(int step) => step >= 0 && step < kPatternSteps;
@@ -92,6 +160,9 @@ class Pattern {
   Map<String, dynamic> toJson() => {
         'steps': steps.map((step) => step.toList()..sort()).toList(),
         'velocities': velocities,
+        'probabilities': probabilities,
+        'nudges': nudges,
+        'ratchets': ratchets,
       };
 
   /// Reads both shapes. Patterns written before accents existed are a bare
@@ -112,12 +183,25 @@ class Pattern {
       return Pattern.empty();
     }
 
+    List<double>? doubles(String key) => json is Map
+        ? (json[key] as List<dynamic>?)
+            ?.map((v) => (v as num).toDouble())
+            .toList()
+        : null;
+
     return Pattern(
       [
         for (final step in rawSteps)
           {...(step as List<dynamic>).map((note) => note as String)},
       ],
-      rawVelocities?.map((v) => (v as num).toDouble()).toList(),
+      velocities: rawVelocities?.map((v) => (v as num).toDouble()).toList(),
+      probabilities: doubles('probabilities'),
+      nudges: doubles('nudges'),
+      ratchets: json is Map
+          ? (json['ratchets'] as List<dynamic>?)
+              ?.map((v) => (v as num).toInt())
+              .toList()
+          : null,
     );
   }
 }

@@ -71,10 +71,27 @@ const List<double> kSwingMarks = [0.5, 0.58, 2 / 3];
 const double kVelocityMin = 0.1;
 const double kVelocityMax = 1.0;
 
+/// The floor of a step's chance of sounding. Zero would mean «nunca», and a
+/// step that never sounds is a step you meant to erase.
+const double kProbabilityMin = 0.1;
+
+/// How far a step can be pushed off the grid, in fractions of a step. Half a
+/// step in either direction: past that it stops being feel and becomes the
+/// neighbouring sixteenth.
+const double kNudgeMax = 0.5;
+
+/// The most hits a ratchet packs into one step. Four thirty-seconds in a
+/// sixteenth is already a buzz; more is a tone.
+const int kRatchetMax = 4;
+
 /// How many step lights fit in a pad's corner before they reach the family
 /// dot on the other side. A step with more voices than this still reads as
 /// «a lot», which is all the number is for at that point.
 const int kMaxStepDots = 4;
+
+/// How many named snapshots a session keeps. Eight covers an afternoon, and
+/// the cap is per session so filling one never eats another's.
+const int kSavePointsPerSession = 8;
 
 /// How many steps back the instrument remembers. Every entry is a snapshot of
 /// an immutable session, so the cost is references rather than data; the cap

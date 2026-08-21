@@ -2,8 +2,34 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'dart:math' as math;
+
 import '../core/constants.dart';
 import '../domain/pattern.dart';
+
+/// One step leaving the sequencer, with everything the engine needs to place
+/// it: the notes, how hard, how far off the grid, and into how many hits.
+///
+/// Offsets are fractions of a step rather than milliseconds so the sequencer
+/// stays ignorant of tempo — converting to time is the engine's business.
+class StepPlay {
+  const StepPlay({
+    required this.notes,
+    this.velocity = kVelocityMax,
+    this.offsetSteps = 0,
+    this.ratchet = 1,
+  });
+
+  final Set<String> notes;
+  final double velocity;
+
+  /// How long after its tick this fires, in steps. An early note carries the
+  /// offset from the *previous* tick, so it is always non-negative here.
+  final double offsetSteps;
+
+  /// How many evenly spaced hits this step packs.
+  final int ratchet;
+}
 
 /// The step sequencer, the way a groovebox does it: sixteen steps, sixteen
 /// patterns, and two ways of writing into them.
@@ -22,12 +48,17 @@ class Sequencer extends ChangeNotifier {
     required this.onNotes,
     required this.onPatternsChanged,
     this.chordWindow = kChordWindow,
-  });
+    double Function()? random,
+  }) : _random = random ?? math.Random().nextDouble;
 
-  /// Fires every note of a step at the strength that step was written with.
-  /// An empty set is a rest, and must stay silent rather than repeating
-  /// whatever sounded last.
-  final void Function(Set<String> notes, double velocity) onNotes;
+  /// Fires one step's worth of playing. An empty set is a rest, and must stay
+  /// silent rather than repeating whatever sounded last.
+  final void Function(StepPlay play) onNotes;
+
+  /// The dice for probability, injectable so tests can load them. Only rolled
+  /// for steps whose probability is below one: an untouched pattern never
+  /// consults chance at all.
+  final double Function() _random;
 
   /// The patterns changed and the session should be written to disk.
   final VoidCallback onPatternsChanged;
@@ -52,6 +83,10 @@ class Sequencer extends ChangeNotifier {
   int _step = 0;
   int? _editingStep;
   Timer? _chordTimer;
+
+  /// A step already sent out early by the previous tick — (pattern, step) —
+  /// so its own tick knows not to sound it again.
+  (int, int)? _firedEarly;
 
   bool get isOn => _on;
   bool get isPlaying => _playing;
@@ -116,6 +151,7 @@ class Sequencer extends ChangeNotifier {
   void togglePlay() {
     _cancelChord();
     _countIn = null;
+    _firedEarly = null;
     if (_playing) {
       _playing = false;
       _step = 0;
@@ -212,6 +248,33 @@ class Sequencer extends ChangeNotifier {
   double get editingVelocity =>
       _editingStep == null ? kVelocityMax : pattern.velocityAt(_editingStep!);
 
+  double get editingProbability =>
+      _editingStep == null ? 1.0 : pattern.probabilityAt(_editingStep!);
+
+  double get editingNudge =>
+      _editingStep == null ? 0.0 : pattern.nudgeAt(_editingStep!);
+
+  int get editingRatchet =>
+      _editingStep == null ? 1 : pattern.ratchetAt(_editingStep!);
+
+  void setStepProbability(double value) {
+    final step = _editingStep;
+    if (step != null) _write(pattern.withProbability(step, value));
+  }
+
+  void setStepNudge(double value) {
+    final step = _editingStep;
+    if (step != null) _write(pattern.withNudge(step, value));
+  }
+
+  void setStepRatchet(int value) {
+    final step = _editingStep;
+    if (step != null) _write(pattern.withRatchet(step, value));
+  }
+
+  /// Swaps the whole pattern on screen — how a copied pattern is pasted.
+  void replacePattern(Pattern next) => _write(next);
+
   void clearPattern() => _write(pattern.cleared());
 
   void _write(Pattern next) {
@@ -247,8 +310,51 @@ class Sequencer extends ChangeNotifier {
       _index = (_index + 1) % _chainLength;
     }
     _advance();
-    onNotes(pattern.at(_step), pattern.velocityAt(_step));
+
+    // This step — unless the previous tick already sent it out early.
+    final firedEarly = _firedEarly == (_index, _step);
+    _firedEarly = null;
+    if (!firedEarly) {
+      // A late step keeps its lag; an early one whose preview never happened
+      // (playback just started here) sounds on time rather than never.
+      final nudge = pattern.nudgeAt(_step);
+      _emit(pattern, _step, offsetSteps: nudge > 0 ? nudge : 0);
+    }
+
+    // One step of lookahead: a step pushed *early* has to leave on this tick,
+    // riding the remainder of it. Crossing the bar line follows the chain,
+    // so the first step of the next pattern can lean into this one.
+    final (nextPattern, nextStep) = _positionAfter();
+    final nextNudge = _patterns[nextPattern].nudgeAt(nextStep);
+    if (nextNudge < 0) {
+      _emit(_patterns[nextPattern], nextStep, offsetSteps: 1 + nextNudge);
+      _firedEarly = (nextPattern, nextStep);
+    }
     notifyListeners();
+  }
+
+  /// Where the head goes on the next tick, chain included.
+  (int, int) _positionAfter() {
+    final wrapped = _step == kPatternSteps - 1;
+    final nextStep = (_step + 1) % kPatternSteps;
+    final nextPattern =
+        wrapped && _chainLength > 1 ? (_index + 1) % _chainLength : _index;
+    return (nextPattern, nextStep);
+  }
+
+  /// Sends one step out, rolling the dice only when the step asks for it.
+  /// A lost roll goes out as a rest, so the listener still hears every tick.
+  void _emit(Pattern source, int step, {double offsetSteps = 0}) {
+    final probability = source.probabilityAt(step);
+    final silenced = source.at(step).isNotEmpty &&
+        probability < 1.0 &&
+        _random() > probability;
+    onNotes(StepPlay(
+      notes: silenced ? const {} : source.at(step),
+      velocity: source.velocityAt(step),
+      offsetSteps: offsetSteps,
+      ratchet: source.ratchetAt(step),
+    ));
   }
 
   void _advance() => _step = (_step + 1) % kPatternSteps;
@@ -256,6 +362,7 @@ class Sequencer extends ChangeNotifier {
   void _stopEverything() {
     _cancelChord();
     _countIn = null;
+    _firedEarly = null;
     _playing = false;
     _recording = false;
     _editingStep = null;

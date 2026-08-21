@@ -147,6 +147,10 @@ class _PadsScreenState extends State<PadsScreen> {
           _mixdownBadge(),
           const SizedBox(width: 8),
         ],
+        if (c.canUndo) ...[
+          _iconButton(Icons.undo, _undo),
+          const SizedBox(width: 6),
+        ],
         _iconButton(Icons.library_music_outlined, widget.onOpenLibrary),
         const SizedBox(width: 6),
         _iconButton(Icons.mic_none, widget.onOpenSampler),
@@ -279,7 +283,12 @@ class _PadsScreenState extends State<PadsScreen> {
         title: '${kBankIds[bank]} · ${(slot + 1).toString().padLeft(2, '0')}',
         pad: c.padAt(slot),
         sounds: c.librarySounds,
-        onChanged: (pad) => c.updatePad(bank, slot, pad),
+        onChanged: (pad) async {
+          final soundChanged = c.padAt(slot).soundId != pad.soundId;
+          await c.updatePad(bank, slot, pad);
+          if (!mounted || !soundChanged) return;
+          _offerUndo(pad.isEmpty ? 'Pad vaciado' : 'Sonido cambiado');
+        },
         onPreview: c.preview,
       ),
     );
@@ -495,7 +504,10 @@ class _PadsScreenState extends State<PadsScreen> {
         if (mounted) setState(() {});
       },
       onRest: () => setState(seq.rest),
-      onClear: () => setState(seq.clearPattern),
+      onClear: () {
+        setState(c.clearPattern);
+        _offerUndo('Patrón borrado');
+      },
       onPattern: (index) => setState(() => c.selectPattern(index)),
       onChain: (bars) => setState(() => c.setChainLength(bars)),
     );
@@ -627,6 +639,41 @@ class _PadsScreenState extends State<PadsScreen> {
     final minutes = elapsed.inMinutes;
     final seconds = elapsed.inSeconds % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  /// Says what just happened and keeps the way back within reach for a few
+  /// seconds. The button up top stays available long after this is gone —
+  /// this is here so the way back gets found in the first place.
+  void _offerUndo(String done) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(done),
+          backgroundColor: Palette.panelHigh,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'DESHACER',
+            textColor: Palette.accent,
+            onPressed: _undo,
+          ),
+        ),
+      );
+  }
+
+  Future<void> _undo() async {
+    final label = await c.undo();
+    if (label == null || !mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Deshecho: $label'),
+          backgroundColor: Palette.panelHigh,
+          duration: const Duration(milliseconds: 1800),
+        ),
+      );
   }
 
   void _notYet(String message) {

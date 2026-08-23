@@ -3,6 +3,8 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 import '../core/constants.dart';
 import '../domain/sound.dart';
+import 'family_fx.dart';
+import 'fx_curves.dart';
 import 'master_fx.dart';
 
 /// Thin wrapper over SoLoud. Everything the instrument needs to make noise,
@@ -14,6 +16,15 @@ class AudioEngine {
   /// Master volume and performance effects. Their state outlives the engine,
   /// which is torn down whenever the sampler needs the audio session.
   final MasterFx fx = MasterFx();
+
+  /// The four family buses and the reverb they share. Same deal: the knobs
+  /// outlive the engine, the buses themselves do not.
+  final FamilyFx buses = FamilyFx();
+
+  /// The send twin fired alongside a voice, and the gain it went out at, so a
+  /// pad that is stopped or muted stops feeding the reverb too. Only voices
+  /// with their family's send up are in here.
+  final Map<SoundHandle, ({SoundHandle handle, double gain})> _sends = {};
 
   bool _ready = false;
   bool get isReady => _ready;
@@ -32,6 +43,7 @@ class AudioEngine {
     _soloud.setMaxActiveVoiceCount(kMaxVoices);
     _ready = true;
     fx.apply();
+    buses.attach();
   }
 
   /// Frees the engine so the recorder can own the audio session. iOS refuses
@@ -41,6 +53,9 @@ class AudioEngine {
     if (!_ready) return;
     await stopAll();
     _sources.clear();
+    // Before the deinit, never after: destroying a bus reaches into the
+    // engine it belongs to.
+    buses.detach();
     _soloud.deinit();
     _ready = false;
   }
@@ -65,28 +80,98 @@ class AudioEngine {
   }
 
   /// Fires a sound once. Returns null when the source never loaded.
+  ///
+  /// The voice travels on its family's bus, so the family's filter and grit
+  /// colour it. Pass [dry] for the things that are not music — the click —
+  /// which go straight to the master and answer to no family.
+  ///
+  /// When the family's send is up, a twin of the same voice is fired into the
+  /// shared reverb at the send's gain. Only the dry handle comes back: the
+  /// twin is the engine's business, and it is stopped, faded and panned with
+  /// the voice it belongs to.
   SoundHandle? fire(
     Sound sound, {
     required double volume,
     required double rate,
     bool looping = false,
     double pan = 0,
+    bool dry = false,
   }) {
     final source = _sources[sound.id];
     if (source == null || !_ready) return null;
 
+    final handle = _start(
+      source,
+      sound,
+      bus: dry ? null : buses.busFor(sound.family),
+      volume: volume,
+      rate: rate,
+      looping: looping,
+      pan: pan,
+    );
+    if (handle == null) return null;
+
+    final reverb = buses.reverbBus;
+    // The share of the voice that goes to the reverb, kept as the ratio and
+    // not as the level: it is what the twin has to be re-scaled by whenever
+    // the voice it shadows is faded.
+    final share = dry ? 0.0 : buses.settingsFor(sound.family).sendVolume;
+    if (reverb != null && volume * share > kFxEpsilon) {
+      _pruneSends();
+      final twin = _start(
+        source,
+        sound,
+        bus: reverb,
+        volume: volume * share,
+        rate: rate,
+        looping: looping,
+        pan: pan,
+      );
+      if (twin != null) _sends[handle] = (handle: twin, gain: share);
+    }
+    return handle;
+  }
+
+  /// Starts one voice, on [bus] or straight on the engine when there is none.
+  /// Both the dry voice and its send twin come through here, so they can never
+  /// drift apart in trim, rate or pan.
+  SoundHandle? _start(
+    AudioSource source,
+    Sound sound, {
+    required Bus? bus,
+    required double volume,
+    required double rate,
+    required bool looping,
+    required double pan,
+  }) {
     final start = Duration(milliseconds: sound.trimStartMs);
     final end = sound.trimEndMs == null
         ? null
         : Duration(milliseconds: sound.trimEndMs!);
+    final level = volume.clamp(0.0, 1.0);
 
-    final handle = _soloud.play(
-      source,
-      volume: volume.clamp(0.0, 1.0),
-      looping: looping,
-      loopingStartAt: start,
-      loopingEndAt: end,
-    );
+    final SoundHandle handle;
+    try {
+      handle = bus == null
+          ? _soloud.play(
+              source,
+              volume: level,
+              looping: looping,
+              loopingStartAt: start,
+              loopingEndAt: end,
+            )
+          : bus.play(
+              source,
+              volume: level,
+              looping: looping,
+              loopingStartAt: start,
+              loopingEndAt: end,
+            );
+    } on SoLoudException catch (e) {
+      debugPrint('No se pudo disparar ${sound.name}: $e');
+      return null;
+    }
+
     if (rate != 1.0) {
       _soloud.setRelativePlaySpeed(handle, rate);
     }
@@ -109,9 +194,24 @@ class AudioEngine {
     return handle;
   }
 
+  /// Drops the pairs whose dry voice has already finished. One-shots end on
+  /// their own and nobody tells us, so the map is swept when it grows past
+  /// what the engine can even play at once — never on every hit, which would
+  /// put dozens of calls across the boundary in the middle of a roll.
+  void _pruneSends() {
+    if (_sends.length <= kMaxVoices) return;
+    _sends.removeWhere((dry, _) => !_soloud.getIsValidVoiceHandle(dry));
+  }
+
+  /// The twin follows: a loop muted while it runs would otherwise keep
+  /// feeding the reverb, and a muted pad you can still hear is not muted.
   void setHandleVolume(SoundHandle handle, double volume) {
     if (!_ready) return;
     _soloud.setVolume(handle, volume.clamp(0.0, 1.0));
+    final send = _sends[handle];
+    if (send != null) {
+      _soloud.setVolume(send.handle, (volume * send.gain).clamp(0.0, 1.0));
+    }
   }
 
   /// Where a voice sits in the stereo field, -1 hard left to 1 hard right.
@@ -120,17 +220,31 @@ class AudioEngine {
   void setHandlePan(SoundHandle handle, double pan) {
     if (!_ready) return;
     _soloud.setPan(handle, pan.clamp(-1.0, 1.0));
+    final send = _sends[handle];
+    if (send != null) {
+      _soloud.setPan(send.handle, pan.clamp(-1.0, 1.0));
+    }
   }
 
+  /// Stopping a voice stops what it was sending. The reverb keeps ringing —
+  /// it is a tail, and a tail that is cut is a fault, not a stop.
   Future<void> stopHandle(SoundHandle handle) async {
     if (!_ready) return;
+    final send = _sends.remove(handle);
     await _soloud.stop(handle);
+    if (send != null) {
+      await _soloud.stop(send.handle);
+    }
   }
 
   Future<void> stopAll() async {
     if (!_ready) return;
     await _soloud.disposeAllSources();
     _sources.clear();
+    _sends.clear();
+    // Every bus is a voice, and that call stops all of them. Without this the
+    // grid goes quiet from here on: the sounds play into buses nobody hears.
+    buses.rearm();
   }
 
 

@@ -9,6 +9,7 @@ import 'dart:io';
 
 import '../audio/audio_engine.dart';
 import '../audio/chopper.dart';
+import '../audio/family_fx.dart';
 import '../audio/master_fx.dart';
 import '../audio/mixdown_recorder.dart';
 import '../audio/mixer_tap.dart';
@@ -148,6 +149,9 @@ class SessionController extends ChangeNotifier {
 
   /// Master volume and the performance effects, exposed for the surface.
   MasterFx get fx => _engine.fx;
+
+  /// The four family buses and the reverb they share, same deal.
+  FamilyFx get buses => _engine.buses;
 
   /// Plays a sound once to audition it, loading it if it never reached a pad.
   Future<void> preview(Sound sound) async {
@@ -1031,10 +1035,14 @@ class SessionController extends ChangeNotifier {
   void _fireClick({bool accent = false}) {
     final click = _click;
     if (click == null) return;
+    // Dry: the click is not music. It would otherwise ride the percussion
+    // bus, which means filtering the drums would filter the metronome you
+    // are using to hear whether the drums are in time.
     _engine.fire(
       click,
       volume: accent ? kMetronomeAccentVolume : kMetronomeVolume,
       rate: accent ? kMetronomeAccentRate : 1.0,
+      dry: true,
     );
   }
 

@@ -53,6 +53,11 @@ class _PadsScreenState extends State<PadsScreen> {
   SurfaceTab _tab = SurfaceTab.sound;
   Timer? _ringTicker;
 
+  /// Where the FX tab is pointing: at the master output, or at the bus of the
+  /// selected pad's family. It opens on the master, which is what the tab has
+  /// always been, and the first knob of the row moves it.
+  bool _fxOnFamily = false;
+
   /// While armed, the next pad tapped opens its sheet instead of sounding.
   /// It is the only modal state in the instrument, it lasts one tap, and the
   /// grid says so out loud by lighting every pad as a target.
@@ -465,7 +470,21 @@ class _PadsScreenState extends State<PadsScreen> {
       case SurfaceTab.scale:
         return _scaleKnobs(slot);
       case SurfaceTab.fx:
-        return _fxKnobs(includeResonance: true);
+        final sound = c.soundFor(pad);
+        if (sound == null) return _fxKnobs(includeResonance: true);
+        return [
+          KnobSpec(
+            label: 'Bus',
+            display: _fxOnFamily ? sound.family.label : 'Maestro',
+            value: _fxOnFamily ? 1 : 0,
+            accent: _fxOnFamily,
+            onChanged: (v) => setState(() => _fxOnFamily = v > 0.5),
+          ),
+          if (_fxOnFamily)
+            ..._busKnobs(sound.family)
+          else
+            ..._fxKnobs(includeResonance: true),
+        ];
       case SurfaceTab.loop:
         final looping = c.isLooping(c.activeBank, slot);
         final choices = loopLengthChoices(pad.loopSteps);
@@ -586,6 +605,50 @@ class _PadsScreenState extends State<PadsScreen> {
         value: fx.drive,
         accent: fx.drive > kFxEpsilon,
         onChanged: (v) => setState(() => fx.drive = v),
+      ),
+    ];
+  }
+
+  /// The selected pad's family bus: its own filter, its own grit, and how
+  /// much of it goes to the reverb everyone shares.
+  ///
+  /// Filter, resonance and drive keep the position they have on the master
+  /// row, so the thumb does not have to relearn the strip when it changes
+  /// what it is pointing at. Only the third knob differs — echo on the
+  /// master, send on a bus — and it says which it is.
+  List<KnobSpec> _busKnobs(SoundFamily family) {
+    final buses = c.buses;
+    final bus = buses.settingsFor(family);
+    final filterOpen = bus.cutoff >= 1 - kFxEpsilon;
+    return [
+      KnobSpec(
+        label: 'Filtro',
+        display: filterOpen ? 'OFF' : (bus.cutoff * 100).round().toString(),
+        value: bus.cutoff,
+        accent: !filterOpen,
+        onChanged: (v) => setState(() => buses.setCutoff(family, v)),
+      ),
+      KnobSpec(
+        label: 'Reso',
+        display: (bus.resonance * 100).round().toString(),
+        value: bus.resonance,
+        accent: bus.resonance > kFxEpsilon,
+        onChanged: (v) => setState(() => buses.setResonance(family, v)),
+      ),
+      KnobSpec(
+        label: 'Envío',
+        display: bus.isSendResting ? 'OFF' : (bus.send * 100).round().toString(),
+        value: bus.send,
+        accent: !bus.isSendResting,
+        onChanged: (v) => setState(() => buses.setSend(family, v)),
+      ),
+      KnobSpec(
+        label: 'Drive',
+        display:
+            bus.isDriveResting ? 'OFF' : (bus.drive * 100).round().toString(),
+        value: bus.drive,
+        accent: !bus.isDriveResting,
+        onChanged: (v) => setState(() => buses.setDrive(family, v)),
       ),
     ];
   }

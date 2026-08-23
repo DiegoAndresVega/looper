@@ -66,3 +66,33 @@ double crushBitdepth(double knob) {
   final bits = kCrushMaxBitdepth - position * (kCrushMaxBitdepth - _crushFloorBits);
   return bits.clamp(kCrushMinBitdepth, kCrushMaxBitdepth);
 }
+
+// ------------------------------------------------------------------ Buses
+
+/// What the plugin accepts on the shared send bus's reverb. Freeverb's five
+/// parameters all live between zero and one, so nothing here can fall out of
+/// range — it is written down anyway, so the day the reverb is swapped the
+/// test is already in place.
+const double kReverbMin = 0;
+const double kReverbMax = 1;
+
+/// The fixed character of the shared reverb: a medium room that does not eat
+/// anyone else's space. As with the echo, the knob does not shape it — it
+/// only decides how much of each family goes into it.
+///
+/// `wet` is one because the bus returns **reverb only**: the dry signal
+/// already travels on the family's own bus. That is what makes this a send
+/// and not an insert.
+const double kReverbWet = 1;
+const double kReverbRoomSize = 0.72;
+const double kReverbDamp = 0.35;
+const double kReverbWidth = 1;
+const double kReverbFreeze = 0;
+
+/// How much of a pad reaches the shared reverb. Square: the first half of the
+/// throw is a halo and the second half is the whole room, which is how a
+/// reverb is looked for by someone playing rather than looking.
+double sendGain(double knob) {
+  final position = knob.clamp(0.0, 1.0);
+  return position * position;
+}

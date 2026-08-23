@@ -364,6 +364,16 @@ mutar la existente.
   kit de fábrica. Antes de guardarla se corta a diez segundos y se normaliza a
   0,9 para que suene al nivel del resto.
 - **Exportar la toma:** captura de la salida del mezclador a WAV.
+- **Buses de familia:** las cuatro familias —percusión, voz, tono, textura— son
+  buses de mezcla de verdad, cada uno con su filtro y su drive. Un pad suena
+  por el bus de su familia, así que filtrar la percusión filtra la percusión
+  entera de una vez, no sonido a sonido. El clic del metrónomo es la excepción:
+  sale en seco, porque no es música.
+- **Envío compartido:** hay **una sola** reverb, en su propio bus, y cada
+  familia decide cuánto le manda. Como en SoLoud un bus es un padre y no un
+  envío, mandar significa disparar el mismo sonido dos veces: seco por su
+  familia y otra vez dentro de la reverb, al nivel del envío. Cuatro reverbs
+  —una por familia— es justamente lo que este diseño existe para evitar.
 
 ## Puesta en marcha
 
@@ -404,6 +414,8 @@ Funcionando:
 
 - Efectos de directo sobre la salida: filtro con resonancia, eco y drive,
   en la franja de mando
+- Efectos por familia: cada una con su filtro, su drive y su envío a la reverb
+  compartida, en la misma solapa FX
 - Cadena de patrones de 1 a 16 compases
 - Controlador MIDI por USB y Bluetooth, sin mapeo que configurar
 - Probabilidad, micro-timing y ratchet por paso
@@ -423,7 +435,8 @@ Funcionando:
 Pendiente:
 
 - Elegir licencia del repositorio
-- Verificar en el móvil la cuenta atrás del REC y las divisiones del roll
+- Verificar en el móvil la cuenta atrás del REC, las divisiones del roll y los
+  buses de familia con su envío
 
 ## Fuera de alcance
 

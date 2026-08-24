@@ -171,12 +171,48 @@ suelo y no desde cero: muchos pads baratos mandan siempre 100, y ninguno puede
 quedarse a cuatro quintos para siempre. START y STOP mueven el secuenciador.
 
 El reloj MIDI se reconoce y se ignora a propósito: seguir el tempo de otro es
-una decisión más grande que esta. Los controles de mando esperan a MIDI learn.
+una decisión más grande que esta.
 
 Lo que se puede probar sin cable —el protocolo entero, con sus dos trampas: un
 Note On de velocidad cero es un Note Off, y un paquete puede traer varios
 mensajes de los que solo el primero lleva cabecera— vive en `domain/midi.dart`
 y está cubierto.
+
+### Los mandos se aprenden solos
+
+**Mantén pulsado un mando de la franja, mueve el mando físico, y quedan
+casados.** No hay lista de CC que rellenar ni menú que abrir: el gesto pasa
+encima del mando que quieres mover, que es donde estabas mirando. Mientras
+espera, la fila de arriba lo dice y las solapas desaparecen —cambiar de solapa
+ahora sería cambiar de novia—, y el mando aprendido lleva el número del control
+escrito dentro del dial.
+
+Se casa con el **parámetro**, nunca con el sitio de la franja. Aprender el
+filtro con la percusión delante casa el mando con el bus de percusión para
+siempre; si se casara con «el primer mando de lo que haya», elegir otro pad
+recablearía el controlador por debajo a mitad de toma. Los parámetros del pad
+son la excepción a propósito, y siguen al pad elegido: sesenta y cuatro pads por
+cinco parámetros no los mapea nadie a mano.
+
+Un mando mueve una sola cosa y una cosa obedece a un solo mando: aprender rompe
+los dos matrimonios anteriores. El movimiento que casa **también mueve** el
+parámetro, así que el valor sale ya donde está el mando físico en vez de pedir
+un segundo meneo.
+
+El canal se ignora, igual que en las notas: un mando es ese mando grite por
+donde grite. El único mando de la franja que no se aprende es el que apunta la
+fila FX al maestro o al bus, porque cambia lo que miras y no lo que suena, y un
+controlador que cambia la vista es un controlador que hay que mirar.
+
+Lo aprendido vive en `midimap.json`, junto a las sesiones y no dentro de
+ninguna: pertenece a la mesa, no a la pieza. La pantalla del controlador lista
+lo casado con su número de CC, para comprobarlo y para olvidarlo sin tener que
+buscar el mando que lo aprendió.
+
+*Lo que no hace:* no hay recogida suave. Al abrir la app con un mapa guardado, el
+primer roce de un mando físico salta al valor de ese mando en vez de esperar a
+cruzar el que tenía la app. Es la factura de no tener que mover un mando entero
+antes de que responda.
 
 ## La rejilla como escala
 
@@ -335,10 +371,11 @@ lib/
   domain/       Modelos inmutables: Sound, PadConfig, Bank, Session, Pattern
   data/         Almacenamiento local, biblioteca, sesiones, kit de fábrica
   audio/        Síntesis, WAV, motor SoLoud, reloj, micrófono y mezcla
-  state/        SessionController y Sequencer
+  state/        SessionController, Sequencer y el aprendizaje del controlador
   ui/pads/      Grilla, bancos, tempo, franja de mando, barra del secuenciador
   ui/sampler/   Samplear con el micrófono y revisar lo capturado
   ui/library/   Biblioteca y editor de sonido
+  ui/midi/      Controladores y lo que han aprendido
   ui/sessions/  Lista de sesiones
   ui/common/    Lo que usan varias pantallas, como la forma de onda
 ```
@@ -418,6 +455,8 @@ Funcionando:
   compartida, en la misma solapa FX
 - Cadena de patrones de 1 a 16 compases
 - Controlador MIDI por USB y Bluetooth, sin mapeo que configurar
+- MIDI learn: mantener pulsado un mando y mover uno físico los casa, y lo
+  aprendido sobrevive a cerrar la app
 - Probabilidad, micro-timing y ratchet por paso
 - Copiar pads y patrones
 - Puntos de guardado: ocho instantáneas con nombre por sesión
@@ -435,8 +474,8 @@ Funcionando:
 Pendiente:
 
 - Elegir licencia del repositorio
-- Verificar en el móvil la cuenta atrás del REC, las divisiones del roll y los
-  buses de familia con su envío
+- Verificar en el móvil la cuenta atrás del REC, las divisiones del roll, los
+  buses de familia con su envío y el MIDI learn con un controlador delante
 
 ## Fuera de alcance
 

@@ -428,9 +428,9 @@ td .plat { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 
 .t-knob .dial { width: 24px; height: 24px; border-radius: 50%; border: 1.6px solid var(--linea-viva); position: relative; }
 .t-knob .dial::after { content: ''; position: absolute; top: 2px; left: 50%; width: 1.6px; height: 8px; background: var(--fosforo); transform-origin: bottom center; transform: translateX(-50%) rotate(var(--giro, 0deg)); }
 .t-knob span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-flo); }
-.t-knob.armado { border-color: var(--laser); }
-.t-knob.armado .dial { border-color: var(--laser); }
-.t-knob.armado span { color: var(--laser); }
+.t-knob.armado { border-color: var(--fosforo); }
+.t-knob.armado .dial { border-color: var(--fosforo); }
+.t-knob.armado span { color: var(--fosforo); }
 
 .t-seqbar { display: flex; align-items: center; gap: 5px; padding: 0 14px 10px; }
 .t-seqbar .pill {
@@ -689,9 +689,9 @@ ol.pasos-num kbd {
     </p>
     <div class="cifras">
       <div class="cifra"><b>7</b><span>Referencias</span></div>
-      <div class="cifra"><b>16 / 39</b><span>Funciones hechas</span></div>
+      <div class="cifra"><b>17 / 39</b><span>Funciones hechas</span></div>
       <div class="cifra"><b>5 / 9</b><span>Correcciones</span></div>
-      <div class="cifra"><b>5½ / 6</b><span>Pantallas</span></div>
+      <div class="cifra"><b>6 / 6</b><span>Pantallas</span></div>
     </div>
   </div>
 </header>
@@ -995,7 +995,7 @@ ol.pasos-num kbd {
     <!-- A5 MIDI -->
     <div class="bloque b-midi rev">
       <div class="bloque-head">
-        <h3>MIDI y sincronía</h3><span class="cuenta">7 funciones</span><span class="rule"></span>
+        <h3>MIDI y sincronía</h3><span class="cuenta">2 de 7 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -1005,10 +1005,10 @@ ol.pasos-num kbd {
           <p class="como"><b>En Looper:</b> <code>flutter_midi_command</code> envuelve <code>android.media.midi</code> y CoreMIDI, y contribuye solo los permisos de BLE. El M-Vave FM-1 que inspiró el secuenciador podría tocarlo.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>MIDI learn</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>MIDI learn</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Loopy Pro lo resolvió con un gesto: mantienes pulsado el objeto en pantalla, mueves el mando físico, y quedan casados. Sin menús, sin listas de CC.</p>
-          <p class="como"><b>En Looper:</b> el patrón de interacción a copiar tal cual. Encaja con AJUSTAR, que ya es «armar un modo que dura exactamente un toque».</p>
+          <p class="como"><b>Hecho:</b> el gesto de Loopy Pro, copiado tal cual, encima del mando que quieres mover. Mientras espera, la fila de arriba de la franja lo dice y <em>las solapas desaparecen</em> — cambiar de solapa ahora sería cambiar de novia. El número del control queda escrito dentro del dial. Se casa con el <strong>parámetro</strong>, nunca con el sitio de la franja: aprender el filtro con la percusión delante casa el mando con el bus de percusión para siempre, porque si se casara con «el primer mando de lo que haya», elegir otro pad recablearía el controlador por debajo a mitad de toma. Los del pad son la excepción a propósito y siguen al pad elegido: sesenta y cuatro pads por cinco parámetros no los mapea nadie a mano. Un mando mueve una cosa y una cosa obedece a un mando — aprender rompe los dos matrimonios anteriores —, y el movimiento que casa <em>también mueve</em>, así que el valor sale ya donde está el mando físico. Lo aprendido vive en <code>midimap.json</code>, junto a las sesiones y no dentro de ninguna: pertenece a la mesa, no a la pieza. <em>Lo que no hace:</em> no hay recogida suave, así que al abrir la app con un mapa guardado el primer roce salta al valor del mando físico en vez de esperar a cruzar el que tenía la app.</p>
         </article>
 
         <article class="card">
@@ -1498,17 +1498,14 @@ ol.pasos-num kbd {
               <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">C3</span><span class="nom">Botella</span></div>
               <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="grado">D3</span><span class="nom">Vinilo</span></div>
             </div>
+            <div class="t-seqbar">
+              <span class="pill on">Mueve un mando del controlador</span><span class="pill">Olvidar CC21</span><span class="pill">Cancelar</span>
+            </div>
             <div class="t-strip">
               <div class="t-knob"><span class="dial" style="--giro:-30deg"></span><span>Vol</span></div>
-              <div class="t-knob armado"><span class="dial" style="--giro:18deg"></span><span>Filtro</span></div>
+              <div class="t-knob armado"><span class="dial" style="--giro:18deg"></span><span>Filtro · mueve</span></div>
               <div class="t-knob"><span class="dial" style="--giro:0deg"></span><span>Eco</span></div>
               <div class="t-knob"><span class="dial" style="--giro:52deg"></span><span>Drive</span></div>
-            </div>
-            <div class="t-sheet">
-              <div class="t-learn">
-                <b>Aprendiendo · Filtro</b>
-                <span>Mueve un mando del FM-1 para asignarlo. Toca en cualquier sitio para salir.</span>
-              </div>
             </div>
             <div class="tel-home"></div>
           </div>
@@ -1516,7 +1513,7 @@ ol.pasos-num kbd {
         <div class="lamina-pie">
           <h3>MIDI learn con un solo gesto</h3>
           <p>Mantener pulsado el mando en pantalla lo pone a escuchar; el primer mensaje que llegue del controlador queda casado. Sin listas de CC ni pantalla de ajustes — el mismo principio que AJUSTAR: un modo que dura exactamente una acción.</p>
-          <p><strong>A medias.</strong> La entrada está construida y los pads responden sin configurar nada, pero esta pantalla —casar un mando físico con uno de la app— sigue pendiente. Es lo único que le falta a las seis láminas.</p>
+          <p><strong>Construido, y esta lámina cambió al construirlo.</strong> El aviso no sale en una hoja por debajo, como se dibujó aquí: sale <em>en la fila de arriba de la franja</em>, ocupando el sitio de las solapas — una hoja taparía la grilla justo cuando quieres ver qué estás casando, y dejar las solapas puestas permitiría cambiar de solapa a medio matrimonio. Y el mando que escucha se pinta en <em>fósforo</em>, no en láser: la paleta dice que el fósforo es el color de lo armado y que el láser es solo del REC. Esta lámina llevaba el láser desde el primer día.</p>
           <span class="gesto">Mantener el mando + mover el físico</span>
         </div>
       </div>
@@ -1580,7 +1577,7 @@ ol.pasos-num kbd {
 <section id="prioridad" style="background: var(--pozo); border-block: 1px solid var(--linea);">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Nueve tandas construidas</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Diez tandas construidas</span><span class="rule"></span></div>
       <h2 class="cap-title">Dónde está</h2>
       <p class="lede">
         Los cinco pasos que este documento priorizó están construidos, y cuatro tandas
@@ -1592,10 +1589,10 @@ ol.pasos-num kbd {
 
     <div class="estado-barra rev">
       <div><b>5 / 5</b><span>Pasos priorizados</span></div>
-      <div><b>+11</b><span>De la cola siguiente</span></div>
-      <div><b>16 / 39</b><span>Funciones del catálogo</span></div>
-      <div><b>295</b><span>Tests</span></div>
-      <div><b>5½ / 6</b><span>Pantallas maquetadas</span></div>
+      <div><b>+12</b><span>De la cola siguiente</span></div>
+      <div><b>17 / 39</b><span>Funciones del catálogo</span></div>
+      <div><b>335</b><span>Tests</span></div>
+      <div><b>6 / 6</b><span>Pantallas maquetadas</span></div>
     </div>
 
     <div class="pasos">
@@ -1680,14 +1677,23 @@ ol.pasos-num kbd {
         </div>
         <span class="coste">Hecho</span>
       </article>
+
+      <article class="paso rev">
+        <span class="n">10</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Los mandos se aprenden solos</h3>
+          <p>Mantener pulsado un mando de la franja y mover uno del controlador los casa. Veintiún parámetros aprendibles — el maestro, los cuatro buses, el pad elegido y la escala —, el número del control escrito dentro del dial, y lo aprendido guardado fuera de la sesión porque pertenece a la mesa y no a la pieza. Las cuentas de «posición de mando a valor» salieron a <code>knob_scale.dart</code> el mismo día: ahora el pulgar y el cable pasan por la misma aritmética en vez de por dos copias.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
     </div>
 
     <div class="despues rev">
-      <b>Lo siguiente, en este orden:</b> MIDI learn de los mandos · escenas ·
-      modo canción. Los efectos por familia con su envío compartido salen de esta
-      lista: están construidos y a la espera de oreja. MIDI learn es lo único que le
-      falta a las cinco láminas de arriba. El bloque de <em>Groove</em> del catálogo
-      queda cerrado salvo la longitud por pista, que reestructura el patrón entero.
+      <b>Lo siguiente, en este orden:</b> escenas · modo canción. MIDI learn sale de
+      esta lista con los efectos por familia: los tres están construidos y a la espera
+      de oreja, que es ahora el cuello de botella y no el teclado. El bloque de
+      <em>Groove</em> del catálogo queda cerrado salvo la longitud por pista, que
+      reestructura el patrón entero.
     </div>
 
     <div class="techo rev">
@@ -1736,7 +1742,7 @@ ol.pasos-num kbd {
 <section id="pruebas">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Diecisiete pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Veinte pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
       <h2 class="cap-title">Lo que falta probar</h2>
       <p class="lede">
         Todo lo de este documento pasa sus tests, pero un test no oye. Estas son
@@ -1746,9 +1752,10 @@ ol.pasos-num kbd {
       </p>
       <p class="lede">
         Están ordenadas por lo que más duele si falla. Las tres primeras tocan
-        subsistemas enteros que ningún dedo ha rozado todavía, y las tres últimas
-        —el bloque de los buses— son enrutado de audio nuevo: si algo ahí está mal,
-        el instrumento se queda mudo, así que conviene empezar por la 15.
+        subsistemas enteros que ningún dedo ha rozado todavía, y el bloque de los
+        buses es enrutado de audio nuevo: si algo ahí está mal, el instrumento se
+        queda mudo, así que conviene empezar por la 15. Las tres últimas necesitan
+        un controlador enchufado; sin uno, no se pueden hacer.
       </p>
     </div>
 
@@ -2229,6 +2236,97 @@ ol.pasos-num kbd {
           <div class="ojo">
             <b>Señales de que está roto</b>
             <strong>Silencio después de grabar</strong>: los buses no se reconstruyeron y los sonidos entran en la nada. Silencio solo tras el rescate: rescatar tira todas las voces —los buses son voces también— y no se volvieron a poner al aire. Que el hat vuelva sin filtro: los mandos no se están volviendo a empujar al bus nuevo. Un crujido al primer golpe después de grabar: el filtro entró en marcha con sus ajustes de fábrica en vez de en reposo.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+
+    <!-- ── BLOQUE 6 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Los mandos aprendidos</h3><span class="cuenta">3 pruebas · con el controlador delante</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">18</span>
+            <h3>Casar un mando físico con uno de la app</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>El gesto entero, de una pieza. Lo que hay que <em>ver</em> es que la franja avisa mientras espera; lo que hay que <em>oír</em> es que el filtro se mueve solo desde el cacharro.</p>
+          <ol class="pasos-num">
+            <li>Enchufa el controlador. Abre la app.</li>
+            <li>Toca el icono del <kbd>piano</kbd> arriba a la derecha: tiene que estar encendido en verde y el aparato en la lista, con <strong>CONECTADO</strong> al lado. Si no, tócalo para conectarlo. Vuelve atrás.</li>
+            <li>Mantén pulsado el <strong>Bombo</strong> (f1 · c1) hasta que vibre: se queda en bucle. Déjalo sonando toda la prueba.</li>
+            <li>Sin elegir ningún pad —toca <kbd>Parar</kbd> si hay uno elegido— la franja de abajo pone <strong>MAESTRO</strong> y sus cuatro mandos son Vol, Filtro, Eco y Drive.</li>
+            <li><strong>Mantén el dedo</strong> sobre el mando <kbd>Filtro</kbd> medio segundo, y suéltalo.</li>
+            <li><em>Mira la fila de arriba de la franja.</em></li>
+            <li>Ahora <strong>gira un mando cualquiera</strong> del controlador, de arriba abajo del todo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 6, la fila de arriba deja de decir MAESTRO y pasa a decir <strong>MUEVE UN MANDO DEL CONTROLADOR</strong> en verde fósforo; las cuatro solapas desaparecen y sale un botón <kbd>CANCELAR</kbd>. El mando <kbd>Filtro</kbd> se pone verde y su número pasa a decir <strong>MUEVE</strong>. En el paso 7, en cuanto giras: el aviso desaparece, la franja vuelve a la normalidad, y <strong>el bombo se apaga y se abre siguiendo tu mano</strong>. Dentro del dial del Filtro queda escrito un número pequeño — el del control que acabas de girar.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que mantener el dedo no haga nada: la pulsación larga no está llegando al mando, o el mando no es de los que se aprenden. Que el aviso salga pero girar no haga nada: los mensajes de control no están llegando —prueba con otro mando del cacharro, algunos botones no mandan control—. Que el filtro se mueva pero <strong>a saltos bruscos</strong> o al revés: la conversión de 0–127 a posición está mal. Que el número no aparezca en el dial: casó pero la franja no se ha enterado de que tiene que repintarse.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">19</span>
+            <h3>Que lo aprendido siga ahí mañana</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Un mapa que se evapora al cerrar la app es más lento que estirar el brazo a la pantalla. Esta prueba es la única que dice si el fichero se está escribiendo de verdad.</p>
+          <ol class="pasos-num">
+            <li>Con la prueba 18 hecha, mantén pulsado el mando <kbd>Drive</kbd> y gira <strong>otro</strong> mando del controlador.</li>
+            <li>Los dos dials tienen que llevar ya su número, y distinto cada uno.</li>
+            <li>Cierra la app <strong>del todo</strong>: sácala de las aplicaciones recientes, no basta con salir a la pantalla de inicio.</li>
+            <li>Vuelve a abrirla. Conecta el controlador otra vez si hiciera falta.</li>
+            <li>Sin tocar nada más, mira la franja: los dials de <kbd>Filtro</kbd> y <kbd>Drive</kbd> tienen que llevar sus números puestos.</li>
+            <li>Gira los dos mandos físicos.</li>
+            <li>Abre el icono del <kbd>piano</kbd> y baja del todo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Los números siguen en los dials después de reabrir, y cada mando físico mueve lo suyo sin volver a enseñárselo. Abajo del todo de la pantalla del controlador hay una lista <strong>MANDOS APRENDIDOS · 2</strong> con las dos líneas: <em>CC21 · Filtro · Maestro</em> y su <kbd>OLVIDAR</kbd> al lado.
+            <br><br>Y una cosa que <em>no</em> es un fallo: el primer giro después de reabrir <strong>salta</strong> al valor donde esté el mando físico en vez de recogerlo desde donde estaba la app. No hay recogida suave, y está decidido así.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Dials sin número al reabrir: el mapa no se escribió, o no se está leyendo al arrancar. Un solo número de los dos: aprender el segundo pisó al primero — que es lo correcto <em>solo</em> si giraste el mismo mando físico las dos veces. La lista vacía con los dials puestos: la pantalla del controlador no está mirando el mismo mapa que la franja.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">20</span>
+            <h3>Un mando, una cosa; y el pad elegido manda</h3>
+            <span class="chip">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Las dos reglas que hacen que esto no se vuelva un lío: un mando físico no puede mover dos cosas, y los mandos del pad siguen al pad que tengas elegido en vez de a un pad concreto.</p>
+          <ol class="pasos-num">
+            <li>Toca una vez el <strong>Bombo</strong> (f1 · c1) para elegirlo. Su nombre sale en la franja.</li>
+            <li>Solapa <kbd>Sonido</kbd>. Mantén pulsado el mando <kbd>Vol</kbd> y gira un mando físico que esté <strong>sin usar</strong>.</li>
+            <li>Gíralo de arriba abajo: el bombo sube y baja de volumen.</li>
+            <li>Ahora toca una vez el <strong>Bajo</strong> (f3 · c1) para elegirlo a él.</li>
+            <li>Gira el mismo mando físico.</li>
+            <li>Toca <kbd>Parar</kbd> para no tener ningún pad elegido —la franja vuelve a decir MAESTRO— y gíralo otra vez.</li>
+            <li>Vuelve a elegir el <strong>Bombo</strong>, mantén pulsado <kbd>Tono</kbd> y gira <strong>ese mismo</strong> mando físico.</li>
+            <li>Gíralo, y luego mira el dial de <kbd>Vol</kbd>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 5 el mando mueve el volumen <strong>del bajo</strong>: el mando del pad sigue a lo que tengas elegido, a propósito. En el paso 6 no pasa nada de nada, y eso está bien: sin pad elegido no hay volumen de pad que mover. En el paso 8 el mando pasa a mover el <strong>tono</strong>, y el dial de <kbd>Vol</kbd> se ha quedado <strong>sin número</strong>: casarlo con el tono rompió el matrimonio anterior.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que en el paso 5 siga moviendo el bombo: el mando se casó con un pad concreto en vez de con «el pad elegido». Que en el paso 6 se mueva algo: está cogiendo un pad por su cuenta. Que en el paso 8 el <kbd>Vol</kbd> conserve su número y el mando mueva las dos cosas a la vez: la regla de un mando una cosa no se está aplicando, y eso se nota enseguida como un mando que hace cosas raras.
           </div>
         </article>
 

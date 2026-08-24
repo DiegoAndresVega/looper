@@ -51,6 +51,11 @@ int semitonesForPad(
   return root + (octave + octaveOffset) * 12 + scale.steps[pad % degrees];
 }
 
+/// How far the keyboard can be shifted, in octaves. Two either way covers the
+/// range a sampled sound survives being played at, and the list is the knob's
+/// stops as well as the clamp.
+const List<int> kScaleOctaves = [-2, -1, 0, 1, 2];
+
 /// The name of a pitch, ignoring which octave it lands in.
 String noteName(int semitones) => kNoteNames[semitones % 12];
 

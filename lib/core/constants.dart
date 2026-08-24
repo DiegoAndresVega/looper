@@ -51,6 +51,10 @@ const int kStepperFastAmount = 3;
 /// A long press on a pad opens its sheet.
 const Duration kPadLongPress = Duration(milliseconds: 320);
 
+/// How far the pitch knob reaches, in semitones either way. An octave up and
+/// an octave down is as far as a sample survives being stretched like tape.
+const int kPadPitchRange = 12;
+
 /// Roll (retrigger) divisions offered while the ROLL button is held, in steps.
 const List<int> kRollDivisions = [2, 1]; // 1/8 and 1/16 of a bar
 

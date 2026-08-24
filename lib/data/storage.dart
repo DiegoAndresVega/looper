@@ -37,6 +37,10 @@ class Storage {
   /// file never carries eight copies of its own history.
   File get savePointsIndex => File('${root.path}/savepoints.json');
 
+  /// Which control of the MIDI controller moves what. It belongs to the desk,
+  /// not to a piece, so it lives beside the sessions instead of inside one.
+  File get midiMapIndex => File('${root.path}/midimap.json');
+
   Future<void> _ensureLayout() async {
     for (final dir in [root, sounds, mixdowns]) {
       if (!await dir.exists()) {

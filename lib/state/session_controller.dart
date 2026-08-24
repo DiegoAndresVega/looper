@@ -18,9 +18,12 @@ import '../audio/tempo_clock.dart';
 import '../core/constants.dart';
 import '../core/palette.dart';
 import '../data/metronome.dart';
+import '../data/midi_map_store.dart';
 import '../data/session_store.dart';
 import '../data/sound_library.dart';
 import '../data/storage.dart';
+import 'midi_apply.dart';
+import 'midi_learn.dart';
 import 'sequencer.dart';
 import 'undo_stack.dart';
 import '../domain/pad_config.dart';
@@ -535,6 +538,13 @@ class SessionController extends ChangeNotifier {
 
   StreamSubscription<MidiEvent>? _midiSubscription;
 
+  /// Which control of the desk moves what, and the knob waiting to find out.
+  late final MidiLearn midiLearn = MidiLearn(MidiMapStore(Storage.instance));
+
+  /// Something moved a parameter from outside the screen. Nothing in the
+  /// session changed, but the strip is now lying about where its knobs are.
+  void refreshSurface() => notifyListeners();
+
   /// Which pads are being held down from the controller, so a released note
   /// silences the one it started rather than whatever is sounding now.
   final Set<int> _midiHeld = {};
@@ -584,10 +594,17 @@ class SessionController extends ChangeNotifier {
       case MidiStop():
         if (sequencer.isPlaying) toggleSequencerPlay();
 
-      case MidiControlChange():
+      case MidiControlChange(:final value) && final change:
+        // Either this marries the control to the knob that is waiting, or it
+        // moves whatever it was married to earlier. An unlearned control does
+        // nothing at all, which is what keeps a controller's stray traffic —
+        // modulation wheels, all-notes-off — out of the mix.
+        final target = midiLearn.route(change);
+        if (target != null) moveMidiTarget(target, positionFromMidi(value));
+
       case MidiClock():
         // Reading the clock means following someone else's tempo, which is a
-        // bigger decision than this. Control changes wait for MIDI learn.
+        // bigger decision than this one.
         break;
     }
   }
@@ -633,7 +650,8 @@ class SessionController extends ChangeNotifier {
 
   void setScaleRoot(int value) => _setKey(root: value % 12);
 
-  void setScaleOctave(int value) => _setKey(octave: value.clamp(-2, 2));
+  void setScaleOctave(int value) =>
+      _setKey(octave: value.clamp(kScaleOctaves.first, kScaleOctaves.last));
 
   void _setKey({Scale? scale, int? root, int? octave}) {
     final session = _session;

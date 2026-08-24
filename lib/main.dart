@@ -157,6 +157,9 @@ class _BootState extends State<Boot> {
         store: store,
       );
       await controller.open(session);
+      // The controller mapping belongs to the desk, not to the piece: it is
+      // read once here and outlives every session opened afterwards.
+      await controller.midiLearn.load();
 
       if (!mounted) return;
       setState(() {
@@ -251,16 +254,21 @@ class _BootState extends State<Boot> {
     );
   }
 
-  /// Hands the audio session over to the microphone and takes it back when the
-  /// recording screen closes. A saved sound goes straight onto a free pad, so
-  /// it can be played the second it exists.
   Future<void> _openMidi() async {
+    final controller = _controller;
+    if (controller == null) return;
+
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => MidiScreen(midi: _midi)),
+      MaterialPageRoute(
+        builder: (_) => MidiScreen(midi: _midi, learn: controller.midiLearn),
+      ),
     );
     if (mounted) setState(() {});
   }
 
+  /// Hands the audio session over to the microphone and takes it back when the
+  /// recording screen closes. A saved sound goes straight onto a free pad, so
+  /// it can be played the second it exists.
   Future<void> _openSampler() async {
     final controller = _controller;
     final library = _library;

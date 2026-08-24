@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/palette.dart';
 import '../../core/type.dart';
+import '../../domain/midi_target.dart';
+import '../../state/midi_learn.dart';
 
 /// Which set of four knobs the surface is showing.
 enum SurfaceTab { sound, fx, loop, scale }
@@ -14,6 +16,7 @@ class KnobSpec {
     required this.value,
     required this.onChanged,
     this.accent = false,
+    this.target,
   });
 
   final String label;
@@ -23,6 +26,12 @@ class KnobSpec {
   final double value;
   final ValueChanged<double>? onChanged;
   final bool accent;
+
+  /// What a physical control would be moving if it learned this knob, or null
+  /// for the one knob that is not a parameter: the switch that points the FX
+  /// row at the master or at a bus. A controller that changes the view is a
+  /// controller you have to look at.
+  final MidiTarget? target;
 }
 
 /// The strip that lives under the grid and never goes away. If it is something
@@ -35,6 +44,7 @@ class ControlSurface extends StatelessWidget {
     required this.tab,
     required this.knobs,
     required this.onTabChanged,
+    required this.learn,
   });
 
   final String targetLabel;
@@ -42,6 +52,10 @@ class ControlSurface extends StatelessWidget {
   final SurfaceTab tab;
   final List<KnobSpec> knobs;
   final ValueChanged<SurfaceTab> onTabChanged;
+
+  /// Which control of the desk moves what. The strip owns this gesture because
+  /// the strip is where the knobs are: holding one down is the whole setup.
+  final MidiLearn learn;
 
   @override
   Widget build(BuildContext context) {
@@ -55,33 +69,10 @@ class ControlSurface extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: targetColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  targetLabel.toUpperCase(),
-                  overflow: TextOverflow.ellipsis,
-                  style: Brand.label(
-                    9,
-                    width: 75,
-                    weight: 700,
-                    tracking: 0.1,
-                    color: Palette.ink,
-                  ),
-                ),
-              ),
-              for (final t in SurfaceTab.values) _tabChip(t),
-            ],
-          ),
+          // While a knob is waiting for a control, the row says so instead of
+          // saying what is selected — and the tabs go away with it, because
+          // changing tab now would be changing what you are about to marry.
+          learn.armed == null ? _targetRow() : _learningRow(learn.armed!),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -90,12 +81,95 @@ class ControlSurface extends StatelessWidget {
                   child: Padding(
                     padding: EdgeInsets.only(
                         right: i == knobs.length - 1 ? 0 : 6),
-                    child: _Knob(spec: knobs[i]),
+                    child: _Knob(spec: knobs[i], learn: learn),
                   ),
                 ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _targetRow() {
+    return Row(
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: targetColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            targetLabel.toUpperCase(),
+            overflow: TextOverflow.ellipsis,
+            style: Brand.label(
+              9,
+              width: 75,
+              weight: 700,
+              tracking: 0.1,
+              color: Palette.ink,
+            ),
+          ),
+        ),
+        for (final t in SurfaceTab.values) _tabChip(t),
+      ],
+    );
+  }
+
+  Widget _learningRow(MidiTarget armed) {
+    final bound = learn.controllerFor(armed);
+    return Row(
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: Palette.accent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'MUEVE UN MANDO DEL CONTROLADOR',
+            overflow: TextOverflow.ellipsis,
+            style: Brand.label(
+              9,
+              width: 75,
+              weight: 700,
+              tracking: 0.1,
+              color: Palette.accent,
+            ),
+          ),
+        ),
+        if (bound != null)
+          _chip('OLVIDAR CC$bound', onTap: () => learn.forget(armed)),
+        _chip('CANCELAR', onTap: learn.cancel),
+      ],
+    );
+  }
+
+  Widget _chip(String text, {required VoidCallback onTap}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Palette.lineLive),
+          ),
+          child: Text(
+            text,
+            style: Brand.label(7.5, width: 75, weight: 700, color: Palette.ink),
+          ),
+        ),
       ),
     );
   }
@@ -138,14 +212,23 @@ class ControlSurface extends StatelessWidget {
 const double _fullThrowPixels = 120;
 
 /// A knob you drag vertically. Big target, no fiddly arc dragging.
+///
+/// Holding it down is how it gets married to a control on the desk: the same
+/// long press that opens a pad's insides opens a knob's. Learning is the only
+/// thing the long press does here, so nothing else has to move out of the way.
 class _Knob extends StatelessWidget {
-  const _Knob({required this.spec});
+  const _Knob({required this.spec, required this.learn});
 
   final KnobSpec spec;
+  final MidiLearn learn;
 
   @override
   Widget build(BuildContext context) {
     final enabled = spec.onChanged != null;
+    final target = spec.target;
+    final armed = target != null && learn.isArmed(target);
+    final controller = target == null ? null : learn.controllerFor(target);
+
     return GestureDetector(
       // The whole column takes the drag, not just the 38 pixels of dial: a
       // thumb that lands beside the ring was doing nothing at all before.
@@ -158,19 +241,42 @@ class _Knob extends StatelessWidget {
               spec.onChanged!(next);
             }
           : null,
+      onLongPress: target == null || !enabled
+          ? null
+          : () => armed ? learn.cancel() : learn.arm(target),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
             width: 38,
             height: 38,
-            child: CustomPaint(
-              painter: _KnobPainter(
-                value: spec.value,
-                color: enabled
-                    ? (spec.accent ? Palette.accent : Palette.inkDim)
-                    : Palette.inkFaint,
-              ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: const Size.square(38),
+                  painter: _KnobPainter(
+                    value: spec.value,
+                    color: armed
+                        ? Palette.accent
+                        : enabled
+                            ? (spec.accent ? Palette.accent : Palette.inkDim)
+                            : Palette.inkFaint,
+                  ),
+                ),
+                // The control number lives inside the dial, where the hole
+                // already is: a knob that answers to the desk says which key
+                // it answers to without costing a row of screen.
+                if (controller != null)
+                  Text(
+                    '$controller',
+                    style: Brand.readout(
+                      8,
+                      weight: 700,
+                      color: armed ? Palette.accent : Palette.inkFaint,
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 4),
@@ -178,16 +284,24 @@ class _Knob extends StatelessWidget {
             spec.label.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Brand.label(7, width: 75),
+            style: Brand.label(
+              7,
+              width: 75,
+              color: armed ? Palette.accent : Palette.inkFaint,
+            ),
           ),
           Text(
-            spec.display,
+            armed ? 'MUEVE' : spec.display,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Brand.readout(
               9,
               weight: 600,
-              color: enabled ? Palette.ink : Palette.inkFaint,
+              color: armed
+                  ? Palette.accent
+                  : enabled
+                      ? Palette.ink
+                      : Palette.inkFaint,
             ),
           ),
         ],

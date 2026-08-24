@@ -9,7 +9,9 @@ import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../data/factory_kit.dart';
+import '../../domain/knob_scale.dart';
 import '../../domain/loop_length.dart';
+import '../../domain/midi_target.dart';
 import '../../domain/pad_config.dart';
 import '../../domain/scale.dart';
 import '../../state/session_controller.dart';
@@ -72,6 +74,11 @@ class _PadsScreenState extends State<PadsScreen> {
   @override
   void initState() {
     super.initState();
+    // Nothing on this screen used to change without a finger on it, so nobody
+    // was listening. A controller changes that: a knob turned on the desk, or
+    // a pad played from it, has to reach the paint.
+    c.addListener(_onInstrumentChanged);
+    c.midiLearn.addListener(_onInstrumentChanged);
     // From here on the last half-minute of the master is always within reach,
     // so something worth keeping can be rescued after it happened rather than
     // having to be armed for beforehand.
@@ -85,8 +92,14 @@ class _PadsScreenState extends State<PadsScreen> {
     });
   }
 
+  void _onInstrumentChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    c.removeListener(_onInstrumentChanged);
+    c.midiLearn.removeListener(_onInstrumentChanged);
     _ringTicker?.cancel();
     super.dispose();
   }
@@ -392,6 +405,7 @@ class _PadsScreenState extends State<PadsScreen> {
       tab: _tab,
       onTabChanged: (t) => setState(() => _tab = t),
       knobs: _knobsFor(slot, pad),
+      learn: c.midiLearn,
     );
   }
 
@@ -405,6 +419,7 @@ class _PadsScreenState extends State<PadsScreen> {
           display: (c.fx.volume * 100).round().toString(),
           value: c.fx.volume,
           accent: true,
+          target: const MidiTarget(MidiParam.masterVolume),
           onChanged: (v) => setState(() => c.fx.volume = v),
         ),
         ..._fxKnobs(includeResonance: false),
@@ -419,37 +434,38 @@ class _PadsScreenState extends State<PadsScreen> {
             display: (pad.volume * 100).round().toString(),
             value: pad.volume,
             accent: true,
+            target: const MidiTarget(MidiParam.padVolume),
             onChanged: (v) => setState(() => c.setPadVolume(slot, v)),
           ),
           KnobSpec(
             label: 'Tono',
             display: pad.semitones > 0 ? '+${pad.semitones}' : '${pad.semitones}',
-            value: (pad.semitones + 12) / 24,
-            onChanged: (v) => setState(
-                () => c.setPadSemitones(slot, (v * 24 - 12).round())),
+            value: semitonesAsKnob(pad.semitones),
+            target: const MidiTarget(MidiParam.padPitch),
+            onChanged: (v) =>
+                setState(() => c.setPadSemitones(slot, knobAsSemitones(v))),
           ),
           KnobSpec(
             label: 'Pan',
             // L and R rather than a signed number: nobody thinks in −0,4.
-            display: pad.pan.abs() < 0.05
+            display: pad.pan.abs() < kPanDeadZone
                 ? 'C'
                 : '${pad.pan < 0 ? 'L' : 'R'}${(pad.pan.abs() * 100).round()}',
-            value: (pad.pan + 1) / 2,
-            accent: pad.pan.abs() >= 0.05,
-            onChanged: (v) => setState(() {
-              final pan = v * 2 - 1;
-              // A dead zone in the middle: centre has to be findable with a
-              // thumb, and a pad two per cent off centre is centre.
-              c.setPadPan(slot, pan.abs() < 0.05 ? 0 : pan);
-            }),
+            value: panAsKnob(pad.pan),
+            accent: pad.pan.abs() >= kPanDeadZone,
+            target: const MidiTarget(MidiParam.padPan),
+            onChanged: (v) => setState(() => c.setPadPan(slot, knobAsPan(v))),
           ),
           KnobSpec(
             label: 'Mute',
             display: pad.muted ? 'ON' : 'OFF',
-            value: pad.muted ? 1 : 0,
+            value: switchAsKnob(pad.muted),
             accent: pad.muted,
+            target: const MidiTarget(MidiParam.padMute),
             onChanged: (v) {
-              if ((v > 0.5) != pad.muted) setState(() => c.toggleMute(slot));
+              if (knobAsSwitch(v) != pad.muted) {
+                setState(() => c.toggleMute(slot));
+              }
             },
           ),
           // Solo points at this pad, not at the session: with another pad
@@ -458,10 +474,11 @@ class _PadsScreenState extends State<PadsScreen> {
           KnobSpec(
             label: 'Solo',
             display: c.isSoloOn(slot) ? 'ON' : 'OFF',
-            value: c.isSoloOn(slot) ? 1 : 0,
+            value: switchAsKnob(c.isSoloOn(slot)),
             accent: c.isSoloOn(slot),
+            target: const MidiTarget(MidiParam.padSolo),
             onChanged: (v) {
-              if ((v > 0.5) != c.isSoloOn(slot)) {
+              if (knobAsSwitch(v) != c.isSoloOn(slot)) {
                 setState(() => c.toggleSolo(slot));
               }
             },
@@ -476,9 +493,9 @@ class _PadsScreenState extends State<PadsScreen> {
           KnobSpec(
             label: 'Bus',
             display: _fxOnFamily ? sound.family.label : 'Maestro',
-            value: _fxOnFamily ? 1 : 0,
+            value: switchAsKnob(_fxOnFamily),
             accent: _fxOnFamily,
-            onChanged: (v) => setState(() => _fxOnFamily = v > 0.5),
+            onChanged: (v) => setState(() => _fxOnFamily = knobAsSwitch(v)),
           ),
           if (_fxOnFamily)
             ..._busKnobs(sound.family)
@@ -492,26 +509,28 @@ class _PadsScreenState extends State<PadsScreen> {
           KnobSpec(
             label: 'Loop',
             display: looping ? 'ON' : 'OFF',
-            value: looping ? 1 : 0,
+            value: switchAsKnob(looping),
             accent: looping,
-            onChanged: (v) => setState(() => c.setPadLooping(slot, v > 0.5)),
+            target: const MidiTarget(MidiParam.padLoop),
+            onChanged: (v) =>
+                setState(() => c.setPadLooping(slot, knobAsSwitch(v))),
           ),
           KnobSpec(
             label: 'Sync',
             display: pad.synced ? 'ON' : 'OFF',
-            value: pad.synced ? 1 : 0,
+            value: switchAsKnob(pad.synced),
             accent: pad.synced,
-            onChanged: (v) => setState(() => c.setPadSynced(slot, v > 0.5)),
+            target: const MidiTarget(MidiParam.padSync),
+            onChanged: (v) =>
+                setState(() => c.setPadSynced(slot, knobAsSwitch(v))),
           ),
           KnobSpec(
             label: 'Tiempos',
             display: loopLengthLabel(pad.loopSteps),
-            value: choices.indexOf(pad.loopSteps) / (choices.length - 1),
-            onChanged: (v) => setState(() {
-              final index =
-                  (v * (choices.length - 1)).round().clamp(0, choices.length - 1);
-              c.setPadLoopSteps(slot, choices[index]);
-            }),
+            value: indexAsKnob(choices.indexOf(pad.loopSteps), choices.length),
+            target: const MidiTarget(MidiParam.padLoopSteps),
+            onChanged: (v) => setState(() => c.setPadLoopSteps(
+                slot, choices[knobAsIndex(v, choices.length)])),
           ),
         ];
     }
@@ -522,18 +541,17 @@ class _PadsScreenState extends State<PadsScreen> {
   /// of the surface makes, where the knobs point at whatever is selected.
   List<KnobSpec> _scaleKnobs(int slot) {
     final scales = Scale.values;
-    final atScale = scales.indexOf(c.scale);
-    const octaves = [-2, -1, 0, 1, 2];
-    final atOctave = octaves.indexOf(c.scaleOctave);
+    final atOctave = kScaleOctaves.indexOf(c.scaleOctave);
 
     return [
       KnobSpec(
         label: 'Teclado',
         display: c.isScaleOn ? 'ON' : 'OFF',
-        value: c.isScaleOn ? 1 : 0,
+        value: switchAsKnob(c.isScaleOn),
         accent: c.isScaleOn,
+        target: const MidiTarget(MidiParam.scaleOn),
         onChanged: (v) {
-          final wanted = v > 0.5;
+          final wanted = knobAsSwitch(v);
           if (wanted == c.isScaleOn) return;
           setState(() => c.toggleScale(wanted ? slot : null));
         },
@@ -541,27 +559,27 @@ class _PadsScreenState extends State<PadsScreen> {
       KnobSpec(
         label: 'Tónica',
         display: noteName(c.scaleRoot),
-        value: c.scaleRoot / 11,
-        onChanged: (v) =>
-            setState(() => c.setScaleRoot((v * 11).round().clamp(0, 11))),
+        value: rootAsKnob(c.scaleRoot),
+        target: const MidiTarget(MidiParam.scaleRoot),
+        onChanged: (v) => setState(() => c.setScaleRoot(knobAsRoot(v))),
       ),
       KnobSpec(
         label: 'Escala',
         display: c.scale.label,
-        value: atScale / (scales.length - 1),
-        onChanged: (v) => setState(() {
-          final i = (v * (scales.length - 1)).round().clamp(0, scales.length - 1);
-          c.setScale(scales[i]);
-        }),
+        value: indexAsKnob(scales.indexOf(c.scale), scales.length),
+        target: const MidiTarget(MidiParam.scaleKind),
+        onChanged: (v) => setState(
+            () => c.setScale(scales[knobAsIndex(v, scales.length)])),
       ),
       KnobSpec(
         label: 'Octava',
         display: c.scaleOctave > 0 ? '+${c.scaleOctave}' : '${c.scaleOctave}',
-        value: (atOctave < 0 ? 2 : atOctave) / (octaves.length - 1),
-        onChanged: (v) => setState(() {
-          final i = (v * (octaves.length - 1)).round().clamp(0, octaves.length - 1);
-          c.setScaleOctave(octaves[i]);
-        }),
+        value: indexAsKnob(
+            atOctave < 0 ? kScaleOctaves.indexOf(0) : atOctave,
+            kScaleOctaves.length),
+        target: const MidiTarget(MidiParam.scaleOctave),
+        onChanged: (v) => setState(() => c
+            .setScaleOctave(kScaleOctaves[knobAsIndex(v, kScaleOctaves.length)])),
       ),
     ];
   }
@@ -580,6 +598,7 @@ class _PadsScreenState extends State<PadsScreen> {
         display: filterOpen ? 'OFF' : (fx.cutoff * 100).round().toString(),
         value: fx.cutoff,
         accent: !filterOpen,
+        target: const MidiTarget(MidiParam.masterCutoff),
         onChanged: (v) => setState(() => fx.cutoff = v),
       ),
       if (includeResonance)
@@ -588,6 +607,7 @@ class _PadsScreenState extends State<PadsScreen> {
           display: (fx.resonance * 100).round().toString(),
           value: fx.resonance,
           accent: fx.resonance > kFxEpsilon,
+          target: const MidiTarget(MidiParam.masterResonance),
           onChanged: (v) => setState(() => fx.resonance = v),
         ),
       KnobSpec(
@@ -596,6 +616,7 @@ class _PadsScreenState extends State<PadsScreen> {
             fx.echo <= kFxEpsilon ? 'OFF' : (fx.echo * 100).round().toString(),
         value: fx.echo,
         accent: fx.echo > kFxEpsilon,
+        target: const MidiTarget(MidiParam.masterEcho),
         onChanged: (v) => setState(() => fx.echo = v),
       ),
       KnobSpec(
@@ -604,6 +625,7 @@ class _PadsScreenState extends State<PadsScreen> {
             fx.drive <= kFxEpsilon ? 'OFF' : (fx.drive * 100).round().toString(),
         value: fx.drive,
         accent: fx.drive > kFxEpsilon,
+        target: const MidiTarget(MidiParam.masterDrive),
         onChanged: (v) => setState(() => fx.drive = v),
       ),
     ];
@@ -626,6 +648,7 @@ class _PadsScreenState extends State<PadsScreen> {
         display: filterOpen ? 'OFF' : (bus.cutoff * 100).round().toString(),
         value: bus.cutoff,
         accent: !filterOpen,
+        target: MidiTarget.bus(MidiParam.busCutoff, family),
         onChanged: (v) => setState(() => buses.setCutoff(family, v)),
       ),
       KnobSpec(
@@ -633,6 +656,7 @@ class _PadsScreenState extends State<PadsScreen> {
         display: (bus.resonance * 100).round().toString(),
         value: bus.resonance,
         accent: bus.resonance > kFxEpsilon,
+        target: MidiTarget.bus(MidiParam.busResonance, family),
         onChanged: (v) => setState(() => buses.setResonance(family, v)),
       ),
       KnobSpec(
@@ -640,6 +664,7 @@ class _PadsScreenState extends State<PadsScreen> {
         display: bus.isSendResting ? 'OFF' : (bus.send * 100).round().toString(),
         value: bus.send,
         accent: !bus.isSendResting,
+        target: MidiTarget.bus(MidiParam.busSend, family),
         onChanged: (v) => setState(() => buses.setSend(family, v)),
       ),
       KnobSpec(
@@ -648,6 +673,7 @@ class _PadsScreenState extends State<PadsScreen> {
             bus.isDriveResting ? 'OFF' : (bus.drive * 100).round().toString(),
         value: bus.drive,
         accent: !bus.isDriveResting,
+        target: MidiTarget.bus(MidiParam.busDrive, family),
         onChanged: (v) => setState(() => buses.setDrive(family, v)),
       ),
     ];

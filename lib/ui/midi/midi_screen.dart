@@ -5,17 +5,21 @@ import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../data/midi_service.dart';
+import '../../domain/midi_map.dart';
+import '../../state/midi_learn.dart';
 
 /// Controllers, and which one the grid is listening to.
 ///
-/// There is no mapping to set up: notes from [kMidiPadBaseNote] upwards play
-/// the sixteen pads of the bank on screen, which is the layout every pad
-/// controller already ships with. The screen exists to pick a device, not to
-/// configure one.
+/// There is still no mapping to set up here: notes from [kMidiPadBaseNote]
+/// upwards play the sixteen pads of the bank on screen, and knobs are married
+/// on the instrument itself by holding one down. What this screen adds is the
+/// list of what got married — somewhere to check, and somewhere to undo it
+/// without hunting for the knob that learned it.
 class MidiScreen extends StatefulWidget {
-  const MidiScreen({super.key, required this.midi});
+  const MidiScreen({super.key, required this.midi, required this.learn});
 
   final MidiService midi;
+  final MidiLearn learn;
 
   @override
   State<MidiScreen> createState() => _MidiScreenState();
@@ -23,17 +27,20 @@ class MidiScreen extends StatefulWidget {
 
 class _MidiScreenState extends State<MidiScreen> {
   MidiService get m => widget.midi;
+  MidiLearn get learn => widget.learn;
 
   @override
   void initState() {
     super.initState();
     m.addListener(_onChange);
+    learn.addListener(_onChange);
     m.refresh();
   }
 
   @override
   void dispose() {
     m.removeListener(_onChange);
+    learn.removeListener(_onChange);
     super.dispose();
   }
 
@@ -63,6 +70,8 @@ class _MidiScreenState extends State<MidiScreen> {
             if (m.devices.isEmpty) _empty(),
             const SizedBox(height: 16),
             _scanButton(),
+            const SizedBox(height: 26),
+            _mappings(),
           ],
         ),
       ),
@@ -93,6 +102,16 @@ class _MidiScreenState extends State<MidiScreen> {
             'Con el secuenciador escribiendo, lo que toques entra en el patrón. '
             'Con el teclado encendido, cada nota es un grado de la escala.',
             style: Brand.body(12.5, color: Palette.inkFaint),
+          ),
+          const SizedBox(height: 12),
+          Text('LOS MANDOS SE APRENDEN SOLOS',
+              style: Brand.label(8.5, weight: 700)),
+          const SizedBox(height: 8),
+          Text(
+            'Mantén pulsado un mando de la franja, mueve el mando físico, y '
+            'quedan casados. El número del control queda escrito dentro del '
+            'dial. Se aprenden en el sitio, no aquí.',
+            style: Brand.body(12.5),
           ),
         ],
       ),
@@ -191,6 +210,75 @@ class _MidiScreenState extends State<MidiScreen> {
             weight: 700,
             color: m.isScanning ? Palette.inkFaint : Palette.ink,
           ),
+        ),
+      ),
+    );
+  }
+
+  /// What the desk moves today. It is a list to *undo* from, not one to set up
+  /// from: nothing here can create a mapping, only forget one.
+  Widget _mappings() {
+    final bindings = learn.map.bindings;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text('MANDOS APRENDIDOS · ${bindings.length}',
+                  style: Brand.label(8.5, weight: 700)),
+            ),
+            if (bindings.isNotEmpty)
+              GestureDetector(
+                onTap: learn.forgetEverything,
+                child: Text('OLVIDAR TODO',
+                    style: Brand.label(8.5, weight: 700, color: Palette.rec)),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (bindings.isEmpty)
+          Text(
+            'Ninguno todavía. Mantén pulsado cualquier mando de la franja para '
+            'enseñarle uno.',
+            style: Brand.body(12.5, color: Palette.inkFaint),
+          ),
+        ...bindings.map(_mappingRow),
+      ],
+    );
+  }
+
+  Widget _mappingRow(MidiBinding binding) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Palette.panel,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Palette.line),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 52,
+              child: Text('CC${binding.controller}',
+                  style: Brand.readout(12, weight: 700)),
+            ),
+            Expanded(
+              child: Text(binding.target.label, style: Brand.strong(13)),
+            ),
+            GestureDetector(
+              onTap: () => learn.forget(binding.target),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text('OLVIDAR',
+                    style:
+                        Brand.label(8, weight: 700, color: Palette.inkDim)),
+              ),
+            ),
+          ],
         ),
       ),
     );

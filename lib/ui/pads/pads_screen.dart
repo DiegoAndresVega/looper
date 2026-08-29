@@ -9,11 +9,13 @@ import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../data/factory_kit.dart';
+import '../../domain/chord.dart';
 import '../../domain/knob_scale.dart';
 import '../../domain/loop_length.dart';
 import '../../domain/midi_target.dart';
 import '../../domain/pad_config.dart';
 import '../../domain/scale.dart';
+import '../../domain/sound.dart';
 import '../../state/session_controller.dart';
 import 'bank_tabs.dart';
 import 'control_surface.dart';
@@ -23,7 +25,9 @@ import 'scene_strip.dart';
 import 'sequencer_bar.dart';
 import 'song_sheet.dart';
 import 'tempo_stepper.dart';
+import 'tracks_sheet.dart';
 import 'transport_bar.dart';
+import 'xy_pad.dart';
 
 /// The root of the app. Banks, tempo, grid, control surface and transport —
 /// everything a session needs, with no menu in the way.
@@ -93,7 +97,8 @@ class _PadsScreenState extends State<PadsScreen> {
     // The loop rings need a steady repaint; the controller only notifies on
     // real state changes, which is not often enough for a moving ring.
     _ringTicker = Timer.periodic(const Duration(milliseconds: 33), (_) {
-      final moving = c.loops.isNotEmpty ||
+      final moving =
+          c.loops.isNotEmpty ||
           c.mixdown.isRecording ||
           c.sequencer.isPlaying ||
           // A hit fades out on its own, so the frame that turns it off has to
@@ -139,7 +144,7 @@ class _PadsScreenState extends State<PadsScreen> {
                 activeIndex: c.activeBank,
                 busyBanks: {
                   for (var i = 0; i < kBankCount; i++)
-                    if (c.bankHasLoops(i)) i
+                    if (c.bankHasLoops(i)) i,
                 },
                 onSelect: (i) => setState(() => c.selectBank(i)),
               ),
@@ -187,7 +192,11 @@ class _PadsScreenState extends State<PadsScreen> {
                   ),
                 ),
                 const SizedBox(width: 5),
-                const Icon(Icons.expand_more, size: 15, color: Palette.inkFaint),
+                const Icon(
+                  Icons.expand_more,
+                  size: 15,
+                  color: Palette.inkFaint,
+                ),
               ],
             ),
           ),
@@ -258,19 +267,26 @@ class _PadsScreenState extends State<PadsScreen> {
           borderRadius: BorderRadius.circular(9),
           border: Border.all(color: lit ? Palette.accent : Palette.line),
         ),
-        child: Icon(icon, size: 16, color: lit ? Palette.accent : Palette.inkDim),
+        child: Icon(
+          icon,
+          size: 16,
+          color: lit ? Palette.accent : Palette.inkDim,
+        ),
       ),
     );
   }
 
   Widget _grid() {
-    return LayoutBuilder(builder: (context, box) {
-      const gap = 8.0;
-      const rows = kPadsPerBank ~/ kGridColumns;
-      final padWidth = (box.maxWidth - gap * (kGridColumns - 1)) / kGridColumns;
-      final padHeight = (box.maxHeight - gap * (rows - 1)) / rows;
-      return _buildGrid(padWidth / padHeight, gap);
-    });
+    return LayoutBuilder(
+      builder: (context, box) {
+        const gap = 8.0;
+        const rows = kPadsPerBank ~/ kGridColumns;
+        final padWidth =
+            (box.maxWidth - gap * (kGridColumns - 1)) / kGridColumns;
+        final padHeight = (box.maxHeight - gap * (rows - 1)) / rows;
+        return _buildGrid(padWidth / padHeight, gap);
+      },
+    );
   }
 
   Widget _buildGrid(double aspectRatio, double gap) {
@@ -416,7 +432,7 @@ class _PadsScreenState extends State<PadsScreen> {
     final label = sound == null
         ? 'Maestro'
         : '${kBankIds[c.activeBank]} · ${(slot! + 1).toString().padLeft(2, '0')} · ${sound.name}'
-            '${c.isScaleOn ? ' · TECLADO' : ''}';
+              '${c.isScaleOn ? ' · TECLADO' : ''}';
 
     return ControlSurface(
       targetLabel: label,
@@ -425,6 +441,7 @@ class _PadsScreenState extends State<PadsScreen> {
       tab: _tab,
       onTabChanged: (t) => setState(() => _tab = t),
       knobs: _knobsFor(slot, pad),
+      wide: _tab == SurfaceTab.xy ? _xyPad(sound) : null,
       learn: c.midiLearn,
     );
   }
@@ -459,7 +476,9 @@ class _PadsScreenState extends State<PadsScreen> {
           ),
           KnobSpec(
             label: 'Tono',
-            display: pad.semitones > 0 ? '+${pad.semitones}' : '${pad.semitones}',
+            display: pad.semitones > 0
+                ? '+${pad.semitones}'
+                : '${pad.semitones}',
             value: semitonesAsKnob(pad.semitones),
             target: const MidiTarget(MidiParam.padPitch),
             onChanged: (v) =>
@@ -506,6 +525,10 @@ class _PadsScreenState extends State<PadsScreen> {
         ];
       case SurfaceTab.scale:
         return _scaleKnobs(slot);
+      case SurfaceTab.xy:
+        // The XY pad is not four knobs, so the row is replaced whole. The
+        // list stays empty rather than faked.
+        return const [];
       case SurfaceTab.fx:
         final sound = c.soundFor(pad);
         if (sound == null) return _fxKnobs(includeResonance: true);
@@ -549,8 +572,12 @@ class _PadsScreenState extends State<PadsScreen> {
             display: loopLengthLabel(pad.loopSteps),
             value: indexAsKnob(choices.indexOf(pad.loopSteps), choices.length),
             target: const MidiTarget(MidiParam.padLoopSteps),
-            onChanged: (v) => setState(() => c.setPadLoopSteps(
-                slot, choices[knobAsIndex(v, choices.length)])),
+            onChanged: (v) => setState(
+              () => c.setPadLoopSteps(
+                slot,
+                choices[knobAsIndex(v, choices.length)],
+              ),
+            ),
           ),
         ];
     }
@@ -588,20 +615,87 @@ class _PadsScreenState extends State<PadsScreen> {
         display: c.scale.label,
         value: indexAsKnob(scales.indexOf(c.scale), scales.length),
         target: const MidiTarget(MidiParam.scaleKind),
-        onChanged: (v) => setState(
-            () => c.setScale(scales[knobAsIndex(v, scales.length)])),
+        onChanged: (v) =>
+            setState(() => c.setScale(scales[knobAsIndex(v, scales.length)])),
       ),
       KnobSpec(
         label: 'Octava',
         display: c.scaleOctave > 0 ? '+${c.scaleOctave}' : '${c.scaleOctave}',
         value: indexAsKnob(
-            atOctave < 0 ? kScaleOctaves.indexOf(0) : atOctave,
-            kScaleOctaves.length),
+          atOctave < 0 ? kScaleOctaves.indexOf(0) : atOctave,
+          kScaleOctaves.length,
+        ),
         target: const MidiTarget(MidiParam.scaleOctave),
-        onChanged: (v) => setState(() => c
-            .setScaleOctave(kScaleOctaves[knobAsIndex(v, kScaleOctaves.length)])),
+        onChanged: (v) => setState(
+          () => c.setScaleOctave(
+            kScaleOctaves[knobAsIndex(v, kScaleOctaves.length)],
+          ),
+        ),
+      ),
+      ..._chordKnobs(),
+    ];
+  }
+
+  /// How many notes a key plays and whether they arrive together. They ride
+  /// with the scale rather than getting a tab of their own: they are the same
+  /// decision — what the grid plays when it stops being percussion — and the
+  /// row already holds six dials on the FX tab.
+  List<KnobSpec> _chordKnobs() {
+    final voicings = ChordVoicing.values;
+    final modes = ArpMode.values;
+
+    return [
+      KnobSpec(
+        label: 'Acorde',
+        display: c.chord.label,
+        value: indexAsKnob(voicings.indexOf(c.chord), voicings.length),
+        accent: c.chord.isChord,
+        target: const MidiTarget(MidiParam.chordVoicing),
+        onChanged: (v) => setState(
+          () => c.setChord(voicings[knobAsIndex(v, voicings.length)]),
+        ),
+      ),
+      KnobSpec(
+        label: 'Arpegio',
+        display: c.arp.label,
+        value: indexAsKnob(modes.indexOf(c.arp), modes.length),
+        accent: c.arp.isOn,
+        target: const MidiTarget(MidiParam.arpMode),
+        onChanged: (v) =>
+            setState(() => c.setArp(modes[knobAsIndex(v, modes.length)])),
       ),
     ];
+  }
+
+  /// One thumb, two parameters: the filter across and the drive up. It moves
+  /// whatever the FX tab is pointed at — the master, or the family bus of the
+  /// pad you have selected — so the macro and the dials are never two
+  /// different things fighting over the same value.
+  Widget _xyPad(Sound? sound) {
+    final onBus = _fxOnFamily && sound != null;
+    final bus = onBus ? c.buses.settingsFor(sound.family) : null;
+    final fx = c.fx;
+
+    final x = bus?.cutoff ?? fx.cutoff;
+    final y = bus?.drive ?? fx.drive;
+
+    return XyPad(
+      x: x,
+      y: y,
+      xLabel: onBus ? 'Filtro · ${sound.family.label}' : 'Filtro · maestro',
+      yLabel: 'Drive',
+      xDisplay: x >= 1 - kFxEpsilon ? 'OFF' : '${(x * 100).round()}',
+      yDisplay: y <= kFxEpsilon ? 'OFF' : '${(y * 100).round()}',
+      onChanged: (nx, ny) => setState(() {
+        if (bus == null) {
+          fx.cutoff = nx;
+          fx.drive = ny;
+        } else {
+          c.buses.setCutoff(sound!.family, nx);
+          c.buses.setDrive(sound.family, ny);
+        }
+      }),
+    );
   }
 
   /// The performance effects. They sit on the master output, so the same
@@ -632,8 +726,9 @@ class _PadsScreenState extends State<PadsScreen> {
         ),
       KnobSpec(
         label: 'Eco',
-        display:
-            fx.echo <= kFxEpsilon ? 'OFF' : (fx.echo * 100).round().toString(),
+        display: fx.echo <= kFxEpsilon
+            ? 'OFF'
+            : (fx.echo * 100).round().toString(),
         value: fx.echo,
         accent: fx.echo > kFxEpsilon,
         target: const MidiTarget(MidiParam.masterEcho),
@@ -641,12 +736,33 @@ class _PadsScreenState extends State<PadsScreen> {
       ),
       KnobSpec(
         label: 'Drive',
-        display:
-            fx.drive <= kFxEpsilon ? 'OFF' : (fx.drive * 100).round().toString(),
+        display: fx.drive <= kFxEpsilon
+            ? 'OFF'
+            : (fx.drive * 100).round().toString(),
         value: fx.drive,
         accent: fx.drive > kFxEpsilon,
         target: const MidiTarget(MidiParam.masterDrive),
         onChanged: (v) => setState(() => fx.drive = v),
+      ),
+      KnobSpec(
+        label: 'Comp',
+        display: fx.compressor <= kFxEpsilon
+            ? 'OFF'
+            : (fx.compressor * 100).round().toString(),
+        value: fx.compressor,
+        accent: fx.compressor > kFxEpsilon,
+        target: const MidiTarget(MidiParam.masterCompressor),
+        onChanged: (v) => setState(() => fx.compressor = v),
+      ),
+      KnobSpec(
+        label: 'Chorus',
+        display: fx.chorus <= kFxEpsilon
+            ? 'OFF'
+            : (fx.chorus * 100).round().toString(),
+        value: fx.chorus,
+        accent: fx.chorus > kFxEpsilon,
+        target: const MidiTarget(MidiParam.masterChorus),
+        onChanged: (v) => setState(() => fx.chorus = v),
       ),
     ];
   }
@@ -681,7 +797,9 @@ class _PadsScreenState extends State<PadsScreen> {
       ),
       KnobSpec(
         label: 'Envío',
-        display: bus.isSendResting ? 'OFF' : (bus.send * 100).round().toString(),
+        display: bus.isSendResting
+            ? 'OFF'
+            : (bus.send * 100).round().toString(),
         value: bus.send,
         accent: !bus.isSendResting,
         target: MidiTarget.bus(MidiParam.busSend, family),
@@ -689,8 +807,9 @@ class _PadsScreenState extends State<PadsScreen> {
       ),
       KnobSpec(
         label: 'Drive',
-        display:
-            bus.isDriveResting ? 'OFF' : (bus.drive * 100).round().toString(),
+        display: bus.isDriveResting
+            ? 'OFF'
+            : (bus.drive * 100).round().toString(),
         value: bus.drive,
         accent: !bus.isDriveResting,
         target: MidiTarget.bus(MidiParam.busDrive, family),
@@ -787,6 +906,53 @@ class _PadsScreenState extends State<PadsScreen> {
     if (mounted) setState(() {});
   }
 
+  /// How long each track of the pattern runs. It is the one thing in the
+  /// sequencer that is not per step but per pad, so it does not fit in the
+  /// step slider — and a pattern with tracks of different lengths stops
+  /// sounding like a loop, which is worth a sheet of its own.
+  Future<void> _openTracksSheet() async {
+    final seq = c.sequencer;
+    if (!seq.isOn) setState(c.toggleSequencer);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => StatefulBuilder(
+        builder: (_, setSheetState) => TracksSheet(
+          patternNumber: seq.patternIndex + 1,
+          tracks: [
+            for (final note in seq.tracks)
+              if (parsePadKey(note) case final target?)
+                TrackRow(
+                  note: note,
+                  label: _trackLabel(target.bank, target.slot),
+                  color: c
+                          .soundFor(c.session!.padAt(target.bank, target.slot))
+                          ?.family
+                          .color ??
+                      Palette.inkFaint,
+                  length: seq.trackLength(note),
+                ),
+          ],
+          onLength: (note, length) {
+            setState(() => seq.setTrackLength(note, length));
+            setSheetState(() {});
+          },
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// A track reads the way its pad reads: bank, number and sound.
+  String _trackLabel(int bank, int slot) {
+    final pad = c.session!.padAt(bank, slot);
+    final sound = c.soundFor(pad);
+    final number = (slot + 1).toString().padLeft(2, '0');
+    return '${kBankIds[bank]} · $number · ${sound?.name ?? 'Vacío'}';
+  }
+
   Widget _transport() {
     final slot = c.selectedSlot;
     final pad = slot == null ? null : c.padAt(slot);
@@ -813,23 +979,30 @@ class _PadsScreenState extends State<PadsScreen> {
           active: c.isRolling,
           onTap: _editArmed
               ? () => setState(() {
-                    c.cycleRollDivision();
-                    _editArmed = false;
-                  })
+                  c.cycleRollDivision();
+                  _editArmed = false;
+                })
               : () {},
           onPressStart: _editArmed ? null : () => setState(c.startRoll),
           onPressEnd: _editArmed ? null : () => setState(c.stopRoll),
         ),
+        // AJUSTAR + toque abre el largo de cada pista, el mismo trato que
+        // ya tiene ROLL: armado, el botón se configura en vez de usarse.
         TransportAction(
           icon: Icons.grid_view,
           label: 'Seq',
           active: c.sequencer.isOn,
-          onTap: () => setState(() {
+          onTap: _editArmed
+              ? () {
+                  setState(() => _editArmed = false);
+                  _openTracksSheet();
+                }
+              : () => setState(() {
             // The strip holds one thing at a time, so asking for the
             // sequencer is also asking the scenes to step aside.
-            _scenesOpen = false;
-            c.toggleSequencer();
-          }),
+                  _scenesOpen = false;
+                  c.toggleSequencer();
+                }),
         ),
         // Scenes share the strip with the sequencer, so they share its
         // neighbourhood on the transport too.
@@ -868,18 +1041,24 @@ class _PadsScreenState extends State<PadsScreen> {
           onTap: c.isSoloActive
               ? () => setState(c.clearSolo)
               : slot == null
-                  ? () => _notYet('Elige un pad para silenciarlo')
-                  : () => setState(() => c.toggleMute(slot)),
-          onLongPress: slot == null ? null : () => setState(() => c.toggleSolo(slot)),
+              ? () => _notYet('Elige un pad para silenciarlo')
+              : () => setState(() => c.toggleMute(slot)),
+          onLongPress: slot == null
+              ? null
+              : () => setState(() => c.toggleSolo(slot)),
         ),
         // The laser dot belongs to the sequencer and only to the sequencer.
         // Rendering the performance out is an export, and wears the icon
         // every phone already reads as "send this somewhere".
         TransportAction(
           icon: Icons.ios_share,
-          label: 'Exportar',
+          label: c.stemProgress == null ? 'Exportar' : 'Pistas',
           recording: c.mixdown.isRecording,
           onTap: _toggleMixdown,
+          // Held, it exports one file per family instead of one mix. Four
+          // passes of four compases, so it is a decision and not a slip:
+          // that is why it is the long press and not a second button.
+          onLongPress: c.mixdown.isRecording ? null : _exportStems,
         ),
       ],
     );
@@ -890,6 +1069,12 @@ class _PadsScreenState extends State<PadsScreen> {
   /// living next to the others instead of behind a screen.
   Future<void> _toggleMixdown() async {
     if (!c.mixdown.isRecording) {
+      // Said before the take rather than after it fails: the difference
+      // between a nuisance and a lost session. It warns and starts anyway —
+      // it is the player's phone, and half a gigabyte is still a long take.
+      if (c.isSpaceLow) {
+        _notYet('Queda poco espacio: ${c.freeSpaceLabel}');
+      }
       await c.startMixdown();
       if (mounted) setState(() {});
       return;
@@ -921,6 +1106,47 @@ class _PadsScreenState extends State<PadsScreen> {
       ),
     );
   }
+
+  /// One file per family. It takes four passes of four bars — the engine
+  /// gives a single tap of the mixer — so the screen says which one is being
+  /// recorded while it happens.
+  Future<void> _exportStems() async {
+    if (c.loops.isEmpty && !c.sequencer.isPlaying) {
+      _notYet('Pon algo a sonar antes de exportar las pistas');
+      return;
+    }
+    _notYet('Exportando cuatro pistas · unos ${_stemSeconds()} segundos');
+
+    final files = await c.exportStems();
+    if (!mounted) return;
+    setState(() {});
+    if (files.isEmpty) {
+      _notYet('Las pistas salieron vacías');
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${files.length} pistas exportadas'),
+        backgroundColor: Palette.panelHigh,
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'COMPARTIR',
+          textColor: Palette.accent,
+          onPressed: () => SharePlus.instance.share(
+            ShareParams(
+              files: [for (final file in files) XFile(file.path)],
+              text: 'Las pistas de ${c.session?.name ?? 'Looper'}',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Roughly how long the four passes take, so the wait is a number and not
+  /// a surprise.
+  int _stemSeconds() => (4 * 4 * 4 * 60 / c.bpm).round();
 
   String _formatElapsed(Duration elapsed) {
     final minutes = elapsed.inMinutes;
@@ -986,10 +1212,12 @@ class _PadsScreenState extends State<PadsScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(landed == null
-              ? 'No queda ningún pad libre donde ponerlo'
-              : 'Cuatro compases en ${kBankIds[landed.bank]} · '
-                  '${(landed.slot + 1).toString().padLeft(2, '0')}'),
+          content: Text(
+            landed == null
+                ? 'No queda ningún pad libre donde ponerlo'
+                : 'Cuatro compases en ${kBankIds[landed.bank]} · '
+                      '${(landed.slot + 1).toString().padLeft(2, '0')}',
+          ),
           backgroundColor: Palette.panelHigh,
           duration: const Duration(seconds: 3),
         ),
@@ -1033,8 +1261,10 @@ class _PadsScreenState extends State<PadsScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('P${c.sequencer.patternIndex + 1} copiado · '
-              've al patrón de destino'),
+          content: Text(
+            'P${c.sequencer.patternIndex + 1} copiado · '
+            've al patrón de destino',
+          ),
           backgroundColor: Palette.panelHigh,
           duration: const Duration(seconds: 10),
           action: SnackBarAction(

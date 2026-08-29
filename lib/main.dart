@@ -15,6 +15,7 @@ import 'state/session_controller.dart';
 import 'ui/library/library_screen.dart';
 import 'data/midi_service.dart';
 import 'data/save_point_store.dart';
+import 'data/set_list_store.dart';
 import 'ui/midi/midi_screen.dart';
 import 'ui/pads/pads_screen.dart';
 import 'ui/sampler/sampler_screen.dart';
@@ -122,6 +123,7 @@ class _BootState extends State<Boot> {
   SessionController? _controller;
   Storage? _storage;
   SavePointStore? _savePoints;
+  SetListStore? _setList;
   final MidiService _midi = MidiService();
   SoundLibrary? _library;
   SessionStore? _store;
@@ -149,6 +151,8 @@ class _BootState extends State<Boot> {
       await store.load();
       final savePoints = SavePointStore(storage);
       await savePoints.load();
+      final setList = SetListStore(storage);
+      await setList.load();
       final session = await store.firstOrCreate(library);
 
       final controller = SessionController(
@@ -165,6 +169,7 @@ class _BootState extends State<Boot> {
       setState(() {
         _storage = storage;
         _savePoints = savePoints;
+        _setList = setList;
         _library = library;
         _store = store;
         _controller = controller;
@@ -172,6 +177,9 @@ class _BootState extends State<Boot> {
         // to; picking one is a screen away, and none is a perfectly normal
         // state to stay in for ever.
         controller.listenToMidi(_midi.events);
+        // And the other way: the same cable carries the clock, the transport
+        // and the notes out, once somebody asks for them.
+        controller.attachMidiOut(_midi.send);
         _midi.start();
       });
     } catch (e, stack) {
@@ -260,7 +268,12 @@ class _BootState extends State<Boot> {
 
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => MidiScreen(midi: _midi, learn: controller.midiLearn),
+        builder: (_) => MidiScreen(
+          midi: _midi,
+          learn: controller.midiLearn,
+          isOutOn: controller.isMidiOutOn,
+          onOutChanged: (on) => setState(() => controller.setMidiOut(on)),
+        ),
       ),
     );
     if (mounted) setState(() {});
@@ -335,6 +348,15 @@ class _BootState extends State<Boot> {
           },
           slicesFor: controller.previewChop,
           onReverse: controller.reverseSound,
+          onPitch: controller.pitchSound,
+          onStretch: controller.stretchSound,
+          sessionBpm: controller.bpm,
+          onDecodeAudio: _engine.decodeToSamples,
+          lowSpaceLabel:
+              controller.isSpaceLow ? controller.freeSpaceLabel : null,
+          onAuditionPatch: controller.previewPatch,
+          onCreatePatch: (patch, name) =>
+              controller.createFromPatch(patch, name: name),
           onChop: controller.chop,
         ),
       ),
@@ -349,11 +371,13 @@ class _BootState extends State<Boot> {
     final store = _store;
     final library = _library;
     final savePoints = _savePoints;
+    final setList = _setList;
     final current = controller?.session;
     if (controller == null ||
         store == null ||
         library == null ||
         savePoints == null ||
+        setList == null ||
         current == null) {
       return;
     }
@@ -368,6 +392,7 @@ class _BootState extends State<Boot> {
           library: library,
           currentId: current.id,
           savePoints: savePoints,
+          setList: setList,
           currentSession: current,
           onRestore: controller.restore,
         ),

@@ -70,6 +70,26 @@ class FamilyFx {
     applyAll();
   }
 
+  /// Leaves one family on the air and silences the rest, or brings them all
+  /// back when [only] is null.
+  ///
+  /// It is how stems are exported: the engine hands out a single tap of the
+  /// mixer, so four separate tracks cannot be recorded at once — they are
+  /// recorded one after another, with the others turned down. The reverb goes
+  /// with them, so a stem comes out dry, which is what a stem is for.
+  void soloFamily(SoundFamily? only) {
+    for (final entry in _buses.entries) {
+      final handle = entry.value.soundHandle;
+      if (handle == null) continue;
+      SoLoud.instance
+          .setVolume(handle, only == null || entry.key == only ? 1 : 0);
+    }
+    final reverb = _reverb?.soundHandle;
+    if (reverb != null) {
+      SoLoud.instance.setVolume(reverb, only == null ? 1 : 0);
+    }
+  }
+
   /// Puts the bus voices back on the engine. Every bus is a voice like any
   /// other, so anything that stops all voices — `disposeAllSources` does —
   /// takes the buses off the air with them, and the grid goes silent until

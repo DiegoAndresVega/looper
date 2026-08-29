@@ -13,11 +13,15 @@ import '../audio/family_fx.dart';
 import '../audio/master_fx.dart';
 import '../audio/mixdown_recorder.dart';
 import '../audio/mixer_tap.dart';
+import '../audio/stretch.dart';
+import '../audio/synth_voice.dart';
 import '../audio/wav_decoder.dart';
+import '../audio/wav_encoder.dart';
 import '../audio/tempo_clock.dart';
 import '../core/constants.dart';
 import '../core/palette.dart';
 import '../data/metronome.dart';
+import '../data/disk_space.dart';
 import '../data/midi_map_store.dart';
 import '../data/session_store.dart';
 import '../data/sound_library.dart';
@@ -30,12 +34,15 @@ import 'undo_stack.dart';
 import '../domain/pad_config.dart';
 import '../domain/pattern.dart';
 import '../domain/midi.dart';
+import '../domain/midi_out.dart';
 import '../domain/save_point.dart';
+import '../domain/chord.dart';
 import '../domain/scale.dart';
 import '../domain/scene.dart';
 import '../domain/song.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
+import '../domain/synth_patch.dart';
 
 const _uuid = Uuid();
 
@@ -218,6 +225,7 @@ class SessionController extends ChangeNotifier {
       songMode: session.songMode,
     );
     await _preloadSession();
+    await refreshFreeSpace();
     notifyListeners();
   }
 
@@ -437,6 +445,7 @@ class SessionController extends ChangeNotifier {
     if (clamped == session.bpm) return;
     _session = session.copyWith(bpm: clamped);
     _clock.setBpm(clamped);
+    if (_clockTimer != null) _startClock();
     _touch();
     notifyListeners();
   }
@@ -451,7 +460,7 @@ class SessionController extends ChangeNotifier {
     // has to keep pointing at the sound being played, not at the last key hit.
     final source = _scaleSource;
     if (source != null && !padAt(source).isEmpty) {
-      _fireOnce(_activeBank, source, transpose: scaleSemitonesFor(slot));
+      _playChord(source, slot);
       notifyListeners();
       return;
     }
@@ -536,13 +545,29 @@ class SessionController extends ChangeNotifier {
     // The transposition is part of the voice's identity: without it, playing
     // a C and then an E on the same source sound would cut the C off, and the
     // grid-as-keyboard would come out monophonic. Repeating the *same* note
-    // still cuts its own previous hit, which is what the kit does too.
+    // still follows the pad's own mode, which is what the kit does too.
     final key = transpose == 0
         ? padKey(bank, slot)
         : '${padKey(bank, slot)}@$transpose';
-    final previous = _hits.remove(key);
-    if (previous != null) {
-      _engine.stopHandle(previous);
+
+    // The group first: an open hat is silenced by the closed one before the
+    // closed one sounds, not after.
+    _chokeFor(bank, slot, pad);
+
+    final previous = _hits[key];
+    final alive = previous != null && _engine.isVoiceAlive(previous);
+    switch (hitActionFor(mode: pad.playMode, isSounding: alive)) {
+      case HitAction.ignore:
+        return;
+      case HitAction.cutPrevious:
+        _hits.remove(key);
+        if (previous != null) _engine.stopHandle(previous);
+      case HitAction.layer:
+        // The older voice keeps ringing but stops being the pad's current
+        // one. It is parked so PARAR can still reach it: a voice nobody
+        // holds is a voice the panic button cannot stop.
+        _hits.remove(key);
+        if (alive) _park(previous);
     }
 
     final handle = _engine.fire(
@@ -552,6 +577,14 @@ class SessionController extends ChangeNotifier {
       pan: pad.pan,
     );
     if (handle != null) _hits[key] = handle;
+
+    // And out of the cable, so the same finger plays whatever else is on the
+    // desk. A short gate: this is a trigger, not a held key, and a note left
+    // on would hang a synth the moment the app is closed.
+    if (_midiOut) {
+      _send(noteOnMessage(bank: bank, slot: slot, velocity: velocity));
+      Timer(kMidiGate, () => _send(noteOffMessage(bank: bank, slot: slot)));
+    }
   }
 
   /// Tape-style: the pad's own pitch offset stacks on the sound's.
@@ -570,6 +603,69 @@ class SessionController extends ChangeNotifier {
   /// Something moved a parameter from outside the screen. Nothing in the
   /// session changed, but the strip is now lying about where its knobs are.
   void refreshSurface() => notifyListeners();
+
+  // ------------------------------------------------------- MIDI de salida
+
+  /// Where bytes leave for the controller, or null when nothing is attached.
+  /// A function rather than the service itself: the instrument has no idea
+  /// what a MIDI package is, and it is not about to learn.
+  void Function(Uint8List data)? _midiSend;
+
+  /// Whether the instrument talks back. Off by default: a clock nobody asked
+  /// for will start somebody else's drum machine in the middle of a take.
+  bool _midiOut = false;
+  Timer? _clockTimer;
+
+  bool get isMidiOutOn => _midiOut;
+
+  void attachMidiOut(void Function(Uint8List data) send) => _midiSend = send;
+
+  /// Sends the clock, the transport and every note this instrument plays.
+  /// Turning it off stops the clock immediately: something out there is
+  /// following it, and leaving it running would leave that thing running.
+  void setMidiOut(bool value) {
+    if (_midiOut == value) return;
+    _midiOut = value;
+    if (!value) {
+      _stopClock();
+      _send(stopMessage);
+    } else if (sequencer.isPlaying) {
+      _send(startMessage);
+      _startClock();
+    }
+    notifyListeners();
+  }
+
+  void _send(Uint8List data) {
+    if (!_midiOut) return;
+    _midiSend?.call(data);
+  }
+
+  /// Twenty-four pulses a quarter note, which is the only rate anything out
+  /// there reads. It runs off its own timer rather than off the step clock:
+  /// six bursts on every 16th would arrive as one lump and read as swing on
+  /// the receiving end.
+  void _startClock() {
+    _stopClock();
+    final period = stepMsAt(_clock.bpm) / kMidiClockPulsesPerStep;
+    _clockTimer = Timer.periodic(
+      Duration(microseconds: (period * 1000).round()),
+      (_) => _send(clockMessage),
+    );
+  }
+
+  void _stopClock() {
+    _clockTimer?.cancel();
+    _clockTimer = null;
+  }
+
+  /// The pad's LED on the desk, lit and unlit with the loop on screen. Without
+  /// this the screen says one thing and the plastic says another.
+  void _sendLoopState(int bank, int slot, {required bool on}) {
+    _send(on
+        ? noteOnMessage(bank: bank, slot: slot, velocity: 1)
+        : noteOffMessage(bank: bank, slot: slot));
+  }
 
   /// Which pads are being held down from the controller, so a released note
   /// silences the one it started rather than whatever is sounding now.
@@ -661,6 +757,53 @@ class SessionController extends ChangeNotifier {
   }
 
   /// How far above the root the pad at [slot] plays right now.
+  ChordVoicing get chord => _session?.chord ?? ChordVoicing.single;
+  ArpMode get arp => _session?.arp ?? ArpMode.off;
+
+  void setChord(ChordVoicing value) {
+    final session = _session;
+    if (session == null) return;
+    _session = session.copyWith(chord: value);
+    _touch();
+    notifyListeners();
+  }
+
+  void setArp(ArpMode value) {
+    final session = _session;
+    if (session == null) return;
+    _session = session.copyWith(arp: value);
+    _touch();
+    notifyListeners();
+  }
+
+  /// One key of the keyboard, played as however many notes the voicing asks
+  /// for. The intervals are scale degrees, so the chord is in key by
+  /// construction — the same promise the locked scale already makes.
+  ///
+  /// With the arpeggio on, the notes are spread over a beat instead of
+  /// arriving together. A beat and not a step: an arpeggio you have to play
+  /// in time with is a rhythm, and this one answers a single finger.
+  void _playChord(int source, int slot) {
+    final voicing = chord;
+    final semitones = [
+      for (final degree in voicing.degrees) scaleSemitonesFor(slot + degree),
+    ];
+    final order = arpSequence(semitones, arp);
+    if (!arp.isOn || order.length < 2) {
+      for (final transpose in order) {
+        _fireOnce(_activeBank, source, transpose: transpose);
+      }
+      return;
+    }
+    final offsets = arpOffsets(order.length);
+    for (var i = 0; i < order.length; i++) {
+      _afterStepDelay(
+        offsets[i] * kStepsPerBeat,
+        () => _fireOnce(_activeBank, source, transpose: order[i]),
+      );
+    }
+  }
+
   int scaleSemitonesFor(int slot) => semitonesForPad(
         slot,
         scale: scale,
@@ -696,6 +839,58 @@ class SessionController extends ChangeNotifier {
   /// standing on the downbeat — a scene coming in on the bar line. The clock
   /// fires the entries it had when the step began, so one added *during* that
   /// step would sit silent until the next boundary, a whole bar of nothing.
+  /// Voices that have been layered over and are ringing out on their own.
+  /// Only PARAR reaches them; they are not any pad's current voice any more.
+  final Set<SoundHandle> _parked = {};
+
+  void _park(SoundHandle handle) {
+    // Swept rather than tracked: a layering pad can leave dozens behind in a
+    // minute, and asking the engine about each one on every hit would put a
+    // pile of calls across the boundary in the middle of a roll.
+    if (_parked.length > kMaxVoices) {
+      _parked.removeWhere((h) => !_engine.isVoiceAlive(h));
+    }
+    _parked.add(handle);
+  }
+
+  /// Silences the pads that cannot sound alongside this one. Loops are left
+  /// alone on purpose: a loop is a decision to keep something running, and a
+  /// tap on its neighbour is not a decision to undo it.
+  void _chokeFor(int bank, int slot, PadConfig pad) {
+    if (pad.chokeGroup == kNoChokeGroup) return;
+    final victims = chokeVictims(
+      firingKey: padKey(bank, slot),
+      group: pad.chokeGroup,
+      sounding: _soundingGroups(),
+    );
+    if (victims.isEmpty) return;
+    for (final hitKey in _hits.keys.toList()) {
+      if (!victims.contains(_padOf(hitKey))) continue;
+      final handle = _hits.remove(hitKey);
+      if (handle != null) _engine.stopHandle(handle);
+    }
+  }
+
+  /// Which pads are ringing right now and what group each belongs to. Keyed
+  /// by the pad, not by the voice: the same pad played as two notes of a
+  /// scale is still one pad, and chokes as one.
+  Map<String, int> _soundingGroups() {
+    final session = _session;
+    if (session == null) return const {};
+    final out = <String, int>{};
+    for (final hitKey in _hits.keys) {
+      final key = _padOf(hitKey);
+      final target = parsePadKey(key);
+      if (target == null) continue;
+      final group = session.banks[target.bank].pads[target.slot].chokeGroup;
+      if (group != kNoChokeGroup) out[key] = group;
+    }
+    return out;
+  }
+
+  /// The pad behind a voice key: the transposed ones carry '@n' on the end.
+  String _padOf(String hitKey) => hitKey.split('@').first;
+
   void _startLoop(int bank, int slot, {bool fireNow = false}) {
     final key = padKey(bank, slot);
     if (_loops.containsKey(key)) return;
@@ -710,6 +905,7 @@ class SessionController extends ChangeNotifier {
       _loops[key] = ActiveLoop(bank: bank, slot: slot, synced: true);
       _clock.add(key, pad.loopSteps, alignTo: _launchOn(pad.loopSteps));
       if (fireNow) _fireOnce(bank, slot);
+      _sendLoopState(bank, slot, on: true);
     } else {
       // Free loop: SoLoud repeats it natively at its own natural length.
       final handle = _engine.fire(
@@ -720,6 +916,7 @@ class SessionController extends ChangeNotifier {
         pan: pad.pan,
       );
       _loops[key] = ActiveLoop(bank: bank, slot: slot, handle: handle, synced: false);
+      _sendLoopState(bank, slot, on: true);
     }
   }
 
@@ -731,6 +928,12 @@ class SessionController extends ChangeNotifier {
   void _onSyncedStep(String key) {
     if (key == kMetronomeId) {
       _fireClick(accent: isDownbeat(_clock.stepIndex));
+      return;
+    }
+    if (key == kExportKey) {
+      _clock.remove(kExportKey);
+      _barLine?.complete();
+      _barLine = null;
       return;
     }
     if (key == kSceneKey) {
@@ -796,11 +999,29 @@ class SessionController extends ChangeNotifier {
   void _fireNotes(StepPlay play) {
     if (play.notes.isEmpty) return;
 
+    void fire(String note) {
+      final target = parsePadKey(note);
+      if (target == null) return;
+      _fireOnce(target.bank, target.slot, velocity: play.velocity);
+    }
+
+    // With the arpeggio on, a step holding several pads stops being a chord
+    // and becomes a figure: the notes are dealt out across the step in the
+    // chosen order. It is the same set of notes the sequencer already knew
+    // how to stack — the chord window of the live REC is what puts them
+    // there — read the other way round.
+    if (arp.isOn && play.notes.length > 1) {
+      final order = arpSequence(play.notes.toList()..sort(), arp);
+      final offsets = arpOffsets(order.length);
+      for (var i = 0; i < order.length; i++) {
+        _afterStepDelay(play.offsetSteps + offsets[i], () => fire(order[i]));
+      }
+      return;
+    }
+
     void fireAll() {
       for (final note in play.notes) {
-        final target = parsePadKey(note);
-        if (target == null) continue;
-        _fireOnce(target.bank, target.slot, velocity: play.velocity);
+        fire(note);
       }
     }
 
@@ -852,6 +1073,13 @@ class SessionController extends ChangeNotifier {
   void toggleSequencerPlay() {
     _cancelStepTimers();
     sequencer.togglePlay();
+    if (sequencer.isPlaying) {
+      _send(startMessage);
+      _startClock();
+    } else {
+      _send(stopMessage);
+      _stopClock();
+    }
     if (sequencer.isPlaying) {
       // It ticks every step, but its first step waits for a bar line: that is
       // what keeps the pattern and the running loops on the same downbeat.
@@ -1230,6 +1458,7 @@ class SessionController extends ChangeNotifier {
   Future<void> _stopLoop(String key) async {
     final loop = _loops.remove(key);
     if (loop == null) return;
+    _sendLoopState(loop.bank, loop.slot, on: false);
     _clock.remove(key);
     final handle = loop.handle;
     if (handle != null) {
@@ -1248,6 +1477,10 @@ class SessionController extends ChangeNotifier {
       await _engine.stopHandle(handle);
     }
     _hits.clear();
+    for (final handle in _parked) {
+      await _engine.stopHandle(handle);
+    }
+    _parked.clear();
 
     final keys = _loops.keys.toList();
     for (final key in keys) {
@@ -1275,6 +1508,8 @@ class SessionController extends ChangeNotifier {
   /// when nothing was written.
   Future<File?> stopMixdown() async {
     final file = await mixdown.stop();
+    // A take that just landed is the moment the number moved most.
+    await refreshFreeSpace();
     notifyListeners();
     return file;
   }
@@ -1329,11 +1564,34 @@ class SessionController extends ChangeNotifier {
 
   /// Turns a sound around: a new file written backwards, and every pad
   /// holding it now playing that one.
+  /// Transposes a sound for real — the pitch moves, the length does not —
+  /// and puts every pad holding it on the new file.
+  Future<Sound?> pitchSound(Sound sound, int semitones) =>
+      _rerender(sound, () => _library.pitchedCopy(sound, semitones));
+
+  /// Stretches a sound to the session's tempo: the length moves, the pitch
+  /// does not. [fromBpm] is what the sound is running at now.
+  Future<Sound?> stretchSound(Sound sound, double fromBpm) => _rerender(
+        sound,
+        () => _library.stretchedCopy(
+          sound,
+          stretchRatioFor(fromBpm: fromBpm, toBpm: bpm.toDouble()),
+        ),
+      );
+
+  Future<Sound?> reverseSound(Sound sound) =>
+      _rerender(sound, () => _library.reversedCopy(sound));
+
+  /// The shared half of every rendering that rewrites a sound's file: stop
+  /// what is playing it, run the rendering, and load the new file underneath.
   ///
-  /// Loops of that sound are stopped first. The source is disposed and loaded
-  /// again underneath, and a voice still running on the old one would be
-  /// playing memory that has just been handed back.
-  Future<Sound?> reverseSound(Sound sound) async {
+  /// The loops go first. The source is disposed and loaded again below them,
+  /// and a voice still running on the old one would be playing memory that
+  /// has just been handed back.
+  Future<Sound?> _rerender(
+    Sound sound,
+    Future<Sound?> Function() render,
+  ) async {
     final session = _session;
     if (session == null) return null;
 
@@ -1346,14 +1604,167 @@ class SessionController extends ChangeNotifier {
       }
     }
 
-    final next = await _library.reversedCopy(sound);
+    final next = await render();
     if (next == null) return null;
 
     await _engine.unload(next.id);
     await _engine.preload(next, _library.pathFor(next));
+    await refreshFreeSpace();
     notifyListeners();
     return next;
   }
+
+  // -------------------------------------------------------- espacio libre
+
+  final DiskSpace _disk = DiskSpace();
+  int? _freeBytes;
+
+  /// True when the device is down to its last few hundred megabytes and a
+  /// long take could fail halfway. Never true when the platform did not
+  /// answer: an invented warning is one that gets ignored.
+  bool get isSpaceLow => isSpaceLowFor(_freeBytes);
+
+  /// What is left, written the way a person reads it, or null when unknown.
+  String? get freeSpaceLabel => freeSpaceLabelFor(_freeBytes);
+
+  /// Asks the platform how much room is left. Called when a session opens and
+  /// after anything that writes audio, which is often enough to be honest and
+  /// rare enough to cost nothing.
+  Future<void> refreshFreeSpace() async {
+    final free = await _disk.freeBytes();
+    if (free == _freeBytes) return;
+    _freeBytes = free;
+    notifyListeners();
+  }
+
+  // -------------------------------------------------------------- stems
+
+  /// How far along a stem export is: which family is being recorded and how
+  /// many are left. Null when nothing is being exported.
+  ({SoundFamily family, int done, int total})? _stemProgress;
+
+  ({SoundFamily family, int done, int total})? get stemProgress =>
+      _stemProgress;
+
+  /// Records one file per family, one after the other.
+  ///
+  /// The engine hands out a single tap of the mixer — that is why exporting,
+  /// resampling and the rescue all share one — so four tracks cannot be
+  /// recorded at once. They are recorded in four passes with the other
+  /// families turned down, and every pass starts on a bar line so the four
+  /// files line up when they are dropped into anything else.
+  ///
+  /// Whatever is looping keeps looping throughout: this records the
+  /// performance as it stands, it does not render it offline.
+  Future<List<File>> exportStems({int bars = 4}) async {
+    if (_stemProgress != null || mixdown.isRecording) return const [];
+    final families = SoundFamily.values;
+    final files = <File>[];
+
+    for (var i = 0; i < families.length; i++) {
+      final family = families[i];
+      _stemProgress = (family: family, done: i, total: families.length);
+      notifyListeners();
+
+      _engine.buses.soloFamily(family);
+      await _awaitBarLine();
+      await mixdown.start(name: _stemName(family));
+      await Future<void>.delayed(_barsDuration(bars));
+      final file = await mixdown.stop();
+      if (file != null) files.add(file);
+    }
+
+    _engine.buses.soloFamily(null);
+    _stemProgress = null;
+    notifyListeners();
+    return files;
+  }
+
+  Duration _barsDuration(int bars) => Duration(
+        microseconds:
+            (_clock.stepMs * kStepsPerBar * bars * 1000).round(),
+      );
+
+  String _stemName(SoundFamily family) {
+    final now = DateTime.now();
+    String two(int value) => value.toString().padLeft(2, '0');
+    return 'pista_${family.name}_${now.year}${two(now.month)}${two(now.day)}'
+        '_${two(now.hour)}${two(now.minute)}${two(now.second)}.wav';
+  }
+
+  /// Waits for the next downbeat of the shared grid, or returns at once when
+  /// nothing is running — then this moment *is* the downbeat.
+  Future<void> _awaitBarLine() {
+    if (!_clock.isRunning) return Future<void>.value();
+    final waiting = Completer<void>();
+    _barLine = waiting;
+    _clock.add(kExportKey, kStepsPerBar, alignTo: kStepsPerBar);
+    return waiting.future;
+  }
+
+  Completer<void>? _barLine;
+
+  // ------------------------------------------------------------- synth
+
+  /// The id the auditioned patch always uses. One preview at a time: the
+  /// previous is unloaded before the next is rendered, so turning a knob
+  /// cannot leave a pile of one-off sources behind in the engine.
+  static const String _patchPreviewId = '_patch';
+
+  /// Renders a patch and plays it, keeping nothing. Dry on purpose — the
+  /// family buses colour sounds that belong to a family, and this one does
+  /// not belong to anything yet.
+  Future<void> previewPatch(SynthPatch patch) async {
+    final sound = _patchSound(patch, id: _patchPreviewId, fileName: 'synth.wav');
+    final file = Storage.instance.synthScratch;
+    await file.writeAsBytes(_renderPatchBytes(patch));
+    await _engine.unload(_patchPreviewId);
+    await _engine.preload(sound, file.path);
+    _engine.fire(sound, volume: 1, rate: 1, dry: true);
+  }
+
+  /// Keeps it: the patch is rendered to a file of its own and registered in
+  /// the library, where it becomes an ordinary sound — it can be trimmed,
+  /// chopped, reversed and put on a pad like anything else.
+  Future<Sound> createFromPatch(SynthPatch patch, {required String name}) async {
+    final bytes = _renderPatchBytes(patch);
+    final fileName = '${_uuid.v4()}.wav';
+    await Storage.instance.soundFile(fileName).writeAsBytes(bytes);
+
+    final sound = _patchSound(
+      patch,
+      id: _uuid.v4(),
+      fileName: fileName,
+      name: name,
+      sizeBytes: bytes.length,
+    );
+    await _library.add(sound);
+    await _engine.preload(sound, _library.pathFor(sound));
+    notifyListeners();
+    return sound;
+  }
+
+  List<int> _renderPatchBytes(SynthPatch patch) =>
+      encodeWav(renderPatch(patch, kSampleRate), sampleRate: kSampleRate);
+
+  Sound _patchSound(
+    SynthPatch patch, {
+    required String id,
+    required String fileName,
+    String name = 'Sintetizado',
+    int sizeBytes = 0,
+  }) =>
+      Sound(
+        id: id,
+        name: name,
+        // Tone by default: what comes out of an oscillator is pitched, and
+        // the family can be changed in the sheet like any other sound's.
+        family: SoundFamily.tone,
+        fileName: fileName,
+        origin: SoundOrigin.recorded,
+        durationMs: (patch.seconds * 1000).round(),
+        sizeBytes: sizeBytes,
+      );
 
   void toggleMute(int slot) {
     final pad = padAt(slot);
@@ -1465,6 +1876,7 @@ class SessionController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _stopClock();
     _rollTimer?.cancel();
     _saveTimer?.cancel();
     final session = _session;

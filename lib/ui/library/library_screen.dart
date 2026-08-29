@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -8,10 +10,12 @@ import '../../data/sound_import.dart';
 import '../../data/sound_library.dart';
 import '../../data/storage.dart';
 import '../../domain/sound.dart';
+import '../../domain/synth_patch.dart';
 import '../../audio/chopper.dart';
 import 'chop_sheet.dart';
 import 'sound_list.dart';
 import 'sound_sheet.dart';
+import 'synth_sheet.dart';
 
 /// Everything the instrument can play: the factory kit, your takes and what
 /// you brought in. Tapping a sound opens its editor; the list itself is the
@@ -25,6 +29,13 @@ class LibraryScreen extends StatefulWidget {
     required this.onDelete,
     required this.slicesFor,
     required this.onReverse,
+    required this.onPitch,
+    required this.onStretch,
+    required this.sessionBpm,
+    required this.onDecodeAudio,
+    this.lowSpaceLabel,
+    required this.onAuditionPatch,
+    required this.onCreatePatch,
     required this.onChop,
   });
 
@@ -43,6 +54,28 @@ class LibraryScreen extends StatefulWidget {
   /// Writes the sound backwards into a file of its own, and hands back what
   /// it became. Null when the audio could not be read.
   final Future<Sound?> Function(Sound sound) onReverse;
+
+  /// Transposes for real and stretches to the session's tempo. Both rewrite
+  /// the sound's file, so both go through the instrument like the reverse.
+  final Future<Sound?> Function(Sound sound, int semitones) onPitch;
+  final Future<Sound?> Function(Sound sound, double fromBpm) onStretch;
+
+  /// The tempo of the open session, which is what stretching aims at.
+  final int sessionBpm;
+
+  /// Decodes anything the engine can read into samples at the app's own rate.
+  /// It is how MP3, FLAC and OGG get in — and how a WAV at 48 kHz stops
+  /// coming in slow and flat.
+  final Future<Float32List?> Function(String path) onDecodeAudio;
+
+  /// Plays a patch without keeping it, and keeps one. The synthesiser lives
+  /// in the engine, so both go through the instrument.
+  /// What is left on the device, but only when it is little enough to say.
+  /// Null the rest of the time, which is nearly always.
+  final String? lowSpaceLabel;
+
+  final Future<void> Function(SynthPatch patch) onAuditionPatch;
+  final Future<void> Function(SynthPatch patch, String name) onCreatePatch;
 
   /// Cuts the sound across the grid. Null when no bank has room.
   final Future<({int bank, int slot, int count})?> Function(
@@ -84,7 +117,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                 ),
               ),
-              _importButton(),
+              Row(
+                children: [
+                  Expanded(child: _synthButton()),
+                  const SizedBox(width: 10),
+                  Expanded(flex: 2, child: _importButton()),
+                ],
+              ),
             ],
           ),
         ),
@@ -111,9 +150,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
         Expanded(
           child: Text('Biblioteca', style: Brand.title(17)),
         ),
-        Text(
-          '${_library.count} · ${_formatSize(_library.sizeBytes)}',
-          style: Brand.readout(10, color: Palette.inkFaint),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '${_library.count} · ${_formatSize(_library.sizeBytes)}',
+              style: Brand.readout(10, color: Palette.inkFaint),
+            ),
+            // Only when it matters. A running total of free space is noise;
+            // a warning that appears the day it is true is information.
+            if (widget.lowSpaceLabel != null) ...[
+              const SizedBox(height: 3),
+              Text(
+                'Quedan ${widget.lowSpaceLabel}',
+                style: Brand.readout(9, color: Palette.rec),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -134,6 +187,41 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
+  /// The synthesiser that was always in the binary, now with a door.
+  Widget _synthButton() {
+    return GestureDetector(
+      onTap: _openSynth,
+      child: Container(
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Palette.accent),
+        ),
+        child: Text(
+          'SINTETIZAR',
+          style: Brand.label(9, weight: 700, color: Palette.accent),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSynth() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => SynthSheet(
+        onAudition: widget.onAuditionPatch,
+        onCreate: (patch, name) async {
+          await widget.onCreatePatch(patch, name);
+          if (mounted) setState(() => _message = '$name está en la biblioteca.');
+        },
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Widget _importButton() {
     return GestureDetector(
       onTap: _importing ? null : _import,
@@ -145,7 +233,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           border: Border.all(color: Palette.line),
         ),
         child: Text(
-          _importing ? 'IMPORTANDO…' : 'IMPORTAR UN WAV',
+          _importing ? 'IMPORTANDO…' : 'IMPORTAR UN SONIDO',
           style: Brand.label(9, weight: 700, color: Palette.inkDim),
         ),
       ),
@@ -177,6 +265,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         peaks: peaks,
         onChanged: _library.update,
         onReverse: widget.onReverse,
+        onPitch: widget.onPitch,
+        onStretch: widget.onStretch,
+        onDetectTempo: _library.tempoOf,
+        onPeaks: _library.peaksFor,
+        sessionBpm: widget.sessionBpm,
         onPreview: widget.onPreview,
         onDelete: () => _delete(sound),
         onChop: () {
@@ -230,18 +323,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     try {
       final picked = await FilePicker.pickFiles(
-        dialogTitle: 'Elige un WAV',
+        dialogTitle: 'Elige un sonido',
         type: FileType.custom,
-        allowedExtensions: ['wav'],
+        allowedExtensions: kImportExtensions,
       );
       final files = picked?.files ?? const [];
       final path = files.isEmpty ? null : files.first.path;
       if (path == null) return;
 
-      final sound = await importWav(
+      final sound = await importAudio(
         library: _library,
         storage: widget.storage,
         sourcePath: path,
+        decode: widget.onDecodeAudio,
       );
       if (!mounted) return;
       setState(() => _message = '${sound.name} está en la biblioteca.');

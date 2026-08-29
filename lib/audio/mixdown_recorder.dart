@@ -35,7 +35,9 @@ class MixdownRecorder {
 
   /// Starts writing the mixer output straight to disk, so a long take never
   /// piles up in memory.
-  Future<void> start() async {
+  /// [name] renames the file. Stems use it so that four files landing in the
+  /// same folder say which family each one is.
+  Future<void> start({String? name}) async {
     if (isRecording) return;
     if (!await _storage.mixdowns.exists()) {
       await _storage.mixdowns.create(recursive: true);
@@ -43,7 +45,8 @@ class MixdownRecorder {
 
     _tap.open();
 
-    final file = File('${_storage.mixdowns.path}/${_mixdownName()}');
+    final file =
+        File('${_storage.mixdowns.path}/${name ?? _mixdownName()}');
     final sink = file.openWrite();
     _file = file;
     _sink = sink;

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants.dart';
@@ -11,7 +12,14 @@ import '../../domain/sound.dart';
 /// [queued] is the one that needs saying out loud: the loop is on and armed,
 /// waiting for the downbeat so it lands with whatever is already running. It
 /// wears the ring empty, so the pad looks loaded and ready rather than dead.
-enum PadVisualState { empty, loaded, firing, queued, looping, target, blocked }
+/// What a pad is doing, in the order it outranks: a hit shows over a loaded
+/// pad, and an armed grid shows over everything.
+///
+/// There used to be a `blocked` here, drawn with a padlock, that nothing
+/// could ever produce: no pad in this instrument is ever locked. A state you
+/// cannot reach is a promise the app does not keep, so it is gone rather than
+/// kept for a feature that might want it one day.
+enum PadVisualState { empty, loaded, firing, queued, looping, target }
 
 /// The second light, in the corner opposite the sound dot. With the sequencer
 /// on, the sixteen pads double as the sixteen steps: this is where the bar is
@@ -100,7 +108,7 @@ class _PadTileState extends State<PadTile> {
   bool get _isEmpty => widget.state == PadVisualState.empty;
 
   double get _washOpacity {
-    if (_isEmpty || widget.state == PadVisualState.blocked) return 0;
+    if (_isEmpty) return 0;
     if (_pressed || widget.state == PadVisualState.firing) return 0.60;
     if (widget.pad.muted) return 0.07;
     if (widget.state == PadVisualState.looping) return 0.32;
@@ -116,12 +124,32 @@ class _PadTileState extends State<PadTile> {
     final looping = widget.state == PadVisualState.looping;
     final queued = widget.state == PadVisualState.queued;
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
+    // Raw rather than a plain GestureDetector for one reason: the hold has to
+    // be [kPadLongPress] and not the platform's half second. The constant was
+    // written for this from the start and nothing ever read it, so every hold
+    // in the instrument — looping a pad, picking a step to write — was 180 ms
+    // slower than it was designed to be.
+    return RawGestureDetector(
+      gestures: <Type, GestureRecognizerFactory>{
+        TapGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+          TapGestureRecognizer.new,
+          (recogniser) {
+            recogniser
+              ..onTapDown = ((_) => setState(() => _pressed = true))
+              ..onTapUp = ((_) => setState(() => _pressed = false))
+              ..onTapCancel = (() => setState(() => _pressed = false))
+              ..onTap = widget.onTap;
+          },
+        ),
+        LongPressGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+          () => LongPressGestureRecognizer(duration: kPadLongPress),
+          (recogniser) {
+            recogniser.onLongPress = widget.onLongPress;
+          },
+        ),
+      },
       child: AnimatedScale(
         scale: _pressed ? 0.94 : 1.0,
         duration: const Duration(milliseconds: 90),
@@ -157,11 +185,6 @@ class _PadTileState extends State<PadTile> {
                 if (widget.stepLight != StepLight.off) _stepDots(),
                 if (widget.accent != null) _accentBar(widget.accent!),
                 _label(),
-                if (widget.state == PadVisualState.blocked)
-                  const Center(
-                    child: Icon(Icons.lock_outline,
-                        size: 18, color: Palette.inkFaint),
-                  ),
               ],
             ),
           ),

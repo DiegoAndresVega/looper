@@ -462,6 +462,30 @@ td .plat { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 
 .t-trans div.on { background: var(--fosforo); border-color: var(--fosforo); color: var(--suelo); }
 .t-trans div.rec { border-color: var(--laser); color: var(--laser); }
 
+.t-escenas { padding: 0 14px 10px; display: grid; gap: 5px; }
+.t-escenas .cab { display: flex; justify-content: space-between; align-items: baseline; }
+.t-escenas .cab b { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 700; font-size: 0.46rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--tinta); }
+.t-escenas .cab span { font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.42rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--laser); }
+.t-escenas .fila { display: flex; gap: 5px; }
+.t-escenas .esc { flex: 1; border: 1px solid var(--linea); border-radius: 8px; padding: 5px 0 4px; display: grid; gap: 1px; justify-items: center; }
+.t-escenas .esc b { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 0.62rem; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.t-escenas .esc em { font-style: normal; font-family: var(--mono); font-variation-settings: 'wdth' 75, 'wght' 500; font-size: 0.38rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--tinta-flo); }
+.t-escenas .esc.vacia b { color: var(--tinta-flo); }
+.t-escenas .esc.on { background: var(--fosforo); border-color: var(--fosforo); }
+.t-escenas .esc.on b, .t-escenas .esc.on em { color: var(--suelo); }
+.t-escenas .esc.cola { border-color: var(--laser); }
+.t-escenas .esc.cola b { color: var(--laser); }
+
+.t-cancion { display: flex; flex-wrap: wrap; gap: 5px; }
+.t-cancion span {
+  border: 1px solid var(--linea); border-radius: 7px; padding: 5px 7px;
+  font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700;
+  font-size: 0.56rem; color: var(--tinta); font-variant-numeric: tabular-nums;
+}
+.t-cancion span i { font-style: normal; font-variation-settings: 'wdth' 75, 'wght' 600; font-size: 0.44rem; color: var(--tinta-flo); }
+.t-cancion span.on { background: var(--fosforo); border-color: var(--fosforo); color: var(--suelo); }
+.t-cancion span.on i { color: var(--suelo); }
+
 .t-sheet { border-top: 1px solid var(--linea); background: var(--pozo); padding: 12px 14px 4px; display: grid; gap: 9px; }
 .t-sheet .cab { display: flex; justify-content: space-between; align-items: center; }
 .t-sheet .cab b { font-family: var(--mono); font-variation-settings: 'wdth' 100, 'wght' 700; font-size: 0.62rem; letter-spacing: 0.1em; color: var(--tinta); }
@@ -683,15 +707,17 @@ ol.pasos-num kbd {
     <h1 class="hero-title">Estado del arte</h1>
     <p class="hero-sub">
       Siete apps y máquinas del oficio, desmontadas para decidir qué le falta a Looper.
-      <em>39 funciones nuevas, nueve defectos reales y seis patrones de interacción</em>
+      <em>39 funciones nuevas, once defectos reales y seis patrones de interacción</em>
       que merece la pena robarle a quien los inventó. Actualizado con lo que ya está
-      construido: los cinco pasos priorizados están hechos.
+      construido: los cinco pasos priorizados están hechos y la cola acordada
+      —escenas y modo canción incluidos— se ha quedado vacía. Lo que queda por
+      delante ya no es teclado: son veintinueve pruebas con el móvil en la mano.
     </p>
     <div class="cifras">
       <div class="cifra"><b>7</b><span>Referencias</span></div>
-      <div class="cifra"><b>17 / 39</b><span>Funciones hechas</span></div>
-      <div class="cifra"><b>5 / 9</b><span>Correcciones</span></div>
-      <div class="cifra"><b>6 / 6</b><span>Pantallas</span></div>
+      <div class="cifra"><b>20 / 39</b><span>Funciones hechas</span></div>
+      <div class="cifra"><b>7 / 11</b><span>Correcciones</span></div>
+      <div class="cifra"><b>8 / 8</b><span>Pantallas</span></div>
     </div>
   </div>
 </header>
@@ -839,20 +865,20 @@ ol.pasos-num kbd {
     <!-- A2 ESTRUCTURA -->
     <div class="bloque b-groove rev">
       <div class="bloque-head">
-        <h3>Estructura de canción</h3><span class="cuenta">5 funciones</span><span class="rule"></span>
+        <h3>Estructura de canción</h3><span class="cuenta">2 de 5 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
-        <article class="card">
-          <div class="card-top"><h3>Escenas</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Escenas</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Live Loops: las columnas son escenas, y disparar una columna lanza la sección entera. Intro, estrofa, estribillo, cada uno en su columna.</p>
-          <p class="como"><b>En Looper:</b> la rejilla 4×4 se puede leer como 4 escenas × 4 pistas sin tocar el motor. Es la pieza que falta para pasar de «bucle» a «canción».</p>
+          <p class="como"><b>Hecho:</b> ocho escenas en la franja de siempre, dos filas de cuatro. Una escena guarda <em>lo que está sonando</em> —qué pads van en bucle y con qué patrón— y un toque la trae entera. <b>Entra en la línea de compás, nunca bajo el dedo:</b> se pone en cola en el mismo reloj de dieciseisavos que los bucles, así que se puede pedir a mitad de compás sin romper el groove, y la celda se pinta en láser mientras espera. Lo que ya sonaba <em>y sigue estando en la escena nueva no se toca</em>: pararlo y volver a arrancarlo abriría un agujero en medio de un sonido que iba a continuar. <b>Corrección:</b> este documento decía que la rejilla 4×4 se leería como 4 escenas × 4 pistas. No: el cuadrado ya significa un pad y ya significa un paso del secuenciador, y un tercer significado encima habría sido el tercero. Las escenas van a la franja, que es donde va todo lo que se toca mientras suena.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Modo canción</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Modo canción</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>G-Stomper y Caustic tienen línea de tiempo de patrones. Koala cambia de secuencia desde la pantalla PERFORM, en vivo.</p>
-          <p class="como"><b>En Looper:</b> hoy solo hay cadena lineal P1…PN de 1 a 16 compases. Falta poder ordenar los patrones libremente y repetirlos.</p>
+          <p class="como"><b>Hecho:</b> cualquier patrón, las veces que quieras, en el orden que quieras — P7×2 · P3 · P1×4. Se abre manteniendo pulsada la pastilla de la cadena, y se escribe <em>compás a compás desde el patrón que tengas en la rejilla</em>, que es como se compone de verdad. La canción <b>no es un interruptor aparte</b>: entra en el mismo anillo que la cadena —1, 2, 4, 8, 16, canción— porque las dos contestan a la misma pregunta, qué suena después de este compás, y dos mandos para una pregunta acaban contradiciéndose. Reordenar son dos flechas y nunca un arrastre, que en un móvil pelea con el desplazamiento de la propia hoja. Y es una lista de <em>compases</em>, no una línea de tiempo en segundos: por eso se toca desde el mismo reloj que todo lo demás y se puede probar sin dispositivo.</p>
         </article>
 
         <article class="card">
@@ -864,7 +890,7 @@ ol.pasos-num kbd {
         <article class="card">
           <div class="card-top"><h3>Modo de reproducción por pad</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
           <p>El RC-505 da cuatro por pista: multi, single, one-shot y reverse. Cambiar el modo cambia el instrumento sin cambiar el sonido.</p>
-          <p class="como"><b>En Looper:</b> existe «Libre» contra «Al tempo». Faltan reverse —cuyo campo <code>Sound.reversed</code> <em>ya está guardándose</em>— y el one-shot explícito.</p>
+          <p class="como"><b>En Looper:</b> existe «Libre» contra «Al tempo», y el reverse ya está hecho —pero <em>del sonido</em>, en la biblioteca, no como modo del pad. Falta que un pad toque del revés lo que otro toca del derecho, y el one-shot explícito.</p>
         </article>
 
         <article class="card">
@@ -879,7 +905,7 @@ ol.pasos-num kbd {
     <!-- A3 MUESTREO -->
     <div class="bloque b-muestreo rev">
       <div class="bloque-head">
-        <h3>Muestreo y manipulación</h3><span class="cuenta">7 funciones</span><span class="rule"></span>
+        <h3>Muestreo y manipulación</h3><span class="cuenta">4 de 7 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -907,10 +933,10 @@ ol.pasos-num kbd {
           <p class="como"><b>En Looper:</b> hoy el tono es de cinta (<code>setRelativePlaySpeed</code>): tono y velocidad van siempre juntos. Separarlos abre el bloque melódico entero.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Reverse, fade y normalizar</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Reverse, fade y normalizar</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Los tres están en cualquier sampler desde hace treinta años. Reverse es el más barato y el que más cambia un sonido.</p>
-          <p class="como"><b>En Looper:</b> <code>Sound.reversed</code> y <code>Sound.fadeMs</code> <em>ya se declaran y se guardan en el JSON en cada escritura</em>, y el motor no los lee jamás. Ver el defecto 06.</p>
+          <p class="como"><b>Hecho:</b> un botón en la hoja del sonido, y es el único control lento de esa hoja porque <b>escribe un fichero nuevo del revés</b>. No podía ser una marca que el motor honrase al disparar: los dieciséis trozos de un corte comparten un solo fichero, y una marca los habría dado la vuelta a todos a la vez. Lo caro no fue invertir las muestras, fue <em>reflejar el recorte</em>: una ventana de 0,2 s a 0,8 s leída al revés vuelve a ser de 0,2 s a 0,8 s, pero una que acababa en 0,3 s empieza en 0,7 s — sin eso, invertir un sonido recortado suena a otro trozo. El fundido se fue por donde decía el defecto 06: <code>fadeMs</code> <em>sale del formato</em> en vez de quedarse prometiendo algo que la app no hacía nunca. Normalizar ya estaba: toda toma se sube a su pico al grabarse.</p>
         </article>
 
         <article class="card">
@@ -1091,10 +1117,10 @@ ol.pasos-num kbd {
 <section id="fallos" class="b-fallo">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">03</span><span class="label">Diez defectos en el código de hoy</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">03</span><span class="label">Once defectos en el código de hoy</span><span class="rule"></span></div>
       <h2 class="cap-title">Lo que hay que corregir</h2>
       <p class="lede">
-        Esto no sale de comparar con nadie: sale de leer los 43 ficheros de <code>lib/</code>.
+        Esto no sale de comparar con nadie: sale de leer los 67 ficheros de <code>lib/</code>.
         Ordenados por daño al usuario. Los dos primeros corrompen datos guardados, así que
         van antes que cualquier función nueva de la lista anterior.
       </p>
@@ -1134,25 +1160,25 @@ ol.pasos-num kbd {
         <div>
           <h3>Ocho milisegundos de jitter en el reloj</h3>
           <p><code>TempoClock</code> dispara con un <code>Timer.periodic</code> de 8 ms leyendo un <code>Stopwatch</code>. No es preciso a nivel de muestra, y ocho milisegundos son audibles en un hat cerrado. Ya estaba anotado como deuda técnica.</p>
-          <p class="arreglo"><b>Arreglo · lib/audio/tempo_clock.dart</b><code>playClocked</code> de flutter_soloud agenda sobre el reloj de muestras, con separación submilisegundo, pensado justo para metrónomos y secuenciadores. Es también el prerrequisito del swing.</p>
+          <p class="arreglo"><b>Estado</b>Abierto a propósito, y ya no a ciegas: <code>playClocked</code> existe en la 4.1.7 que este proyecto tiene fijada, y su propia documentación dice el precio — <em>ni <code>looping</code> ni <code>paused</code> ni ventana de bucle</em>, y unos dos búferes constantes de latencia a cambio de separación submilisegundo. Los dos primeros no importan (los pasos del secuenciador son one-shots), el tercero sí: el recorte de un sonido se monta hoy con <code>loopingStartAt</code>/<code>loopingEndAt</code> y un <code>seek</code>, y con una voz agendada para después hay que comprobar que el <code>seek</code> sigue llegando a tiempo. <b>Es un cambio que se decide con la oreja, no con el teclado</b>, y se hace con el móvil delante: cambiar el reloj a ciegas y descubrir en la siguiente sesión que los recortes se han movido sería peor que los ocho milisegundos.<br><b>Arreglo original</b><b>Arreglo · lib/audio/tempo_clock.dart</b><code>playClocked</code> de flutter_soloud agenda sobre el reloj de muestras, con separación submilisegundo, pensado justo para metrónomos y secuenciadores. Es también el prerrequisito del swing.</p>
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">05</span>
         <div>
           <h3>Estados de pad que no pueden salir nunca</h3>
           <p>El pintor dibuja <code>PadVisualState.firing</code> y <code>PadVisualState.blocked</code> —el segundo con un candado— pero <code>_stateFor()</code> no los produce jamás. Hay un icono de candado en el binario que ningún usuario puede ver.</p>
-          <p class="arreglo"><b>Arreglo · pad_tile.dart + pads_screen.dart</b>O se producen (<code>firing</code> daría el destello del golpe, que hoy falta) o se borran. Hoy es código muerto que hace pensar que existe una función que no existe.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado, y de las dos maneras que decía: <code>firing</code> <b>se produce</b> —cada golpe enciende su pad setenta milisegundos, venga de un dedo, del secuenciador, de una escena o del cable— y <code>blocked</code> <b>se borra</b>, candado incluido, porque en este instrumento no hay ningún pad que se pueda bloquear. El destello no lleva ni un temporizador: los pads apuntan cuándo se apagan y la rejilla, que ya repinta treinta veces por segundo mientras algo se mueve, los apaga sola. Setenta milisegundos porque a 180 BPM las semicorcheas van a ochenta y tres: más y un redoble se vería como una luz fija.<br><b>Arreglo original</b><b>Arreglo · pad_tile.dart + pads_screen.dart</b>O se producen (<code>firing</code> daría el destello del golpe, que hoy falta) o se borran. Hoy es código muerto que hace pensar que existe una función que no existe.</p>
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">06</span>
         <div>
           <h3>Campos que se guardan y nadie lee</h3>
           <p><code>Sound.reversed</code> y <code>Sound.fadeMs</code> se declaran, se serializan y viajan en el JSON en cada guardado. El motor los ignora por completo. El formato de datos promete dos funciones que la app no tiene.</p>
-          <p class="arreglo"><b>Arreglo · lib/domain/sound.dart</b>Implementar reverse —mucho valor, poco coste: es invertir el buffer al cargar— o sacarlos del formato. Dejarlos ahí es deuda que crece en cada sesión guardada.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado, una por cada camino: <b>reverse se implementa</b> y <b><code>fadeMs</code> sale del formato</b>. Y el arreglo original estaba equivocado en el «poco coste»: invertir el búfer al cargar no valía, porque los dieciséis trozos de un corte comparten fichero y se habrían dado la vuelta todos juntos. Reverse escribe un fichero nuevo, borra el viejo solo si ya no lo usa nadie, y refleja el recorte — lo caro de verdad. Un sonido guardado con el <code>fadeMs</code> viejo sigue abriendo: el campo se ignora al leer, que es lo que ya se le hacía.<br><b>Arreglo original</b><b>Arreglo · lib/domain/sound.dart</b>Implementar reverse —mucho valor, poco coste: es invertir el buffer al cargar— o sacarlos del formato. Dejarlos ahí es deuda que crece en cada sesión guardada.</p>
         </div>
       </article>
 
@@ -1161,7 +1187,7 @@ ol.pasos-num kbd {
         <div>
           <h3>Constantes muertas</h3>
           <p><code>kRollDivisions = [2, 1]</code> declara corcheas y semicorcheas, pero el ROLL está clavado a semicorcheas. <code>kLowSpaceBytes</code> y <code>kPadLongPress</code> no los referencia nadie.</p>
-          <p class="arreglo"><b>Estado</b>Medio arreglado: <code>kRollDivisions</code> ya manda en el ROLL. <code>kLowSpaceBytes</code> y <code>kPadLongPress</code> siguen muertas.<br><b>Arreglo original</b><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
+          <p class="arreglo"><b>Estado</b>Dos de tres: <code>kRollDivisions</code> ya manda en el ROLL y <code>kPadLongPress</code> ya manda en la pulsación larga — para eso hizo falta cambiar el <code>GestureDetector</code> del pad por reconocedores propios, porque el de Flutter no deja elegir la duración. <em>Todos</em> los mantener del instrumento eran 180 ms más lentos de lo que decía la constante escrita para ellos. Queda <code>kLowSpaceBytes</code>: avisar del espacio libre necesita una llamada de plataforma que Flutter no trae de serie, así que o entra un paquete —y entonces hay que compilar el APK para saber si sobrevive a las versiones fijadas— o se borra la constante. <b>No se resuelve escribiendo código sin más</b>, y por eso sigue aquí.<br><b>Arreglo original</b><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
         </div>
       </article>
 
@@ -1180,6 +1206,15 @@ ol.pasos-num kbd {
           <h3>El REC del secuenciador no da margen</h3>
           <p>Se empieza a escribir en el paso actual, sin cuenta atrás. Para escribir un patrón en vivo hay que anticiparse al botón, que es exactamente lo que ninguna caja de ritmos pide.</p>
           <p class="arreglo"><b>Estado</b>Arreglado. Un compás de cortesía, audible aunque el metrónomo esté apagado.<br><b>Arreglo original</b><b>Arreglo · lib/state/sequencer.dart</b>Un compás de cuenta atrás antes de armar la escritura, con el acento del defecto 03 marcando el uno.</p>
+        </div>
+      </article>
+
+      <article class="fallo rev resuelto">
+        <span class="num">11</span>
+        <div>
+          <h3>La franja del secuenciador enseñaba el nombre de su propia clase</h3>
+          <p>Cuatro textos escribían <code>'$widget.chainLength'</code> sin llaves. En Dart eso interpola <em>el widget</em> y luego pega el nombre del campo como texto, así que la pastilla de la cadena leía <code>SequencerBar.chainLength 1 COMPÁS</code>, la cuenta atrás <code>SequencerBar.countInBeat…</code> y la línea de estado <code>SequencerBar.filledSteps pasos con notas</code>.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado. No salió de buscar defectos: salió de ir a tocar la pastilla de la cadena para meterle la canción. Las cuatro estaban en el mismo fichero y todas con la misma forma —quedan de un renombrado en bloque de campos a <code>widget.campo</code> que el analizador no puede ver, porque la cadena de texto es válida—, y en el mismo sitio había un comentario que decía «la <code>widget.swing</code> de la sesión», que es la firma del mismo cambio. <b>Lo que enseña:</b> <code>flutter analyze</code> limpio no dice nada de lo que se lee en pantalla, y este documento tampoco lo habría cogido nunca: solo lo ve un ojo delante del móvil. Va derecho a la prueba 25.</p>
         </div>
       </article>
 
@@ -1260,10 +1295,10 @@ ol.pasos-num kbd {
 <section id="pantallas">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">05</span><span class="label">Seis maquetas sobre la app real</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">05</span><span class="label">Ocho maquetas sobre la app real</span><span class="rule"></span></div>
       <h2 class="cap-title">Cómo se vería</h2>
       <p class="lede">
-        Las seis propuestas con más recorrido, dibujadas sobre la interfaz que ya existe:
+        Las ocho propuestas con más recorrido, dibujadas sobre la interfaz que ya existe:
         misma barra superior, mismas solapas de banco, misma rejilla, mismo transport de
         siete pastillas. Ninguna añade una pantalla nueva.
       </p>
@@ -1569,6 +1604,112 @@ ol.pasos-num kbd {
         </div>
       </div>
 
+      <!-- 7 · LAS ESCENAS -->
+      <div class="lamina rev b-groove">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Sesión 3</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-banks">
+              <div class="t-bank on">A · Kit</div><div class="t-bank">B · Techno</div><div class="t-bank">C · Mías</div><div class="t-bank">D · Libre</div>
+            </div>
+            <div class="t-tempo"><span class="step">−</span><span class="bpm">92<sub>BPM</sub></span><span class="step">+</span><span class="tap">TAP</span></div>
+            <div class="t-grid">
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="anillo"></span><span class="nom">Bombo</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Caja</span></div>
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="anillo"></span><span class="nom">Hat</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Palma</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Snap</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Tom</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Rim</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Shaker</span></div>
+              <div class="pad viva" style="--fam:#5BB4F5"><span class="wash"></span><span class="anillo"></span><span class="nom">Bajo</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="nom">Acorde</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="nom">Campana</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Pad</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="nom">Voz 1</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="nom">Voz 2</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Botella</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Vinilo</span></div>
+            </div>
+            <div class="t-escenas">
+              <div class="cab"><b>Escenas</b><span>Escena 3 entra en el compás</span></div>
+              <div class="fila">
+                <div class="esc on"><b>1</b><em>3 · P1</em></div>
+                <div class="esc"><b>2</b><em>5 · P2</em></div>
+                <div class="esc cola"><b>3</b><em>6 · P3</em></div>
+                <div class="esc"><b>4</b><em>2 · P4</em></div>
+              </div>
+              <div class="fila">
+                <div class="esc vacia"><b>5</b><em>Vacía</em></div>
+                <div class="esc vacia"><b>6</b><em>Vacía</em></div>
+                <div class="esc vacia"><b>7</b><em>Vacía</em></div>
+                <div class="esc vacia"><b>8</b><em>Vacía</em></div>
+              </div>
+            </div>
+            <div class="t-trans">
+              <div>Parar</div><div>Roll</div><div>Seq</div><div class="on">Escenas</div><div>Ajustar</div><div>Metro</div><div>Mute</div><div>Export</div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>Ocho escenas donde siempre está la franja</h3>
+          <p>Una escena es <em>lo que suena</em>: qué pads van en bucle y con qué patrón. Un toque la lanza, mantenerla guarda lo que hay sonando ahora mismo, y AJUSTAR + toque la vacía — tres gestos, uno por acción, los mismos que la rejilla usa en todas partes. La celda 1 está en fósforo porque es la que suena; la 3 está en láser porque <strong>está en cola</strong>: se pidió a mitad de compás y entra en la línea, como cualquier bucle sincronizado de esta app. El transport crece a ocho pastillas y la nueva se pone al lado de SEQ a propósito: las dos se turnan la misma franja, así que comparten barrio.</p>
+          <span class="gesto">Transport → Escenas → tocar o mantener</span>
+        </div>
+      </div>
+
+      <!-- 8 · LA CANCIÓN -->
+      <div class="lamina rev b-sonido">
+        <div class="tel">
+          <div class="tel-in">
+            <div class="tel-status"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="t-top"><span class="t-name">Sesión 3</span><span class="t-icons"><i></i><i></i></span></div>
+            <div class="t-banks">
+              <div class="t-bank on">A · Kit</div><div class="t-bank">B · Techno</div><div class="t-bank">C · Mías</div><div class="t-bank">D · Libre</div>
+            </div>
+            <div class="t-tempo"><span class="step">−</span><span class="bpm">92<sub>BPM</sub></span><span class="step">+</span><span class="tap">TAP</span></div>
+            <div class="t-grid">
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="anillo"></span><span class="nom">Bombo</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Caja</span></div>
+              <div class="pad viva" style="--fam:#B4EC5C"><span class="wash"></span><span class="anillo"></span><span class="nom">Hat</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Palma</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Snap</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Tom</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Rim</span></div>
+              <div class="pad" style="--fam:#B4EC5C"><span class="wash"></span><span class="nom">Shaker</span></div>
+              <div class="pad viva" style="--fam:#5BB4F5"><span class="wash"></span><span class="anillo"></span><span class="nom">Bajo</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="nom">Acorde</span></div>
+              <div class="pad" style="--fam:#5BB4F5"><span class="wash"></span><span class="nom">Campana</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Pad</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="nom">Voz 1</span></div>
+              <div class="pad" style="--fam:#4FE3B4"><span class="wash"></span><span class="nom">Voz 2</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Botella</span></div>
+              <div class="pad" style="--fam:#9B78F0"><span class="wash"></span><span class="nom">Vinilo</span></div>
+            </div>
+            <div class="t-seqbar">
+              <span class="pill">‹ P3 ›</span><span class="pill on">Canción 9</span><span class="pill">Recto</span><span class="pill">P3 · compás 4 de 9</span>
+            </div>
+            <div class="t-sheet">
+              <div class="cab"><b>Canción</b><span>9 compases</span></div>
+              <div class="t-cancion">
+                <span>P1<i> ×2</i></span><span class="on">P3<i> ×4</i></span><span>P2</span><span>P3<i> ×2</i></span><span>＋ Añadir P3</span>
+              </div>
+              <div class="t-seg">
+                <div>◀</div><div>▶</div><div>− ×</div><div>+ ×</div><div>Quitar</div>
+              </div>
+            </div>
+            <div class="tel-home"></div>
+          </div>
+        </div>
+        <div class="lamina-pie">
+          <h3>La canción, colgada de la pastilla de la cadena</h3>
+          <p>La pastilla que dice «1 compás» es la misma que dice «canción 9»: un anillo —1, 2, 4, 8, 16, canción— en vez de dos mandos que pueden contradecirse sobre qué suena después de este compás. Mantenerla pulsada abre el orden, y ahí se añade <em>el patrón que tienes en la rejilla</em>, que es como se compone: vuelves a la rejilla a por el siguiente. Reordenar son dos flechas, nunca un arrastre — arrastrar en una hoja de móvil pelea con el desplazamiento de la propia hoja. Y mientras suena, la línea de estado deja de contar pasos y cuenta <strong>compases de la canción</strong>, que es lo que quieres saber a los cuatro minutos de tema.</p>
+          <span class="gesto">Mantener la pastilla de la cadena</span>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -1577,22 +1718,24 @@ ol.pasos-num kbd {
 <section id="prioridad" style="background: var(--pozo); border-block: 1px solid var(--linea);">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Diez tandas construidas</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Trece tandas construidas</span><span class="rule"></span></div>
       <h2 class="cap-title">Dónde está</h2>
       <p class="lede">
-        Los cinco pasos que este documento priorizó están construidos, y cuatro tandas
-        más de la cola que venía detrás. Swing, acento y las luces de paso están
-        probados en un móvil; los buses de familia, todavía no. Lo que sigue es el estado real contra el catálogo entero, que es bastante
-        más grande que esos cinco pasos.
+        Los cinco pasos que este documento priorizó están construidos, y siete tandas
+        más de la cola que venía detrás. Con las escenas y el modo canción <b>la cola
+        acordada se queda vacía</b>: lo que falta a partir de aquí ya no tiene orden
+        decidido, es catálogo. Swing, acento y las luces de paso están probados en un
+        móvil; todo lo demás —buses, MIDI learn, escenas, canción— sigue esperando
+        oreja, que es el cuello de botella real y no el teclado.
       </p>
     </div>
 
     <div class="estado-barra rev">
       <div><b>5 / 5</b><span>Pasos priorizados</span></div>
-      <div><b>+12</b><span>De la cola siguiente</span></div>
-      <div><b>17 / 39</b><span>Funciones del catálogo</span></div>
-      <div><b>335</b><span>Tests</span></div>
-      <div><b>6 / 6</b><span>Pantallas maquetadas</span></div>
+      <div><b>+15</b><span>De la cola siguiente</span></div>
+      <div><b>20 / 39</b><span>Funciones del catálogo</span></div>
+      <div><b>398</b><span>Tests</span></div>
+      <div><b>8 / 8</b><span>Pantallas maquetadas</span></div>
     </div>
 
     <div class="pasos">
@@ -1686,14 +1829,48 @@ ol.pasos-num kbd {
         </div>
         <span class="coste">Hecho</span>
       </article>
+
+      <article class="paso rev">
+        <span class="n">11</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Las escenas</h3>
+          <p>Ocho instantáneas de lo que suena —qué bucles y con qué patrón— en la franja de siempre, con un toque para lanzar, mantener para guardar y AJUSTAR + toque para vaciar. Entran <em>en la línea de compás</em>, porque se ponen en cola en el mismo reloj de dieciseisavos que los bucles: pedir una a mitad de compás no rompe nada y la celda se pinta en láser mientras espera. Lo que ya sonaba y sigue en la escena nueva no se para: se le deja seguir. Con la cadena o la canción puestas, el patrón de la escena se ignora — ellas mandan sobre el orden, y dos cosas peleando por el mismo compás es peor que una escena que respeta a quien manda.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">12</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">El modo canción</h3>
+          <p>Cualquier patrón, las veces que quieras, en el orden que quieras. Se escribe manteniendo la pastilla de la cadena y añadiendo el patrón que tengas en la rejilla, compás a compás. La canción entra en el <em>mismo anillo</em> que la cadena en vez de tener interruptor propio, y solo aparece en el anillo cuando hay algo escrito. Lo más caro fue el adelanto: el secuenciador mira siempre un pulso por delante para dejar salir antes un paso con micro-timing negativo, y cruzando la línea de compás ese pulso ahora tiene que preguntárselo a la canción y no a la cadena.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">13</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Cuatro deudas del capítulo 03, saldadas</h3>
+          <p>Reverse escribe un fichero del revés y refleja el recorte, y <code>fadeMs</code> sale del formato (defecto 06). El destello del golpe se produce por fin y el candado imposible se borra (defecto 05). <code>kPadLongPress</code> pasa a mandar de verdad, lo que obligó a cambiar el <code>GestureDetector</code> del pad por reconocedores propios: <em>todos</em> los mantener del instrumento iban 180 ms más lentos de lo que decía su propia constante (defecto 07). Y por el camino apareció el defecto 11: cuatro textos de la franja del secuenciador enseñaban el nombre de su clase en pantalla.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
     </div>
 
     <div class="despues rev">
-      <b>Lo siguiente, en este orden:</b> escenas · modo canción. MIDI learn sale de
-      esta lista con los efectos por familia: los tres están construidos y a la espera
-      de oreja, que es ahora el cuello de botella y no el teclado. El bloque de
-      <em>Groove</em> del catálogo queda cerrado salvo la longitud por pista, que
-      reestructura el patrón entero.
+      <b>La cola acordada se ha vaciado.</b> Escenas y modo canción eran lo último que
+      tenía orden decidido, y están construidos. El bloque de <em>Estructura de canción</em>
+      pasa a 2 de 5 y el de <em>Muestreo</em> a 4 de 7. De aquí en adelante la decisión ya
+      no es «qué toca», es «qué elegimos»: <em>grupos de corte</em> y <em>modo de
+      reproducción por pad</em> son los dos más baratos que quedan —el reverse del sonido
+      ya está hecho, falta que sea un modo del pad—; <em>tono real</em> y <em>longitud
+      distinta por pista</em> son los dos más caros, y cada uno abre un bloque entero.
+      <b>Pero lo que de verdad toca antes que cualquiera de ellos son las veintinueve
+      pruebas del capítulo siguiente:</b> hay tres subsistemas enteros construidos que
+      ningún dedo ha rozado nunca, y el defecto 11 —cuatro textos enseñando el nombre de
+      su clase en pantalla— es exactamente el tipo de fallo que ni los tests ni este
+      documento pueden ver.
     </div>
 
     <div class="techo rev">
@@ -1742,7 +1919,7 @@ ol.pasos-num kbd {
 <section id="pruebas">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Veinte pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Veintinueve pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
       <h2 class="cap-title">Lo que falta probar</h2>
       <p class="lede">
         Todo lo de este documento pasa sus tests, pero un test no oye. Estas son
@@ -1754,8 +1931,15 @@ ol.pasos-num kbd {
         Están ordenadas por lo que más duele si falla. Las tres primeras tocan
         subsistemas enteros que ningún dedo ha rozado todavía, y el bloque de los
         buses es enrutado de audio nuevo: si algo ahí está mal, el instrumento se
-        queda mudo, así que conviene empezar por la 15. Las tres últimas necesitan
+        queda mudo, así que conviene empezar por la 15. Las pruebas 18 a 20 necesitan
         un controlador enchufado; sin uno, no se pueden hacer.
+      </p>
+      <p class="lede">
+        <b>Si solo hay diez minutos, este es el orden:</b> 15 (los buses, porque puede
+        dejar el instrumento mudo) · 21 (una escena entra en la línea de compás) ·
+        27 (invertir un sonido recortado, que toca ficheros) · 29 (los textos de la
+        franja, que es donde se coló el defecto 11) · 02 (el grifo del mezclador).
+        Con esas cinco está cubierto todo lo que puede perder datos o dejar algo mudo.
       </p>
     </div>
 
@@ -1796,7 +1980,7 @@ ol.pasos-num kbd {
       <div class="gesto-card">
         <b>Dónde está cada cosa</b>
         <p><strong>Arriba:</strong> nombre de sesión · deshacer ↶ · reloj ⟲ · biblioteca · micro · piano.</p>
-        <p><strong>Transport:</strong> Parar · Roll · Seq · Ajustar · Metro · Mute · Exportar.</p>
+        <p><strong>Transport:</strong> Parar · Roll · Seq · <strong>Escenas</strong> · Ajustar · Metro · Mute · Exportar. Son ocho desde las escenas: si en tu móvil solo ves siete, la fila se ha quedado sin sitio y eso también es un fallo que anotar.</p>
       </div>
     </div>
 
@@ -2333,6 +2517,250 @@ ol.pasos-num kbd {
       </div>
     </div>
 
+
+    <!-- ── BLOQUE 7 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Las escenas y la canción</h3><span class="cuenta">5 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">21</span>
+            <h3>Una escena entra en la línea de compás</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Lo que se prueba aquí no es que la escena suene: es <strong>cuándo</strong>. La escena se pone en cola en el mismo reloj que los bucles, y si eso está mal se nota como que el instrumento se descuadra al cambiar de sección.</p>
+          <ol class="pasos-num">
+            <li>Mantén pulsado el <strong>Bombo</strong> (f1·c1) hasta que vibre: se queda en bucle.</li>
+            <li>Mantén pulsado el <strong>Hat</strong> (f1·c3): segundo bucle.</li>
+            <li>Toca <kbd>Escenas</kbd> en el transport. Aparece la franja con ocho celdas.</li>
+            <li><strong>Mantén pulsada</strong> la celda <kbd>1</kbd> hasta que vibre.</li>
+            <li>Toca <kbd>Parar</kbd>. Todo se calla.</li>
+            <li>Mantén pulsado el <strong>Bajo</strong> (f3·c1): un bucle distinto, solo.</li>
+            <li>Con el bajo sonando, y <em>sin esperar a ningún sitio en concreto</em>, toca la celda <kbd>1</kbd>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 4 la celda 1 pasa a decir <strong>«2 · P1»</strong> — dos bucles y el patrón 1 — y se queda encendida en verde. En el paso 7 la celda se pone <strong>en rosa láser</strong> durante un momento: está en cola. Cuando llega el compás, entran bombo y hat <em>a la vez y a tiempo</em>, el bajo se para, y la celda pasa de rosa a verde.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que bombo y hat entren en el instante en que tocas la celda, sin esperar: la escena no está pasando por el reloj y va a descuadrar todo cambio de sección. Que entren pero <strong>un compás tarde</strong> y con un silencio en medio: se está perdiendo la pasada del reloj en la que tenían que sonar. Que la celda se quede en rosa para siempre: la escena se quedó en cola y nunca se aplicó.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">22</span>
+            <h3>Cambiar de escena sin abrir un agujero</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>La regla es que <strong>un bucle que está en las dos escenas no se toca</strong>. Pararlo y volver a arrancarlo sonaría como un corte en medio de un sonido que iba a seguir, y es justo lo que se oye si esto está mal.</p>
+          <ol class="pasos-num">
+            <li>Mantén pulsados <strong>Bombo</strong> (f1·c1) y <strong>Hat</strong> (f1·c3): dos bucles.</li>
+            <li><kbd>Escenas</kbd> → mantén la celda <kbd>1</kbd>.</li>
+            <li>Toca el <strong>Hat</strong> una vez para quitarlo del bucle. Queda solo el bombo.</li>
+            <li>Mantén pulsado el <strong>Bajo</strong> (f3·c1): bombo + bajo.</li>
+            <li>Mantén la celda <kbd>2</kbd>. Ahora hay dos escenas que comparten el bombo.</li>
+            <li>Con la 2 sonando, toca la celda <kbd>1</kbd> y <strong>escucha el bombo</strong>.</li>
+            <li>Cuando entre, toca la celda <kbd>2</kbd> y vuelve a escuchar el bombo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El <strong>bombo no se entera de nada</strong>: sigue igual de firme en los dos cambios. Lo único que cambia es que el hat entra y el bajo se va, y al revés. La celda que suena queda en verde, la otra apagada.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Un salto, un chasquido o un silencio del bombo al cambiar de escena: se está parando y volviendo a arrancar en vez de dejarlo seguir. Que el bombo se descoloque respecto al hat después del cambio: arrancó fuera del compás.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">23</span>
+            <h3>Vaciar una escena, y deshacerlo</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Vaciar es la tercera cosa que hace la franja de escenas, y usa el mismo trato que la rejilla: <strong>AJUSTAR arma, el siguiente toque decide</strong>.</p>
+          <ol class="pasos-num">
+            <li>Con una escena guardada en la celda <kbd>1</kbd> (de la prueba 21), abre <kbd>Escenas</kbd>.</li>
+            <li>Toca <kbd>Ajustar</kbd> en el transport.</li>
+            <li>Mira la línea de arriba de la franja de escenas.</li>
+            <li>Toca la celda <kbd>1</kbd>.</li>
+            <li>Toca el icono de <kbd>deshacer ↶</kbd> arriba a la izquierda.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 3 la línea dice <strong>«Toca una escena para vaciarla»</strong> y el borde de la franja se pone verde. En el paso 4 la celda 1 vuelve a decir <strong>VACÍA</strong>, AJUSTAR se apaga solo y sale el aviso de deshacer. En el paso 5 la escena <strong>vuelve entera</strong>, con sus bucles y su patrón.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que la escena se lance en vez de vaciarse: AJUSTAR no está llegando a la franja. Que AJUSTAR se quede encendido después: el modo dura más de una acción, que es exactamente lo que esta app no hace en ningún sitio. Que deshacer no la traiga: la escena se vació sin dejar paso atrás.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">24</span>
+            <h3>Escribir una canción y oírla en su orden</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">3 min</span>
+          </div>
+          <p>Necesita dos patrones que se distingan a oreja. Escribe uno con bombo solo y otro con hat solo, y así lo que se prueba —<strong>el orden</strong>— se oye sin dudar.</p>
+          <ol class="pasos-num">
+            <li>Toca <kbd>Seq</kbd>. Con <kbd>P1</kbd> en pantalla, mantén el pad <strong>f1·c1</strong> para elegir su paso y toca el <strong>Bombo</strong>. Repite en <strong>f2·c1</strong>, <strong>f3·c1</strong> y <strong>f4·c1</strong>: bombo a negras.</li>
+            <li>Con la flecha <kbd>›</kbd> pasa a <kbd>P2</kbd> y escribe ahí el <strong>Hat</strong> en esas mismas cuatro casillas.</li>
+            <li>Vuelve a <kbd>P1</kbd> con la flecha <kbd>‹</kbd>.</li>
+            <li><strong>Mantén pulsada</strong> la pastilla que dice <kbd>1 COMPÁS</kbd>. Se abre la hoja de la canción.</li>
+            <li>Toca <kbd>Añadir P1</kbd>. Aparece la pastilla <strong>P1</strong>.</li>
+            <li>Tócala para elegirla y dale dos veces a <kbd>+</kbd>: pasa a <strong>P1 ×3</strong>.</li>
+            <li>Cierra la hoja, pasa a <kbd>P2</kbd>, vuelve a mantener la pastilla de la cadena y toca <kbd>Añadir P2</kbd>.</li>
+            <li>Toca <kbd>La canción manda</kbd> y cierra la hoja.</li>
+            <li>Toca <kbd>Play</kbd> y escucha cuatro compases.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            La cabecera de la hoja cuenta <strong>4 compases</strong>. La pastilla de la cadena pasa a leer <strong>CANCIÓN 4</strong> en verde. Al tocar Play: <strong>bombo, bombo, bombo, hat</strong>, y vuelta a empezar. La línea de estado va diciendo <strong>«P1 · compás 1 de 4»</strong>, 2, 3, y <strong>«P2 · compás 4 de 4»</strong>. El número de patrón de la rejilla cambia solo al llegar al cuarto compás.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que suene bombo-hat-bombo-hat: las repeticiones no se están contando. Que empiece por el hat: la canción no arranca por su primer compás. Que la rejilla no siga al patrón que suena: las luces mienten sobre lo que se está oyendo. Que la línea de estado diga pasos en vez de compases: se está leyendo la cadena y no la canción.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">25</span>
+            <h3>El anillo: cadena, canción y vuelta</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Con la canción de la prueba 24 escrita. La cadena y la canción contestan a la misma pregunta, así que comparten un solo mando: esto comprueba que no se contradicen.</p>
+          <ol class="pasos-num">
+            <li>Con <kbd>Seq</kbd> encendido, toca la pastilla de la cadena <strong>una vez</strong>. Mira lo que dice.</li>
+            <li>Sigue tocándola: <strong>2, 4, 8, 16</strong>…</li>
+            <li>Tócala una vez más.</li>
+            <li>Y otra.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El recorrido es <strong>1 compás → 2 → 4 → 8 → 16 → CANCIÓN 4 → 1 compás</strong>. La pastilla está encendida en verde en todas menos en «1 compás». Al salir de la canción vuelve a <strong>1 compás</strong>, no a 16.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que después de 16 vuelva a 1 saltándose la canción: la canción escrita no se está viendo. Que la canción salga en el anillo <em>antes</em> de haber escrito ninguna: se está ofreciendo un orden que no existe, y al elegirlo no sonaría nada distinto.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 8 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Lo que cambió por dentro</h3><span class="cuenta">4 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">26</span>
+            <h3>Invertir un sonido, y que sus hermanos no se enteren</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">3 min</span>
+          </div>
+          <p>Esta escribe un fichero, así que es la que puede perder audio. Lo que importa son los pasos 6 y 8: el recorte tiene que reflejarse, y los trozos de un corte <strong>no</strong> pueden darse la vuelta con él.</p>
+          <ol class="pasos-num">
+            <li>Abre la <kbd>biblioteca</kbd> y toca <strong>Vinilo</strong>.</li>
+            <li>Toca <kbd>Escuchar</kbd> y quédate con cómo suena.</li>
+            <li>Toca <kbd>Del revés</kbd> (el botón con las dos flechas).</li>
+            <li>Toca <kbd>Escuchar</kbd> otra vez.</li>
+            <li>Toca <kbd>Al revés</kbd> para devolverlo, y escucha una tercera vez.</li>
+            <li>Ahora recorta: arrastra el <strong>final</strong> de la onda hasta la mitad, escucha, toca <kbd>Del revés</kbd> y escucha otra vez.</li>
+            <li>Vuelve a dejarlo del derecho y sal de la hoja.</li>
+            <li>Si hiciste la prueba 03, abre <strong>Vinilo 3</strong> y escúchalo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 4 el sonido va del revés y <strong>el dibujo de la onda también se ha dado la vuelta</strong>. En el paso 5 vuelve a sonar exactamente como al principio. En el paso 6, lo importante: <strong>del revés se oye la misma mitad</strong> que oías del derecho, tocada al revés — no la otra mitad. En el paso 8, <strong>Vinilo 3 suena del derecho</strong>, intacto.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que en el paso 6 suene la otra mitad del disco: el recorte no se está reflejando. Que Vinilo 3 suene del revés en el paso 8: se dio la vuelta al fichero compartido y se llevó por delante a todos los trozos del corte — eso es pérdida de audio. Que el botón tarde mucho o la app se quede quieta en un sonido largo: la escritura del fichero está bloqueando la pantalla. Que al volver del derecho el sonido no sea idéntico al original: se está perdiendo calidad en cada vuelta.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">27</span>
+            <h3>El destello del golpe</h3>
+            <span class="chip">Sin probar</span><span class="chip">40 s</span>
+          </div>
+          <p>Un pad que suena tiene que <em>verse</em> sonar. Hasta ahora el pintor sabía dibujarlo y nadie se lo pedía nunca.</p>
+          <ol class="pasos-num">
+            <li>Toca el <strong>Bombo</strong> (f1·c1) varias veces seguidas y mira el pad.</li>
+            <li>Escribe un patrón cualquiera con <kbd>Seq</kbd> y dale a <kbd>Play</kbd>, sin mirar la esquina de los pasos: mira <strong>los pads enteros</strong>.</li>
+            <li>Mantén el <strong>Hat</strong> para dejarlo en bucle y míralo un rato.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Cada toque enciende el pad un instante y se apaga solo. Con el secuenciador andando, <strong>los pads que tocan parpadean al ritmo</strong>. Un pad en bucle se queda con su color de bucle y <em>además</em> destella en cada golpe.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que se quede encendido y no vuelva a apagarse: la rejilla dejó de repintar y el destello se congela. Que un redoble rápido se vea como una luz fija: setenta milisegundos son demasiados y hay que bajarlos. Que la app vaya a tirones mientras suena el secuenciador: el repintado está costando más de lo que vale.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">28</span>
+            <h3>El mantener, 180 ms más rápido</h3>
+            <span class="chip">Sin probar</span><span class="chip">40 s</span>
+          </div>
+          <p>La pulsación larga era medio segundo, la de Flutter por defecto. Ahora es la de la constante que llevaba escrita desde el principio: <strong>320 ms</strong>. Esta prueba es de tacto, y solo la contesta un dedo.</p>
+          <ol class="pasos-num">
+            <li>Mantén pulsado el <strong>Bombo</strong> hasta que vibre.</li>
+            <li>Repítelo cinco o seis veces seguidas, parando el bucle con un toque entre una y otra.</li>
+            <li>Con <kbd>Seq</kbd> encendido, mantén un pad para elegir su paso.</li>
+            <li>Toca varios pads <strong>rápido</strong>, como tocando un ritmo.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El bucle arranca <strong>antes de lo que recordabas</strong>, casi en cuanto apoyas. Elegir un paso responde igual de rápido. Y en el paso 4 nada se queda enganchado: tocar rápido sigue siendo tocar, no mantener.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que tocando rápido se te quede algún pad en bucle sin querer: 320 ms es poco para tu mano y hay que subirlo. Que un toque normal ya no dispare: el reconocedor de toque se está quedando sin turno frente al de mantener.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">29</span>
+            <h3>Leer la franja del secuenciador, letra por letra</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Aquí vivía el <strong>defecto 11</strong>: cuatro textos que enseñaban el nombre de su propia clase en pantalla. Están arreglados, pero es el único fallo del proyecto que ni los tests ni este documento podían ver — solo un ojo delante del móvil. Merece una prueba propia.</p>
+          <ol class="pasos-num">
+            <li>Toca <kbd>Seq</kbd> y lee la pastilla de la cadena.</li>
+            <li>Con el patrón vacío, lee la línea de estado de la derecha.</li>
+            <li>Escribe unas cuantas notas y vuelve a leerla.</li>
+            <li>Toca <kbd>Rec</kbd> y lee la línea mientras cuenta atrás, y también el botón rojo.</li>
+            <li>Toca <kbd>Play</kbd> con la cadena en 4 y lee la línea otra vez.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Números y palabras en castellano, en los cinco sitios: <strong>«1 COMPÁS»</strong>, <strong>«Patrón vacío · mantén un pad para escribir en su paso»</strong>, <strong>«6 pasos con notas»</strong>, <strong>«Preparado… entra en 2 de 4»</strong> con el botón diciendo <strong>«2…»</strong>, y <strong>«P1 de 4 · paso 7»</strong>.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Cualquier texto que contenga <code>SequencerBar</code> o <code>Instance of</code>. Si aparece uno solo, quedan interpolaciones sin llaves en el fichero y hay que barrerlo entero otra vez.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
     <div class="techo rev">
       <b>Ya probadas, y lo que enseñaron</b>
       <p>
@@ -2343,6 +2771,16 @@ ol.pasos-num kbd {
         realidad elige una casilla. De ahí salen las dos tarjetas de gestos de arriba,
         y de ahí salió también la idea de las luces por sonido — una sola luz no sabía
         decir si un tiempo llevaba una voz o tres.
+      </p>
+      <p>
+        <strong>Y la lección más cara vino sin buscarla:</strong> el defecto 11 —cuatro
+        textos de la franja del secuenciador enseñando el nombre de su clase— llevaba
+        ahí desde que esos campos se renombraron, con los tests en verde y
+        <code>flutter analyze</code> limpio encima. Una cadena de texto mal interpolada
+        es válida para el analizador y le da igual al test que no la lee. <b>Solo la ve
+        un ojo delante del móvil</b>, que es de lo que va este capítulo entero: la
+        distancia entre «pasa sus pruebas» y «funciona» se mide con el aparato en la
+        mano.
       </p>
     </div>
   </div>
@@ -2367,7 +2805,7 @@ ol.pasos-num kbd {
     </svg>
     <p>
       Investigación sobre siete apps y máquinas del oficio, contrastada línea a línea con
-      los 43 ficheros de <code>lib/</code>. Ninguna de estas funciones está decidida:
+      los 67 ficheros de <code>lib/</code>. Ninguna de estas funciones está decidida:
       el documento existe para poder elegir.
     </p>
     <div class="fuentes">

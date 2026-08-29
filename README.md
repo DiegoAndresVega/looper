@@ -43,6 +43,7 @@ El gesto decide cómo suena un pad; el pad no guarda ningún «modo».
 | Mantener pulsado | Lo deja en loop, con una vibración corta al arrancar |
 | AJUSTAR y luego un pad | Abre la hoja del pad: cambiar sonido, sincronía, largo y vaciar |
 | AJUSTAR y luego ROLL | Cambia la división del roll entre corchea y semicorchea |
+| AJUSTAR y luego una escena | La vacía |
 
 **Deshacer** vive arriba, junto a la biblioteca, y solo aparece cuando hay algo
 que retirar. Guarda hasta veinte pasos atrás de lo que se puede perder de
@@ -87,6 +88,23 @@ la Circuit y el FM-1 encadenan patrones en vez de estirarlos—: el botón de
 **compases** de la barra pone a sonar P1…PN seguidos (1, 2, 4, 8 o 16
 compases). La grilla va siguiendo al patrón que suena, así que las luces
 siempre cuentan la verdad.
+
+La cadena se queda corta en cuanto un tema tiene partes: siempre P1…PN, siempre
+un compás cada uno. **Manteniendo pulsada esa misma pastilla** se abre la
+canción, que es la respuesta larga a la misma pregunta —qué suena después de
+este compás—: cualquier patrón, las veces que quieras, en el orden que quieras
+(P1×2 · P3 · P2×4). Por eso la canción **no tiene interruptor propio**, entra
+como una posición más del anillo de la pastilla: 1, 2, 4, 8, 16, canción. Dos
+mandos para una pregunta acaban contradiciéndose.
+
+La canción se escribe **desde el patrón que tengas en la rejilla**, compás a
+compás: AÑADIR P3 lo pone al final, y para el siguiente vuelves a la rejilla.
+Reordenar son dos flechas, nunca un arrastre: en una hoja de móvil un arrastre
+pelea con el desplazamiento de la propia hoja. Mientras suena, la línea de
+estado deja de contar pasos y cuenta compases de la canción, que es lo que
+quieres saber a los cuatro minutos de tema. Y la canción es una lista de
+*compases*, no una línea de tiempo en segundos: por eso corre sobre el mismo
+reloj de semicorcheas que todo lo demás.
 
 Hay dos maneras de escribir, las mismas que trae una caja de ritmos:
 
@@ -134,6 +152,38 @@ swing viaja con la sesión, como el tempo.
 El patrón corre sobre el mismo reloj de semicorcheas que los loops
 sincronizados, así que nunca se separa de ellos, y cambiar el tempo no lo corta.
 
+## Las ocho escenas
+
+Una escena es **lo que suena**: qué pads van en bucle y con qué patrón. Es la
+regla que Live Loops usa para enseñar la estructura de un tema sin explicarla —
+disparas una columna y entra la sección entera— traída al sitio donde esta app
+pone todo lo que se toca mientras la música corre: la franja de debajo de la
+grilla, que ya se turnan los mandos y el secuenciador.
+
+No fue a la grilla a propósito. El cuadrado ya significa un pad y ya significa
+un paso del secuenciador; un tercer significado encima habría sido el tercero.
+
+| Gesto | Qué hace |
+|-------|----------|
+| Toque en una escena | La lanza |
+| Mantener pulsada | Guarda en ella lo que esté sonando ahora |
+| AJUSTAR y luego una escena | La vacía (con deshacer detrás) |
+
+Lo importante es **cuándo entra**: una escena se pone en cola en el mismo reloj
+de semicorcheas que los bucles y entra en la línea de compás, nunca bajo el
+dedo. Se puede pedir a mitad de compás sin romper nada, y mientras espera la
+celda se pinta en láser. Un bucle que está en la escena vieja y también en la
+nueva **no se toca**: pararlo y volver a arrancarlo abriría un agujero en medio
+de un sonido que iba a seguir.
+
+El patrón viaja con la escena solo cuando no manda nadie más. Con la cadena o
+la canción puestas, ellas deciden el orden de los patrones y la escena respeta
+lo que haya: dos cosas peleando por el mismo compás es peor que una escena que
+cede.
+
+Las escenas viven en la sesión, como los patrones: una escena nombra pads de
+*esta* sesión y no significa nada al lado de otra.
+
 ## Cortar un sonido a los dieciséis pads
 
 Desde la hoja de un sonido, **CORTAR** lo parte en trozos y los reparte por pads
@@ -153,6 +203,22 @@ a sus hermanos apuntando a un fichero inexistente.
 Los trozos caen en el primer banco con esos pads libres **seguidos**, buscando
 C, D, A y B en ese orden: lo tuyo primero, el kit de fábrica lo último que se
 pisa. Si no hay sitio seguido en ninguno, no corta y lo dice.
+
+## Del revés
+
+En la hoja de un sonido, **DEL REVÉS** lo da la vuelta. Es el único control
+lento de esa hoja porque es el único que **escribe un fichero**: una marca que
+el motor honrase al disparar no valía, porque los dieciséis trozos de un corte
+comparten un solo fichero y se habrían dado la vuelta todos a la vez.
+
+Lo caro no es invertir las muestras: es **reflejar el recorte**. Una ventana de
+0,2 s a 0,8 s de un sonido de un segundo, leída al revés, vuelve a ser de 0,2 s
+a 0,8 s; pero una que acababa en 0,3 s empieza en 0,7 s. Sin eso, invertir un
+sonido recortado suena a otro trozo del original. El fichero viejo se borra solo
+si ya no lo usa nadie, la misma regla que sigue borrar un sonido.
+
+El botón dice en qué estado está el sonido, no lo que va a hacer: leyendo AL
+REVÉS, el audio ya está invertido y tocarlo lo devuelve.
 
 ## Un controlador MIDI, sin configurar nada
 
@@ -368,11 +434,14 @@ https://claude.ai/code/artifact/e88abf13-2695-40e4-85e7-9f3743adc153
 ```
 lib/
   core/         Paleta, tipografía de marca, familias de sonido y límites
-  domain/       Modelos inmutables: Sound, PadConfig, Bank, Session, Pattern
+  domain/       Modelos inmutables: Sound, PadConfig, Bank, Session, Pattern,
+                Song y Scene
   data/         Almacenamiento local, biblioteca, sesiones, kit de fábrica
   audio/        Síntesis, WAV, motor SoLoud, reloj, micrófono y mezcla
-  state/        SessionController, Sequencer y el aprendizaje del controlador
-  ui/pads/      Grilla, bancos, tempo, franja de mando, barra del secuenciador
+  state/        SessionController, Sequencer, el aprendizaje del controlador
+                y los destellos de la grilla
+  ui/pads/      Grilla, bancos, tempo, franja de mando, barra del secuenciador,
+                franja de escenas y hoja de la canción
   ui/sampler/   Samplear con el micrófono y revisar lo capturado
   ui/library/   Biblioteca y editor de sonido
   ui/midi/      Controladores y lo que han aprendido
@@ -454,6 +523,9 @@ Funcionando:
 - Efectos por familia: cada una con su filtro, su drive y su envío a la reverb
   compartida, en la misma solapa FX
 - Cadena de patrones de 1 a 16 compases
+- Modo canción: cualquier patrón, las veces que quieras, en el orden que
+  quieras, en el mismo anillo que la cadena
+- Ocho escenas por sesión: guardan lo que suena y entran en la línea de compás
 - Controlador MIDI por USB y Bluetooth, sin mapeo que configurar
 - MIDI learn: mantener pulsado un mando y mover uno físico los casa, y lo
   aprendido sobrevive a cerrar la app
@@ -461,6 +533,8 @@ Funcionando:
 - Copiar pads y patrones
 - Puntos de guardado: ocho instantáneas con nombre por sesión
 - Panorama por pad
+- Invertir un sonido, con el recorte reflejado
+- Destello del golpe en el pad, venga de un dedo, del secuenciador o del cable
 - La rejilla como escala: seis escalas, tónica y octava
 - Rescatar los últimos cuatro compases del máster a un pad
 - Cortar un sonido a los pads: por transitorios, en 8 o en 16
@@ -474,8 +548,18 @@ Funcionando:
 Pendiente:
 
 - Elegir licencia del repositorio
-- Verificar en el móvil la cuenta atrás del REC, las divisiones del roll, los
-  buses de familia con su envío y el MIDI learn con un controlador delante
+- **Veintinueve pruebas en el móvil**, escritas paso a paso en el capítulo 07
+  del artifact «Estado del arte». Es el cuello de botella real del proyecto: se
+  ha construido más de lo que se ha oído. Sin dedo delante siguen sin verificar
+  la cuenta atrás del REC, las divisiones del roll, los buses de familia con su
+  envío, el MIDI learn, las escenas, la canción y el reverse
+- El jitter de 8 ms del reloj (defecto 04). `playClocked` existe en la 4.1.7,
+  pero no acepta bucle ni pausa y cuesta unos dos búferes de latencia: hay que
+  comprobar con la oreja que el recorte de los sonidos sobrevive al cambio
+- `kLowSpaceBytes` sigue sin usarse: avisar del espacio libre necesita una
+  llamada de plataforma que Flutter no trae, así que o entra un paquete —y hay
+  que compilar el APK para saber si sobrevive a las versiones fijadas— o se
+  borra la constante
 
 ## Fuera de alcance
 

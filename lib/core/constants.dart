@@ -46,6 +46,11 @@ const String kSequencerKey = '_sequencer';
 /// finger that asked for it.
 const String kSceneKey = '_scene';
 
+/// Identifies the pass of a stem export waiting for its downbeat. Same rule
+/// as the scene: four files that started at four different points of the bar
+/// would not line up in anything they were dropped into.
+const String kExportKey = '_export';
+
 /// While recording steps by hand, notes played inside this window land on the
 /// same step. It is what makes a chord a chord instead of four steps.
 const Duration kChordWindow = Duration(milliseconds: 260);
@@ -73,6 +78,12 @@ const Duration kPadLongPress = Duration(milliseconds: 320);
 /// corner of an eye, short enough that sixteenths at 180 BPM — 83 ms apart —
 /// still read as separate hits.
 const Duration kPadFlashDuration = Duration(milliseconds: 70);
+
+/// Choke groups, the MPC convention: pads in the same group cannot sound at
+/// once, because the things they stand for cannot either — an open hat and a
+/// closed hat are one piece of metal. Zero means the pad chokes nobody.
+const int kNoChokeGroup = 0;
+const int kChokeGroups = 4;
 
 /// How far the pitch knob reaches, in semitones either way. An octave up and
 /// an octave down is as far as a sample survives being stretched like tape.
@@ -129,6 +140,11 @@ const int kUndoLimit = 20;
 /// at 44.1 kHz is about five megabytes — cheap enough to hold forever, long
 /// enough to cover the loop you just played and liked.
 const int kSkipBackSeconds = 30;
+
+/// How long a note sent out of the cable is held. A pad is a trigger, not a
+/// key: long enough for anything out there to see the note, short enough that
+/// closing the app cannot leave a synth droning.
+const Duration kMidiGate = Duration(milliseconds: 60);
 
 /// The note the first pad answers to. 36 is C1 in the convention Akai,
 /// Novation and the M-Vave all share, so a pad controller works the moment it

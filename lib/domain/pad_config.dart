@@ -1,10 +1,64 @@
 import '../core/constants.dart';
 
+/// How a pad answers a second hit while the first is still ringing. The
+/// RC-505 gives four modes per track; these are the three that change what a
+/// finger can do — the fourth, reverse, is the sound's own business and lives
+/// in the library.
+enum PadPlayMode {
+  /// A new hit cuts the one before it. Fast tapping reads as a roll, which is
+  /// what a drum pad does, and it is why this is the default.
+  cut('Corte'),
+
+  /// Hits pile up. Eight taps on a bell leave eight bells ringing — the RC-505
+  /// calls this multi, and it is the difference between a pad and a drum.
+  layer('Capas'),
+
+  /// Plays through and refuses to be interrupted, itself included. A stab or
+  /// a spoken line that must not stutter.
+  once('Una vez');
+
+  const PadPlayMode(this.label);
+
+  final String label;
+}
+
+/// What a fresh hit does to the voice the same pad already has running.
+enum HitAction { cutPrevious, layer, ignore }
+
+/// The rule, on its own so it can be read and tested without an engine.
+HitAction hitActionFor({
+  required PadPlayMode mode,
+  required bool isSounding,
+}) =>
+    switch (mode) {
+      PadPlayMode.cut => HitAction.cutPrevious,
+      PadPlayMode.layer => HitAction.layer,
+      PadPlayMode.once => isSounding ? HitAction.ignore : HitAction.layer,
+    };
+
+/// Which of the voices in [sounding] this hit cuts short.
+///
+/// [sounding] maps each ringing pad's key to its choke group. A pad never
+/// appears among its own victims: what a pad does to itself is [PadPlayMode]'s
+/// business, and mixing the two rules would make a pad in a group unable to
+/// layer with itself.
+Set<String> chokeVictims({
+  required String firingKey,
+  required int group,
+  required Map<String, int> sounding,
+}) {
+  if (group == kNoChokeGroup) return const {};
+  return {
+    for (final entry in sounding.entries)
+      if (entry.key != firingKey && entry.value == group) entry.key,
+  };
+}
+
 /// What one of the 64 pads holds. An empty pad has no [soundId].
 ///
-/// There is no play mode stored here: the gesture decides. A tap fires the
-/// sound, a long press leaves it looping. What the pad remembers is only how
-/// the loop behaves once it is running.
+/// The gesture still decides the big thing — a tap fires, a long press loops.
+/// What the pad remembers is how it behaves once it is going: how a second hit
+/// treats the first, and which other pads it cannot sound alongside.
 class PadConfig {
   const PadConfig({
     this.soundId,
@@ -14,7 +68,11 @@ class PadConfig {
     this.synced = true,
     this.muted = false,
     this.pan = 0,
-  });
+    this.playMode = PadPlayMode.cut,
+    int chokeGroup = kNoChokeGroup,
+  }) : chokeGroup = chokeGroup < kNoChokeGroup
+            ? kNoChokeGroup
+            : (chokeGroup > kChokeGroups ? kChokeGroups : chokeGroup);
 
   static const PadConfig empty = PadConfig();
 
@@ -36,6 +94,13 @@ class PadConfig {
   /// cheapest way to let a mix breathe.
   final double pan;
 
+  /// What a second hit does while the first is still ringing.
+  final PadPlayMode playMode;
+
+  /// Which choke group the pad belongs to, or [kNoChokeGroup]. Pads sharing a
+  /// group cut each other short.
+  final int chokeGroup;
+
   bool get isEmpty => soundId == null;
 
   PadConfig copyWith({
@@ -47,6 +112,8 @@ class PadConfig {
     bool? synced,
     bool? muted,
     double? pan,
+    PadPlayMode? playMode,
+    int? chokeGroup,
   }) {
     return PadConfig(
       soundId: clearSound ? null : (soundId ?? this.soundId),
@@ -56,6 +123,8 @@ class PadConfig {
       synced: synced ?? this.synced,
       muted: muted ?? this.muted,
       pan: pan ?? this.pan,
+      playMode: playMode ?? this.playMode,
+      chokeGroup: chokeGroup ?? this.chokeGroup,
     );
   }
 
@@ -67,6 +136,8 @@ class PadConfig {
         'sync': synced,
         'muted': muted,
         'pan': pan,
+        'playMode': playMode.name,
+        'chokeGroup': chokeGroup,
       };
 
   /// Sessions saved before the gesture rewrite carry a 'mode' key, and ones
@@ -84,6 +155,11 @@ class PadConfig {
         muted: json['muted'] as bool? ?? false,
         // A pad written before panning existed sat in the middle.
         pan: (json['pan'] as num?)?.toDouble() ?? 0,
+        // And one written before the modes cut its own tail and choked
+        // nobody, which is what these defaults say.
+        playMode: PadPlayMode.values.asNameMap()[json['playMode'] as String?] ??
+            PadPlayMode.cut,
+        chokeGroup: (json['chokeGroup'] as num?)?.toInt() ?? kNoChokeGroup,
       );
 }
 

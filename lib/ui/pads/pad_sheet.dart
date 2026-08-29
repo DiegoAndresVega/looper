@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../domain/loop_length.dart';
@@ -152,7 +153,32 @@ class _PadSheetState extends State<PadSheet> {
           const SizedBox(height: 8),
           _lengths(),
         ],
+        const SizedBox(height: 8),
+        _segmented(
+          label: 'Golpes',
+          options: PadPlayMode.values.map((m) => m.label).toList(),
+          selected: PadPlayMode.values.indexOf(_pad.playMode),
+          onSelect: (i) =>
+              _apply(_pad.copyWith(playMode: PadPlayMode.values[i])),
+        ),
+        const SizedBox(height: 8),
+        _chokeRow(),
       ],
+    );
+  }
+
+  /// The MPC's choke groups: pads in the same group cannot sound at once.
+  /// Numbers rather than names because the meaning is the player's — one
+  /// person's group 1 is a hi-hat and another's is two vocal takes.
+  Widget _chokeRow() {
+    return _segmented(
+      label: 'Grupo',
+      options: [
+        'Ninguno',
+        for (var g = 1; g <= kChokeGroups; g++) '$g',
+      ],
+      selected: _pad.chokeGroup,
+      onSelect: (i) => _apply(_pad.copyWith(chokeGroup: i)),
     );
   }
 

@@ -708,15 +708,15 @@ ol.pasos-num kbd {
     <p class="hero-sub">
       Siete apps y máquinas del oficio, desmontadas para decidir qué le falta a Looper.
       <em>39 funciones nuevas, once defectos reales y seis patrones de interacción</em>
-      que merece la pena robarle a quien los inventó. Actualizado con lo que ya está
-      construido: los cinco pasos priorizados están hechos y la cola acordada
-      —escenas y modo canción incluidos— se ha quedado vacía. Lo que queda por
-      delante ya no es teclado: son veintinueve pruebas con el móvil en la mano.
+      que merece la pena robarle a quien los inventó. Un año después de escribirlo,
+      <em>treinta y seis de las treinta y nueve están construidas</em> y las tres que
+      faltan lo están por plataforma, no por tiempo. Lo que queda por delante ya no es
+      teclado: son cuarenta y dos pruebas con el móvil en la mano.
     </p>
     <div class="cifras">
       <div class="cifra"><b>7</b><span>Referencias</span></div>
-      <div class="cifra"><b>20 / 39</b><span>Funciones hechas</span></div>
-      <div class="cifra"><b>7 / 11</b><span>Correcciones</span></div>
+      <div class="cifra"><b>36 / 39</b><span>Funciones hechas</span></div>
+      <div class="cifra"><b>9 / 11</b><span>Correcciones</span></div>
       <div class="cifra"><b>8 / 8</b><span>Pantallas</span></div>
     </div>
   </div>
@@ -806,7 +806,10 @@ ol.pasos-num kbd {
       <p class="lede">
         La luz de la esquina de cada tarjeta dice <em>cuánto de esto ya está construido</em>,
         con el mismo vocabulario que <code>PadTile</code> usa en la app. Buena parte del
-        catálogo no es código nuevo: es conectar motores que ya corren.
+        catálogo no era código nuevo: era conectar motores que ya corrían. Hoy quedan
+        <strong>tres tarjetas sin marcar</strong>, y las tres explican por qué:
+        un modelo de separación de stems dentro del APK, la librería de Ableton
+        envuelta a mano, y un estándar de plugins que en Android no existe.
       </p>
     </div>
 
@@ -819,7 +822,7 @@ ol.pasos-num kbd {
     <!-- A1 GROOVE -->
     <div class="bloque b-groove rev">
       <div class="bloque-head">
-        <h3>Groove</h3><span class="cuenta">5 de 6 hechas</span><span class="rule"></span>
+        <h3>Groove</h3><span class="cuenta">6 de 6 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -853,10 +856,10 @@ ol.pasos-num kbd {
           <p class="como"><b>En Looper:</b> el ROLL <em>ya es esto</em>, solo que en vivo y clavado a semicorcheas. Falta poder fijarlo a un paso concreto del patrón.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Longitud distinta por pista</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Longitud distinta por pista</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Patterning llega a 512 pasos por pista. Un hat de 7 pasos contra un bombo de 16 genera polimetría: el patrón tarda compases en repetirse.</p>
-          <p class="como"><b>En Looper:</b> hoy el patrón es un único conjunto de 16 pasos. Es la función más cara del bloque: obliga a reestructurar <code>Pattern</code>.</p>
+          <p class="como"><b>Hecho, y sin reestructurar <code>Pattern</code>:</b> las notas no se mueven, <em>solo se mueve la vuelta</em>. Cada pista guarda cuántos pasos mide y el secuenciador lleva una cuenta absoluta desde el PLAY, así que cada pista toma su propio resto de ella. Un hat de siete contra un bombo de dieciséis coinciden en el cero y tardan <strong>siete compases</strong> en volver a coincidir. Se abre con <strong>AJUSTAR + SEQ</strong>, el mismo trato que ya tenía ROLL. Solo se guardan las excepciones: un patrón donde nadie ha tocado esto no ocupa un byte más, y uno guardado antes de esto mide un compás entero, que es como sonaba. <em>Lo que no hace:</em> el acento, la probabilidad y el micro-timing siguen siendo del paso del compás, no de la pista — un golpe suena donde suena, pero pega como pega el compás.</p>
         </article>
 
       </div>
@@ -865,7 +868,7 @@ ol.pasos-num kbd {
     <!-- A2 ESTRUCTURA -->
     <div class="bloque b-groove rev">
       <div class="bloque-head">
-        <h3>Estructura de canción</h3><span class="cuenta">2 de 5 hechas</span><span class="rule"></span>
+        <h3>Estructura de canción</h3><span class="cuenta">5 de 5 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -881,22 +884,22 @@ ol.pasos-num kbd {
           <p class="como"><b>Hecho:</b> cualquier patrón, las veces que quieras, en el orden que quieras — P7×2 · P3 · P1×4. Se abre manteniendo pulsada la pastilla de la cadena, y se escribe <em>compás a compás desde el patrón que tengas en la rejilla</em>, que es como se compone de verdad. La canción <b>no es un interruptor aparte</b>: entra en el mismo anillo que la cadena —1, 2, 4, 8, 16, canción— porque las dos contestan a la misma pregunta, qué suena después de este compás, y dos mandos para una pregunta acaban contradiciéndose. Reordenar son dos flechas y nunca un arrastre, que en un móvil pelea con el desplazamiento de la propia hoja. Y es una lista de <em>compases</em>, no una línea de tiempo en segundos: por eso se toca desde el mismo reloj que todo lo demás y se puede probar sin dispositivo.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Grupos de corte</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Grupos de corte</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>La convención MPC: el hat abierto y el cerrado no pueden sonar a la vez, porque un charles de verdad tampoco puede. Un grupo, una voz.</p>
-          <p class="como"><b>En Looper:</b> se descartó en v1. Hoy un pad solo se corta a sí mismo (el mapa <code>_hits</code>), que es la mitad del problema resuelta.</p>
+          <p class="como"><b>Hecho:</b> cuatro grupos, en la hoja del pad. Un pad de un grupo calla a los demás del suyo <em>antes</em> de sonar él, no después. <b>Los bucles no se tocan:</b> un bucle es la decisión de dejar algo corriendo, y un toque en el pad de al lado no es la decisión de deshacerla — el grupo corta golpes, no decisiones. Y un pad nunca aparece entre sus propias víctimas: lo que un pad se hace a sí mismo lo decide su modo de golpe, y mezclar las dos reglas dejaría un pad de un grupo sin poder apilarse consigo mismo.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Modo de reproducción por pad</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Modo de reproducción por pad</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>El RC-505 da cuatro por pista: multi, single, one-shot y reverse. Cambiar el modo cambia el instrumento sin cambiar el sonido.</p>
-          <p class="como"><b>En Looper:</b> existe «Libre» contra «Al tempo», y el reverse ya está hecho —pero <em>del sonido</em>, en la biblioteca, no como modo del pad. Falta que un pad toque del revés lo que otro toca del derecho, y el one-shot explícito.</p>
+          <p class="como"><b>Hecho:</b> tres modos en la hoja del pad — <strong>Corte</strong> (el de siempre: el golpe nuevo mata al anterior, y por eso teclear rápido suena a redoble), <strong>Capas</strong> (se apilan: ocho toques en una campana dejan ocho campanas sonando) y <strong>Una vez</strong> (entra entero y no se deja interrumpir, ni por sí mismo). Las voces apiladas no se pierden de vista: dejan de ser la voz actual del pad pero quedan aparcadas para que PARAR las alcance — una voz que nadie sujeta es una voz que el botón de pánico no puede parar. El cuarto modo del RC-505, reverse, no es un modo aquí: es del sonido, y vive en la biblioteca.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Plantillas y lista de actuación</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Plantillas y lista de actuación</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>El RC-505 guarda 99 memorias de frase. Loopy Pro tiene plantillas de proyecto y <em>set lists</em> para saltar de tema a tema en directo.</p>
-          <p class="como"><b>En Looper:</b> las sesiones ya se crean, renombran, duplican y borran. Falta el escalón de arriba: una sesión marcada como punto de partida y un orden de actuación.</p>
+          <p class="como"><b>Hecho:</b> una sesión se marca como <strong>plantilla</strong> y la lista de sesiones gana un botón «desde plantilla» que arranca donde ella lo dejó — con la marca quitada, porque una plantilla es un punto de partida y dos son una bifurcación. Y un <strong>orden de actuación</strong>: cada sesión lleva su número en la fila y una línea arriba dice «tema 2 de 5 · después, Cierre». La lista vive <em>fuera</em> de las sesiones, en su propio fichero junto al mapa del controlador: pertenece al bolo, no a ninguna de las piezas. Borrar una sesión la saca del orden, porque un orden que apunta a algo que ya no existe no puede contestar qué viene después.</p>
         </article>
 
       </div>
@@ -905,7 +908,7 @@ ol.pasos-num kbd {
     <!-- A3 MUESTREO -->
     <div class="bloque b-muestreo rev">
       <div class="bloque-head">
-        <h3>Muestreo y manipulación</h3><span class="cuenta">4 de 7 hechas</span><span class="rule"></span>
+        <h3>Muestreo y manipulación</h3><span class="cuenta">6 de 7 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -927,10 +930,10 @@ ol.pasos-num kbd {
           <p class="como"><b>En Looper:</b> un buffer circular sobre el mismo stream del mezclador. Mucho valor por poco código, y resuelve el momento «esto estaba bien y no le di al botón».</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Estiramiento y detección de BPM</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Estiramiento y detección de BPM</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Koala estira a un BPM concreto. Loopy Pro ajusta lo importado al tempo del proyecto automáticamente y detecta el tempo de origen.</p>
-          <p class="como"><b>En Looper:</b> hoy el tono es de cinta (<code>setRelativePlaySpeed</code>): tono y velocidad van siempre juntos. Separarlos abre el bloque melódico entero.</p>
+          <p class="como"><b>Hecho:</b> la hoja del sonido lee su tempo al abrirse y ofrece estirarlo al de la sesión. El tempo se saca sin una sola FFT: se mide cómo se mueve el volumen —un golpe es un salto de energía, y solo cuentan las subidas, porque una nota apagándose no es un evento— y luego se pregunta cada cuánto se repiten esos saltos correlacionando la curva consigo misma. <b>Contesta «no sé» en vez de adivinar</b> cuando el sonido no llega a dos golpes o cuando nada se repite: un tempo equivocado es peor que ninguno, porque todo lo que venga detrás se estira a él.</p>
         </article>
 
         <article class="card hecha">
@@ -942,13 +945,13 @@ ol.pasos-num kbd {
         <article class="card">
           <div class="card-top"><h3>Separación de stems</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
           <p>Koala parte una canción en batería, bajo, voz y resto, en el propio dispositivo, con las librerías abiertas de Spleeter. Un toque.</p>
-          <p class="como"><b>En Looper:</b> ambicioso —el modelo pesa y hay que vigilar la memoria en móviles viejos— pero es 100 % offline, así que encaja con la filosofía sin ceder nada.</p>
+          <p class="como"><b>Sin construir, y es una decisión de proyecto y no de teclado:</b> separar stems necesita un modelo entrenado —Spleeter, Demucs— y un tiempo de ejecución que lo corra, TFLite u ONNX. Son cientos de megas dentro del APK y una dependencia nativa nueva peleando con las versiones que este proyecto tiene clavadas. Encaja con la filosofía —es 100 % offline— pero no es código que se escriba: es un modelo que se elige, se empaqueta y se mide en un móvil viejo. <b>Queda como la única del catálogo que está sin hacer por tamaño y no por imposibilidad.</b></p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Más formatos al importar</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Más formatos al importar</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Todos aceptan MP3, M4A y FLAC. Nadie tiene ya una carpeta llena de WAV en el móvil.</p>
-          <p class="como"><b>En Looper:</b> hoy solo WAV y 60 segundos como techo. Es la fricción más tonta que tiene la app: el usuario elige un archivo y se le rechaza.</p>
+          <p class="como"><b>Hecho, y sin un paquete nuevo:</b> entran <strong>WAV, MP3, FLAC y OGG</strong>. El motor ya llevaba dentro un decodificador para todo lo que sabe tocar, y de ahí sale la vía: se le pide el fichero en muestras y se reescribe en el formato de la casa. Dos decodificadores y el orden importa — un WAV que ya está a 44.100 lo lee la app, exacto, sin motor de por medio; todo lo demás pasa por el otro. <b>Eso arregla de paso el defecto 08:</b> la lectura se pide <em>por duración</em>, así que un WAV a 48 kHz vuelve a la frecuencia de la casa en vez de entrar sonando grave y lento. M4A se queda fuera: el decodificador del motor no lee AAC.</p>
         </article>
 
       </div>
@@ -957,7 +960,7 @@ ol.pasos-num kbd {
     <!-- A4 SONIDO -->
     <div class="bloque b-sonido rev">
       <div class="bloque-head">
-        <h3>Melodía y efectos</h3><span class="cuenta">4 de 9 hechas</span><span class="rule"></span>
+        <h3>Melodía y efectos</h3><span class="cuenta">9 de 9 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -967,16 +970,16 @@ ol.pasos-num kbd {
           <p class="como"><b>En Looper:</b> los 16 pads pasan a ser grados de la escala elegida. Es <em>la vía más corta</em> para que Looper deje de ser solo percusión.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Acordes y arpegiador</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Acordes y arpegiador</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Un pad dispara tres notas; el arpegiador las reparte en el tiempo. Synth One lleva arpegiador polifónico clásico y secuenciador de 16 pasos.</p>
-          <p class="como"><b>En Looper:</b> el secuenciador <em>ya apila varias notas en un mismo paso</em> —de eso va la ventana de 260 ms de <code>kChordWindow</code>—. La estructura de datos está lista.</p>
+          <p class="como"><b>Hecho:</b> dos mandos más en la solapa Escala. <em>Acorde</em> —sola, tercera, tríada, séptima— cuenta los intervalos <strong>en grados de la escala y nunca en semitonos</strong>: apilar terceras sobre una menor da un acorde menor y sobre una mayor da uno mayor, sin que nadie lo decida. Es el mismo truco que la escala bloqueada, un piso más arriba. <em>Arpegio</em> —junto, sube, baja, sube y baja— reparte esas notas en el tiempo, y también reparte <strong>las de un paso del secuenciador</strong>: un paso con tres pads deja de ser un acorde y pasa a ser una figura. Sube y baja no repite los extremos, así que tres notas son cuatro golpes y no seis, y la figura sigue cayendo en el tiempo.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Tono real, no de cinta</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Tono real, no de cinta</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Cualquier sampler moderno separa el tono de la velocidad. Sin eso, subir una octava también duplica el tempo del bucle.</p>
-          <p class="como"><b>En Looper:</b> el pitch de ±12 semitonos es hoy velocidad de reproducción. Es el techo real del bloque melódico entero.</p>
+          <p class="como"><b>Hecho, y era el techo de todo el bloque:</b> WSOLA. Se corta el sonido en ventanas que se solapan y se vuelven a poner más juntas o más separadas, <em>deslizando cada una hasta donde encaja mejor con lo que ya está puesto</em> — esa última parte es lo que evita que suene a flanger, porque un solapado a secas pelea con su propia fase. Con eso, estirar sin tocar el tono; y el tono sin tocar el largo es estirar por el intervalo y luego leerlo más deprisa por el mismo intervalo: los dos errores se anulan en el tiempo y se suman en el tono. Vive en la hoja del sonido y no en un mando, porque <b>reescribe el fichero</b>: un mando que se arrastra lo reescribiría sesenta veces por segundo. El tono de cinta sigue donde estaba, para tocar en directo.</p>
         </article>
 
         <article class="card hecha">
@@ -991,10 +994,10 @@ ol.pasos-num kbd {
           <p class="como"><b>Hecho:</b> hay <strong>una</strong> reverb, en su propio bus, y cada familia decide cuánto le manda con el mando <em>Envío</em>. En SoLoud un bus es un padre y no un envío, así que mandar significa disparar el sonido <em>dos veces</em>: seco por su familia y otra vez dentro de la reverb, al nivel del envío, con el mismo recorte, el mismo tono y el mismo panorama. El gemelo se para cuando se para su voz y se silencia cuando ella se silencia — si no, un pad muteado se seguiría oyendo por la sala. <em>Lo que no hace:</em> el envío sale del pad, no del bus, así que bajar el filtro de una familia deja su reverb brillante. Es la factura de tener una reverb en vez de cuatro, y está pagada a sabiendas.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Más efectos</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Más efectos</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Reverb, compresor, distorsión, chorus. Loopy Pro lleva reverb con nueve presets, EQ paramétrico de ocho tipos de filtro y un compresor.</p>
-          <p class="como"><b>En Looper:</b> hoy hay filtro con resonancia, eco (con un techo duro de 0,3 s porque su buffer se dimensiona en la primera pasada) y lofi. Falta reverb, que es la que más se echa en falta.</p>
+          <p class="como"><b>Hecho:</b> la reverb llegó con los buses de familia, y ahora el maestro suma <strong>compresor</strong> y <strong>chorus</strong>. El compresor es <em>un</em> mando y no seis: baja el umbral, sube la relación y devuelve el volumen que quita, todo a la vez — un compresor de seis controles es una herramienta de estudio, y este tiene que poder usarse con el pulgar mientras suena. No llega al fondo que permite el plugin: −80 dB sobre una mezcla ya normalizada no es comprimir, es bajar el fader. El chorus es el flanger llevado despacio a propósito: al extremo rápido deja de ser un chorus y se vuelve un avión, y para hacer daño ya está el lofi.</p>
         </article>
 
         <article class="card hecha">
@@ -1003,16 +1006,16 @@ ol.pasos-num kbd {
           <p class="como"><b>Corrección:</b> este documento decía que era «una decisión de arquitectura» porque la app es mono. Falso: mono son los <em>ficheros</em>; el motor arranca en <code>Channels.stereo</code> y SoLoud tiene <code>setPan</code>. Eran unas líneas, no una reforma. Un mando en la solapa Sonido, con zona muerta en el centro para que el pulgar encuentre el medio.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Macros XY y automatización</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Macros XY y automatización</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Loopy Pro tiene pads XY que mueven varios parámetros a la vez. Caustic automatiza casi cualquier mando a lo largo del arreglo.</p>
-          <p class="como"><b>En Looper:</b> el pad XY es el mando más expresivo que tiene un móvil —dos ejes con un dedo— y la app no lo usa en ninguna pantalla.</p>
+          <p class="como"><b>Hecho el pad XY,</b> que es la mitad que un móvil hace mejor que un ordenador: dos ejes con un dedo. Solapa <strong>XY</strong> en la franja — filtro a lo ancho, drive a lo alto — y no mueve unos mandos paralelos: mueve <em>los mismos</em> que los diales, sobre lo que la solapa FX tenga apuntado, maestro o bus de familia. Dos mandos para un valor acaban contradiciéndose. Ancho y bajo a propósito: la altura de la franja es altura de la grilla, y la grilla no devuelve ni un píxel. <em>La automatización a lo largo del arreglo se queda fuera</em>: eso pide una línea de tiempo, y la canción de esta app es una lista de compases, no de segundos.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Abrir el sintetizador</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Abrir el sintetizador</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Synth One expone cinco osciladores, dos LFO y sus filtros, y es gratis. Enseñar los mandos es lo que convierte un kit fijo en un instrumento.</p>
-          <p class="como"><b>En Looper:</b> <code>voices.dart</code> y <code>dsp.dart</code> contienen el motor entero —osciladores, envolventes AD, biquad, saturador— <em>cerrado en números fijos</em>. Está todo escrito, sin un solo mando.</p>
+          <p class="como"><b>Hecho:</b> botón <strong>SINTETIZAR</strong> en la biblioteca, y lo que sale de ahí cae en la lista como una grabación más — desde ese momento <em>lo es</em>, y se puede recortar, cortar a los pads, invertir y transponer. Cuatro ondas y seis mandos: tono, caída, largo, drive, ruido y color. Los mandos se guardan como <em>posición</em> y no como hercios, así que el dial, el control MIDI y el patch guardado hablan el mismo idioma, y el paso a unidades reales vive en un solo sitio — y es exponencial, porque todo lo que el oído oye en proporciones (tono, tiempo, frecuencia) se recorre así. <b>Cada movimiento se oye</b>: un sintetizador que no suena al girar un mando es una lista de números. El ruido va con semilla fija, como el kit: el mismo patch renderiza los mismos bytes en cualquier móvil.</p>
         </article>
 
       </div>
@@ -1021,7 +1024,7 @@ ol.pasos-num kbd {
     <!-- A5 MIDI -->
     <div class="bloque b-midi rev">
       <div class="bloque-head">
-        <h3>MIDI y sincronía</h3><span class="cuenta">2 de 7 hechas</span><span class="rule"></span>
+        <h3>MIDI y sincronía</h3><span class="cuenta">5 de 7 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -1037,28 +1040,28 @@ ol.pasos-num kbd {
           <p class="como"><b>Hecho:</b> el gesto de Loopy Pro, copiado tal cual, encima del mando que quieres mover. Mientras espera, la fila de arriba de la franja lo dice y <em>las solapas desaparecen</em> — cambiar de solapa ahora sería cambiar de novia. El número del control queda escrito dentro del dial. Se casa con el <strong>parámetro</strong>, nunca con el sitio de la franja: aprender el filtro con la percusión delante casa el mando con el bus de percusión para siempre, porque si se casara con «el primer mando de lo que haya», elegir otro pad recablearía el controlador por debajo a mitad de toma. Los del pad son la excepción a propósito y siguen al pad elegido: sesenta y cuatro pads por cinco parámetros no los mapea nadie a mano. Un mando mueve una cosa y una cosa obedece a un mando — aprender rompe los dos matrimonios anteriores —, y el movimiento que casa <em>también mueve</em>, así que el valor sale ya donde está el mando físico. Lo aprendido vive en <code>midimap.json</code>, junto a las sesiones y no dentro de ninguna: pertenece a la mesa, no a la pieza. <em>Lo que no hace:</em> no hay recogida suave, así que al abrir la app con un mapa guardado el primer roce salta al valor del mando físico en vez de esperar a cruzar el que tenía la app.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>MIDI de salida y reloj</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>MIDI de salida y reloj</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Que el secuenciador de Looper dispare un cacharro externo, y que su tempo mande sobre el resto de la mesa.</p>
-          <p class="como"><b>En Looper:</b> el mismo paquete resuelve entrada y salida. El reloj de 16avos ya existe; es publicar sus pasos.</p>
+          <p class="como"><b>Hecho:</b> un interruptor en la pantalla del controlador —<em>apagado por defecto, porque un reloj que nadie ha pedido arranca la caja de ritmos de otro en mitad de una toma</em>— y por el cable salen 24 pulsos por negra, el play, el stop y una nota por cada pad que suena. Los pads se reparten como ya se reparten al entrar: nota 36 en adelante, y <strong>un canal por banco</strong>, porque sesenta y cuatro pads no caben en un canal sin pisarle el mapa de batería a alguien. El reloj corre en su propio temporizador y no a ráfagas de seis en cada dieciseisavo: seis pulsos de golpe llegan como un bulto y se leen como swing al otro lado. Las notas se sueltan a los 60 ms: un pad es un disparo y no una tecla, y una nota que se queda puesta deja un sintetizador zumbando al cerrar la app. Y lo que sale se lee con el mismo analizador que lee lo que entra — hay un test que lo comprueba, porque si no, dos Loopers no podrían sincronizarse entre ellos.</p>
         </article>
 
         <article class="card">
           <div class="card-top"><h3>Ableton Link</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
           <p>Tempo, <em>fase</em> y start/stop compartidos por red local, sin configurar nada. Cualquiera cambia el tempo y los demás siguen; entrar y salir no rompe la sesión.</p>
-          <p class="como"><b>En Looper:</b> no hay binding de Flutter hecho: habría que envolver la librería C++ de Ableton. El concepto de <em>quantum</em> —la unidad de alineación en tiempos— es justo lo que <code>_launchOn</code> ya hace por su cuenta.</p>
+          <p class="como"><b>Sin construir, y por la misma razón que se anotó el primer día:</b> no hay binding de Flutter, así que habría que envolver a mano la librería C++ de Ableton y compilarla para Android y para iOS. El concepto de <em>quantum</em> —la unidad de alineación en tiempos— es justo lo que <code>_launchOn</code> ya hace por su cuenta, así que el instrumento está listo por dentro; lo que falta es el puente, y un puente de C++ no se verifica sin el aparato delante. <b>Mientras tanto, el MIDI de salida cubre el caso corriente:</b> Looper manda el tempo por cable a lo que haya en la mesa.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Estado de vuelta al controlador</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Estado de vuelta al controlador</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Loopy Pro devuelve MIDI para encender los LED del controlador. Sin esto, la pantalla dice una cosa y los botones de plástico dicen otra.</p>
-          <p class="como"><b>En Looper:</b> solo tiene sentido si entra MIDI de entrada, pero hay que diseñarlo a la vez o el resultado se siente roto.</p>
+          <p class="como"><b>Hecho para lo que se ve:</b> un pad que entra en bucle enciende su LED y uno que sale lo apaga, en su canal y su nota. Va con la salida MIDI, en el mismo interruptor, porque son la misma conversación. <em>Lo que no hace:</em> no devuelve la posición de los mandos aprendidos. Sin recogida suave, mandarle a un mando físico un valor al que no puede moverse solo no arregla nada — y esa es la misma deuda que ya se anotó al construir el MIDI learn, no una nueva.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Exportar por pistas</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Exportar por pistas</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Loopy Pro exporta pistas por separado. Koala exporta el proyecto entero como sesión de Ableton Live.</p>
-          <p class="como"><b>En Looper:</b> hoy solo sale la mezcla. El <code>MixdownRecorder</code> ya escribe WAV a disco según llega; multiplicarlo por familia es el paso natural.</p>
+          <p class="como"><b>Hecho, y en cuatro pasadas y no en cuatro ficheros a la vez:</b> el motor entrega <em>un solo grifo</em> del mezclador —de ahí que exportar, resamplear y el rescate lo compartan—, así que cuatro pistas no se pueden grabar simultáneas. Se graban una detrás de otra con las otras familias bajadas, y <strong>cada pasada empieza en una línea de compás</strong>, porque cuatro ficheros que arrancaran en cuatro puntos distintos del compás no encajarían en nada. La reverb baja con ellas: una pista sale seca, que es para lo que sirve una pista. Se llega manteniendo pulsado EXPORTAR, y son cuatro compases por familia — la pantalla dice cuántos segundos antes de empezar.</p>
         </article>
 
         <article class="card">
@@ -1073,7 +1076,7 @@ ol.pasos-num kbd {
     <!-- A6 SESIÓN -->
     <div class="bloque b-sesion rev">
       <div class="bloque-head">
-        <h3>Red de seguridad y aprendizaje</h3><span class="cuenta">5 funciones</span><span class="rule"></span>
+        <h3>Red de seguridad y aprendizaje</h3><span class="cuenta">5 de 5 hechas</span><span class="rule"></span>
       </div>
       <div class="rejilla">
 
@@ -1095,16 +1098,16 @@ ol.pasos-num kbd {
           <p class="como"><b>En Looper:</b> quedó sin responder en el alcance de v1. Hoy hay que reconstruir un patrón nota a nota para hacerle una variación.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Aprender tocando, no leyendo</h3><span class="tag"><span class="luz cero"></span>De cero</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Aprender tocando, no leyendo</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Groovepad monta una «Beat School» por pack de sonidos. Spotify deja saltarse el tutorial entero. La lección compartida: el tour de coach marks es el peor de los formatos.</p>
-          <p class="como"><b>En Looper:</b> el README dice «cero onboarding», y la alternativa no es un tour — es <em>una sesión de ejemplo que ya suena al abrir</em>, con un patrón escrito que se puede desmontar.</p>
+          <p class="como"><b>Hecho:</b> la sesión que se crea sola en la primera apertura viene con <strong>dos patrones ya escritos</strong>. SEQ y PLAY, y suena un compás: bombo a negras, caja en el dos y el cuatro, hats a corcheas con los contratiempos más flojos para que el compás respire. Deliberadamente soso, porque el objetivo es que se lea: cada nota es un pad que se puede levantar para ver qué hacía. El segundo patrón es el primero con dos cosas cambiadas —una probabilidad y un ratchet—, así que la diferencia entre P1 y P2 se oye la primera vez que corre la cadena, y esas dos capas están ahí para que alguien las encuentre.</p>
         </article>
 
-        <article class="card">
-          <div class="card-top"><h3>Aviso de espacio</h3><span class="tag"><span class="luz suelto"></span>Piezas sueltas</span></div>
+        <article class="card hecha">
+          <div class="card-top"><h3>Aviso de espacio</h3><span class="tag hecho">✓ Hecho</span></div>
           <p>Grabar sin parar llena un móvil. Un aviso antes de que falle la escritura es la diferencia entre una molestia y una sesión perdida.</p>
-          <p class="como"><b>En Looper:</b> la constante <code>kLowSpaceBytes</code> <em>ya está escrita en el código con un comentario que dice qué debería hacer</em>, y no la referencia nadie.</p>
+          <p class="como"><b>Hecho, y con código de plataforma propio en vez de un paquete:</b> Flutter no trae forma de preguntar cuánto espacio queda, así que la app lo pregunta ella — cuarenta líneas de Kotlin y de Swift en su propio canal, que es más barato que una dependencia nueva teniendo las versiones que este proyecto tiene clavadas. El aviso sale <em>antes</em> de empezar una toma, no después de que falle, y avisa sin impedir: es el móvil del jugador y medio giga sigue siendo una toma larga. Si la plataforma no contesta, <b>no se inventa un aviso</b>: uno falso es uno que se aprende a ignorar.</p>
         </article>
 
       </div>
@@ -1120,7 +1123,7 @@ ol.pasos-num kbd {
       <div class="cap-eyebrow"><span class="n">03</span><span class="label">Once defectos en el código de hoy</span><span class="rule"></span></div>
       <h2 class="cap-title">Lo que hay que corregir</h2>
       <p class="lede">
-        Esto no sale de comparar con nadie: sale de leer los 67 ficheros de <code>lib/</code>.
+        Esto no sale de comparar con nadie: sale de leer los ficheros de <code>lib/</code>, que hoy son ochenta.
         Ordenados por daño al usuario. Los dos primeros corrompen datos guardados, así que
         van antes que cualquier función nueva de la lista anterior.
       </p>
@@ -1187,16 +1190,16 @@ ol.pasos-num kbd {
         <div>
           <h3>Constantes muertas</h3>
           <p><code>kRollDivisions = [2, 1]</code> declara corcheas y semicorcheas, pero el ROLL está clavado a semicorcheas. <code>kLowSpaceBytes</code> y <code>kPadLongPress</code> no los referencia nadie.</p>
-          <p class="arreglo"><b>Estado</b>Dos de tres: <code>kRollDivisions</code> ya manda en el ROLL y <code>kPadLongPress</code> ya manda en la pulsación larga — para eso hizo falta cambiar el <code>GestureDetector</code> del pad por reconocedores propios, porque el de Flutter no deja elegir la duración. <em>Todos</em> los mantener del instrumento eran 180 ms más lentos de lo que decía la constante escrita para ellos. Queda <code>kLowSpaceBytes</code>: avisar del espacio libre necesita una llamada de plataforma que Flutter no trae de serie, así que o entra un paquete —y entonces hay que compilar el APK para saber si sobrevive a las versiones fijadas— o se borra la constante. <b>No se resuelve escribiendo código sin más</b>, y por eso sigue aquí.<br><b>Arreglo original</b><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado del todo. <code>kRollDivisions</code> manda en el ROLL; <code>kPadLongPress</code> manda en la pulsación larga —para eso hubo que cambiar el <code>GestureDetector</code> del pad por reconocedores propios, porque el de Flutter no deja elegir la duración, y <em>todos</em> los mantener del instrumento iban 180 ms más lentos de lo que decía la constante escrita para ellos—; y <code>kLowSpaceBytes</code> es ahora el umbral del aviso de espacio, que necesitó un canal de plataforma propio: cuarenta líneas de Kotlin y de Swift, más baratas que una dependencia nueva.<br><b>Arreglo original</b><b>Arreglo · lib/core/constants.dart</b>Conectar <code>kRollDivisions</code> al ROLL es <em>la mejora más barata de todo el documento</em>: la constante existe, el motor existe, falta el conmutador.</p>
         </div>
       </article>
 
-      <article class="fallo rev">
+      <article class="fallo rev resuelto">
         <span class="num">08</span>
         <div>
           <h3>Sin conversión de frecuencia al importar</h3>
           <p>La app trabaja a 44.100 Hz de punta a punta, y no hay resampler en ninguna parte. Un WAV a 48 kHz importado es el caso a verificar: si se re-codifica con cabecera a 44.100, sonará grave y lento sin decir nada.</p>
-          <p class="arreglo"><b>Verificar · wav_decoder.dart + sound_import.dart</b>Importar un WAV a 48 kHz en un móvil y escucharlo. Si el problema existe, convertir la frecuencia al importar y rechazar lo que no se pueda convertir.</p>
+          <p class="arreglo"><b>Estado</b>Arreglado de camino a otra cosa. Al abrir el importador a MP3, FLAC y OGG hubo que pedirle las muestras al decodificador del motor, y esa lectura se pide <em>por duración</em> y no por bytes: lo que vuelve está a la frecuencia de la casa, venga el fichero a la que venga. El WAV que ya está a 44.100 sigue leyéndolo la app, exacto y sin motor de por medio; cualquier otro pasa por la vía nueva. <b>Sigue pidiendo oreja</b> —la prueba 40 es exactamente esto— pero ya no es «verificar si está roto», es «comprobar que el arreglo suena».<br><b>Verificación original</b><b>Verificar · wav_decoder.dart + sound_import.dart</b>Importar un WAV a 48 kHz en un móvil y escucharlo. Si el problema existe, convertir la frecuencia al importar y rechazar lo que no se pueda convertir.</p>
         </div>
       </article>
 
@@ -1718,24 +1721,26 @@ ol.pasos-num kbd {
 <section id="prioridad" style="background: var(--pozo); border-block: 1px solid var(--linea);">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Trece tandas construidas</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">06</span><span class="label">Dieciocho tandas construidas</span><span class="rule"></span></div>
       <h2 class="cap-title">Dónde está</h2>
       <p class="lede">
-        Los cinco pasos que este documento priorizó están construidos, y siete tandas
-        más de la cola que venía detrás. Con las escenas y el modo canción <b>la cola
-        acordada se queda vacía</b>: lo que falta a partir de aquí ya no tiene orden
-        decidido, es catálogo. Swing, acento y las luces de paso están probados en un
-        móvil; todo lo demás —buses, MIDI learn, escenas, canción— sigue esperando
-        oreja, que es el cuello de botella real y no el teclado.
+        <b>El catálogo está construido.</b> Treinta y seis de las treinta y nueve
+        funciones de este documento existen en el binario; las tres que faltan no
+        están sin hacer por falta de tiempo, sino porque una necesita un modelo de
+        aprendizaje automático dentro del APK, otra una librería de C++ envuelta a
+        mano y la tercera un estándar que en Android no existe. Todo lo demás ha
+        pasado de «se podría» a «está». Lo que <em>no</em> ha pasado es por una
+        oreja: swing, acento y las luces de paso son lo único verificado en un
+        móvil, y el cuello de botella dejó de ser el teclado hace mucho.
       </p>
     </div>
 
     <div class="estado-barra rev">
       <div><b>5 / 5</b><span>Pasos priorizados</span></div>
-      <div><b>+15</b><span>De la cola siguiente</span></div>
-      <div><b>20 / 39</b><span>Funciones del catálogo</span></div>
-      <div><b>398</b><span>Tests</span></div>
-      <div><b>8 / 8</b><span>Pantallas maquetadas</span></div>
+      <div><b>+31</b><span>De la cola siguiente</span></div>
+      <div><b>36 / 39</b><span>Funciones del catálogo</span></div>
+      <div><b>518</b><span>Tests</span></div>
+      <div><b>3</b><span>Bloqueadas por plataforma</span></div>
     </div>
 
     <div class="pasos">
@@ -1856,21 +1861,64 @@ ol.pasos-num kbd {
         </div>
         <span class="coste">Hecho</span>
       </article>
+
+      <article class="paso rev">
+        <span class="n">14</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Lo que un pad le hace a otro</h3>
+          <p>Cuatro grupos de corte a la manera del MPC —el charles abierto y el cerrado son un solo trozo de metal— y tres modos de golpe por pad: corte, capas y una vez. El grupo calla a los demás <em>antes</em> de sonar él, y nunca toca los bucles: un bucle es una decisión, no un golpe. Las voces apiladas quedan aparcadas para que PARAR las alcance.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">15</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">La plantilla y el orden de la actuación</h3>
+          <p>Una sesión marcada como punto de partida y un botón «desde plantilla» que arranca donde ella lo dejó. Y un orden de bolo: número en cada fila y una línea que dice qué toca después. La lista vive fuera de las sesiones, junto al mapa del controlador, porque pertenece a la noche y no a ninguna de las piezas.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">16</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Acordes, arpegio, XY y el sintetizador abierto</h3>
+          <p>Los acordes cuentan intervalos en grados de la escala, así que salen en tono sin que nadie lo decida; el arpegio reparte tanto un acorde del teclado como un paso del secuenciador con varios pads. El pad XY mueve filtro y drive con un dedo, sobre los mismos valores que los diales. Y el motor de síntesis que llevaba veinte voces con los números clavados dentro gana seis mandos y un botón: lo que sale cae en la biblioteca como una grabación más.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">17</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">El cable, en las dos direcciones</h3>
+          <p>Salen 24 pulsos por negra, el play, el stop y una nota por pad —un canal por banco, porque 64 pads no caben en uno—, y los LED del controlador siguen a los bucles. Apagado por defecto: un reloj que nadie ha pedido arranca la caja de ritmos de otro. Y exportar por familias, en cuatro pasadas alineadas al compás, porque el motor solo da un grifo del mezclador.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
+
+      <article class="paso rev">
+        <span class="n">18</span>
+        <div class="cuerpo">
+          <h3 class="paso-title">Tiempo y tono, por fin separados</h3>
+          <p>WSOLA: estirar sin mover el tono, y transponer sin mover el largo. Con eso caen el estiramiento a un BPM, la detección de tempo —sin FFT: cómo sube la energía, correlacionada consigo misma— y el techo del bloque melódico entero. Alrededor: compresor y chorus en el maestro, importar MP3, FLAC y OGG por el decodificador que el motor ya llevaba dentro, el aviso de espacio con su propio canal de plataforma, dos patrones escritos en la sesión que se crea sola, y la polimetría, que no reestructuró <code>Pattern</code> — solo movió la vuelta.</p>
+        </div>
+        <span class="coste">Hecho</span>
+      </article>
     </div>
 
     <div class="despues rev">
-      <b>La cola acordada se ha vaciado.</b> Escenas y modo canción eran lo último que
-      tenía orden decidido, y están construidos. El bloque de <em>Estructura de canción</em>
-      pasa a 2 de 5 y el de <em>Muestreo</em> a 4 de 7. De aquí en adelante la decisión ya
-      no es «qué toca», es «qué elegimos»: <em>grupos de corte</em> y <em>modo de
-      reproducción por pad</em> son los dos más baratos que quedan —el reverse del sonido
-      ya está hecho, falta que sea un modo del pad—; <em>tono real</em> y <em>longitud
-      distinta por pista</em> son los dos más caros, y cada uno abre un bloque entero.
-      <b>Pero lo que de verdad toca antes que cualquiera de ellos son las veintinueve
-      pruebas del capítulo siguiente:</b> hay tres subsistemas enteros construidos que
-      ningún dedo ha rozado nunca, y el defecto 11 —cuatro textos enseñando el nombre de
-      su clase en pantalla— es exactamente el tipo de fallo que ni los tests ni este
-      documento pueden ver.
+      <b>Ya no hay cola.</b> Cinco bloques del catálogo están cerrados y el sexto —MIDI y
+      sincronía— se queda en 5 de 7 con las dos que no dependen de escribir código.
+      Las tres que faltan piden decisiones de proyecto, no sesiones de trabajo: un
+      modelo de separación de stems dentro del APK, la librería de Ableton envuelta a
+      mano, y un estándar de plugins que en Android no existe.
+      <b>Lo que toca ahora es el capítulo siguiente y nada más:</b> cuarenta y dos
+      pruebas con el móvil en la mano. Se ha construido muchísimo más de lo que se ha
+      oído, y el defecto 11 —cuatro textos que enseñaban el nombre de su clase en
+      pantalla, con los tests en verde y el analizador limpio— es la prueba de que
+      esa distancia es real y de que solo se cierra con un dedo delante.
     </div>
 
     <div class="techo rev">
@@ -1919,7 +1967,7 @@ ol.pasos-num kbd {
 <section id="pruebas">
   <div class="wrap">
     <div class="cap-head rev">
-      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Veintinueve pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
+      <div class="cap-eyebrow"><span class="n">07</span><span class="label">Cuarenta y dos pruebas · ninguna pasa de tres minutos</span><span class="rule"></span></div>
       <h2 class="cap-title">Lo que falta probar</h2>
       <p class="lede">
         Todo lo de este documento pasa sus tests, pero un test no oye. Estas son
@@ -1937,9 +1985,15 @@ ol.pasos-num kbd {
       <p class="lede">
         <b>Si solo hay diez minutos, este es el orden:</b> 15 (los buses, porque puede
         dejar el instrumento mudo) · 21 (una escena entra en la línea de compás) ·
-        27 (invertir un sonido recortado, que toca ficheros) · 29 (los textos de la
-        franja, que es donde se coló el defecto 11) · 02 (el grifo del mezclador).
-        Con esas cinco está cubierto todo lo que puede perder datos o dejar algo mudo.
+        26 (invertir un sonido recortado, que toca ficheros) · 42 (las cuatro pistas
+        encajan) · 29 (los textos de la franja, que es donde se coló el defecto 11).
+        Con esas cinco está cubierto todo lo que puede perder audio o dejar algo mudo.
+      </p>
+      <p class="lede">
+        Las trece últimas son de lo construido después de las escenas, y traen consigo
+        el trabajo de todo un catálogo cerrado: un pad ya decide qué le hace a otro,
+        el tiempo y el tono se han separado, el sintetizador tiene mandos y el cable
+        habla en las dos direcciones. <b>Nada de eso ha pasado por una oreja todavía.</b>
       </p>
     </div>
 
@@ -2761,6 +2815,364 @@ ol.pasos-num kbd {
       </div>
     </div>
 
+
+    <!-- ── BLOQUE 9 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Lo que un pad le hace a otro</h3><span class="cuenta">4 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">30</span>
+            <h3>El charles no puede sonar dos veces a la vez</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>El banco B tiene los dos charles que hacen falta: <strong>Hat Off</strong> (f2·c2) y <strong>Hat Abt</strong> (f2·c3). Un charles de verdad es un solo trozo de metal.</p>
+          <ol class="pasos-num">
+            <li>Toca la solapa del banco <kbd>B · Techno</kbd>.</li>
+            <li>Toca <kbd>Ajustar</kbd> y luego <strong>Hat Abt</strong> (f2·c3): se abre su hoja.</li>
+            <li>En la fila <kbd>Grupo</kbd>, toca el <strong>1</strong>. Cierra la hoja.</li>
+            <li>Repite con <strong>Hat Off</strong> (f2·c2): grupo <strong>1</strong> también.</li>
+            <li>Toca el <strong>Hat Abt</strong> y, mientras suena su cola, toca el <strong>Hat Off</strong>.</li>
+            <li>Al revés: <strong>Hat Off</strong> y encima <strong>Hat Abt</strong>.</li>
+            <li>Ahora mantén pulsado el <strong>Hat Abt</strong> para dejarlo en bucle y toca el <strong>Hat Off</strong>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En los pasos 5 y 6 el que sonaba <strong>se calla de golpe</strong> en cuanto entra el otro. En el paso 7, en cambio, <strong>el bucle sigue corriendo</strong>: el grupo corta golpes, no bucles.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que se oigan los dos solapados: el grupo no está llegando. Que el bucle del paso 7 se pare: se está cortando una decisión y no un golpe, y eso hace el instrumento imposible de tocar. Que un pad se corte a sí mismo cuando está en modo Capas: se están mezclando la regla del grupo y la del modo.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">31</span>
+            <h3>Los tres modos de golpe</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Usa la <strong>Campana</strong> (f3·c3) del banco A, que tiene cola larga y deja oír la diferencia.</p>
+          <ol class="pasos-num">
+            <li>Tócala cuatro veces rápido, seguidas. Así suena en <strong>Corte</strong>, que es como viene.</li>
+            <li><kbd>Ajustar</kbd> + <strong>Campana</strong>, y en la fila <kbd>Golpes</kbd> elige <strong>Capas</strong>. Cierra.</li>
+            <li>Tócala otras cuatro veces rápido.</li>
+            <li>Toca <kbd>Parar</kbd>.</li>
+            <li>Vuelve a la hoja y elige <strong>Una vez</strong>. Cierra.</li>
+            <li>Tócala y, sin esperar a que acabe, tócala otra vez.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 1, cada golpe corta al anterior: suena a redoble. En el paso 3, <strong>se apilan cuatro campanas</strong> sonando a la vez. En el paso 4 se callan todas — también las apiladas. En el paso 6, el segundo toque <strong>no hace nada</strong>: la primera campana llega entera hasta el final.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que en el paso 4 quede alguna campana sonando: una voz apilada se ha perdido de vista y el botón de pánico no la alcanza. Que en el paso 6 el segundo toque reinicie el sonido: el modo «una vez» no está mirando si todavía suena.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">32</span>
+            <h3>Polimetría: un hat de siete pasos</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Lo que hay que <em>oír</em> es que el patrón deja de repetirse igual. Bombo a compás entero contra hat a siete: coinciden en el uno y tardan <strong>siete compases</strong> en volver a coincidir.</p>
+          <ol class="pasos-num">
+            <li>Toca <kbd>Seq</kbd>. Con <kbd>P1</kbd>, mantén <strong>f1·c1</strong> y toca el <strong>Bombo</strong>; repite en <strong>f2·c1</strong>, <strong>f3·c1</strong> y <strong>f4·c1</strong>.</li>
+            <li>Mantén <strong>f1·c3</strong> y toca el <strong>Hat</strong>; repite en <strong>f2·c3</strong> y <strong>f3·c3</strong>.</li>
+            <li>Toca <kbd>Play</kbd> y escucha dos vueltas: por ahora se repite idéntico.</li>
+            <li>Toca <kbd>Ajustar</kbd> y luego <kbd>Seq</kbd>. Se abre <strong>Polimetría</strong>.</li>
+            <li>En la fila del <strong>Hat</strong>, baja con <kbd>−</kbd> de 16 hasta <strong>7</strong>.</li>
+            <li>Cierra la hoja y escucha cuatro o cinco compases.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El bombo no se mueve de las negras y <strong>el hat se va desplazando</strong> compás a compás: cada vuelta cae en otro sitio. La hoja marca esa fila con el color de la familia y las demás siguen diciendo <strong>UN COMPÁS</strong>.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que el hat siga clavado: el largo no llega al secuenciador. Que el bombo también se descoloque: se está aplicando a todas las pistas. Que al parar y volver a dar a Play el hat siga desfasado: la cuenta no vuelve a cero, y entonces dos tomas del mismo patrón nunca sonarían igual.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">33</span>
+            <h3>La plantilla y el orden del bolo</h3>
+            <span class="chip">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Toca el nombre de la sesión, arriba a la izquierda.</li>
+            <li><strong>Mantén pulsada</strong> la sesión abierta y elige <kbd>Usar como plantilla</kbd>.</li>
+            <li>Vuelve a mantenerla y elige <kbd>Añadir a la actuación</kbd>.</li>
+            <li>Toca <kbd>Sesión nueva</kbd>, y en la lista mantenla y añádela también a la actuación.</li>
+            <li>Mira la línea de arriba y los números de las filas.</li>
+            <li>Mantén la segunda y usa <kbd>Antes</kbd> para subirla.</li>
+            <li>Toca <kbd>Desde plantilla</kbd>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            La sesión marcada dice <strong>PLANTILLA</strong> y aparece el botón <kbd>Desde plantilla</kbd>. Las de la actuación llevan <strong>1</strong> y <strong>2</strong> a la izquierda, y la línea de arriba dice «tema 1 de 2 · después, …». En el paso 6 los números se intercambian. En el paso 7 se abre una sesión nueva <strong>con los pads y el tempo de la plantilla</strong>, y esa copia <em>no</em> dice PLANTILLA.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que la copia salga también marcada como plantilla: entonces hay dos puntos de partida y el botón deja de saber cuál usar. Que borrar una sesión deje su número en la lista: el orden estaría apuntando a algo que ya no existe.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 10 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>El instrumento que faltaba</h3><span class="cuenta">5 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">34</span>
+            <h3>Acordes y arpegio en el teclado</h3>
+            <span class="chip">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Lo que se comprueba es que <strong>no hay nota falsa posible</strong>: los intervalos se cuentan en grados de la escala, así que el acorde sale en tono solo.</p>
+          <ol class="pasos-num">
+            <li>Toca el <strong>Bajo</strong> (f3·c1) una vez para elegirlo.</li>
+            <li>Franja → solapa <kbd>Escala</kbd> → sube <kbd>Teclado</kbd> a ON.</li>
+            <li>Toca varios pads: una nota cada uno.</li>
+            <li>En la misma solapa, gira <kbd>Acorde</kbd> hasta <strong>Tríada</strong>.</li>
+            <li>Toca los mismos pads.</li>
+            <li>Gira <kbd>Escala</kbd> a <strong>Mayor</strong> y vuelve a tocarlos.</li>
+            <li>Gira <kbd>Arpegio</kbd> a <strong>Sube</strong> y toca uno.</li>
+            <li>Prueba <strong>Sube y baja</strong>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 5, cada pad suena a <strong>tres notas juntas</strong>, y sobre la pentatónica menor de fábrica suenan menores. En el paso 6 los mismos pads suenan <strong>mayores</strong> sin tocar nada más. En el 7 las tres notas salen <strong>una detrás de otra</strong> dentro del mismo tiempo, de grave a agudo. En el 8 son cuatro golpes y no seis: los extremos no se repiten.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que el acorde suene desafinado: se están contando semitonos en vez de grados. Que al arpegiar se corte la nota anterior: la transposición no está entrando en la identidad de la voz — es el mismo fallo que dejó el teclado monofónico en su día.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">35</span>
+            <h3>El pad XY</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <ol class="pasos-num">
+            <li>Mantén el <strong>Bombo</strong> hasta que vibre: en bucle.</li>
+            <li>Franja → solapa <kbd>XY</kbd>.</li>
+            <li>Arrastra el dedo en horizontal, de un lado a otro.</li>
+            <li>Arrastra en vertical.</li>
+            <li>Sin soltar, haz una diagonal.</li>
+            <li>Cambia a la solapa <kbd>FX</kbd> y mira los diales de <kbd>Filtro</kbd> y <kbd>Drive</kbd>.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            A lo ancho se abre y se cierra el filtro; a lo alto entra y sale el drive; en diagonal, las dos cosas a la vez. La cruz sigue al dedo y las dos etiquetas van cambiando de número. Y en el paso 6, <strong>los diales están donde los dejó el dedo</strong>: es el mismo valor, no un mando paralelo.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que los diales no se hayan movido: hay dos valores para una cosa, y tarde o temprano se contradicen. Que el sonido dé un salto al tocar el pad antes de arrastrar: está saltando al punto del dedo en vez de esperar — que es aceptable, pero conviene saberlo.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">36</span>
+            <h3>Hacerse un sonido desde cero</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>El motor de síntesis llevaba veinte voces con los números clavados dentro desde el primer día. Esta prueba es la puerta.</p>
+          <ol class="pasos-num">
+            <li>Abre la <kbd>biblioteca</kbd> y toca <kbd>Sintetizar</kbd>.</li>
+            <li>Mueve <kbd>Tono</kbd> despacio de un extremo al otro.</li>
+            <li>Ponlo abajo del todo, baja <kbd>Caída</kbd> también y sube <kbd>Drive</kbd>: eso es un bombo.</li>
+            <li>Sube <kbd>Ruido</kbd> al máximo y mueve <kbd>Color</kbd>.</li>
+            <li>Prueba las cuatro ondas.</li>
+            <li>Ponle nombre y toca <kbd>Guardarlo</kbd>.</li>
+            <li>Búscalo en la lista y tócalo. Luego ponlo en un pad vacío del banco D.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            <strong>Cada movimiento se oye al instante</strong>, sin tocar ESCUCHAR. El tono sube en proporciones —la mitad del mando no es la mitad de los hercios—, el ruido convierte el tono en percusión y el color lo mueve de grave a siseo. El sonido guardado aparece en la biblioteca como uno más y se puede poner en un pad, recortar y cortar como cualquier otro.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Silencio al mover un mando: no se está reescribiendo el borrador. Un chasquido al principio o al final de cada nota: la envolvente no está llegando a cero. Que la app se atasque al arrastrar: se está renderizando de más por cada fotograma.
+          </div>
+        </article>
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">37</span>
+            <h3>Compresor y chorus</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Con auriculares. Deja dos o tres bucles corriendo antes de empezar: un compresor sobre un solo pad no dice nada.</p>
+          <ol class="pasos-num">
+            <li>Mantén <strong>Bombo</strong>, <strong>Hat</strong> y <strong>Bajo</strong>: tres bucles.</li>
+            <li>Franja → solapa <kbd>FX</kbd>, sin ningún pad elegido (toca <kbd>Parar</kbd> si hace falta, y vuelve a arrancarlos).</li>
+            <li>Sube <kbd>Comp</kbd> despacio hasta el tope.</li>
+            <li>Bájalo del todo.</li>
+            <li>Sube <kbd>Chorus</kbd> hasta la mitad y luego al tope.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            El compresor <strong>junta la mezcla</strong>: lo flojo sube, y pasada la mitad empieza a bombear con el bombo, que es justo lo que se le pide. No baja el volumen general — devuelve lo que quita. El chorus <strong>ensancha</strong> primero y ondula después, despacio, sin llegar a sonar a avión.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que al subir el compresor la mezcla se quede más baja: falta la ganancia de compensación. Que en cero se oiga algo distinto a nada: no está puenteado en reposo, y entonces el mando nunca descansa.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">38</span>
+            <h3>Tono real y estirar al tempo</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">3 min</span>
+          </div>
+          <p>Esto reescribe ficheros, como el reverse. Y es lo único de toda la app que separa el tono de la velocidad: si suena a robot o a metálico, es el precio del algoritmo y hay que decidir si compensa.</p>
+          <ol class="pasos-num">
+            <li>Biblioteca → <strong>Voz 1</strong>. Toca <kbd>Escuchar</kbd> y quédate con cómo suena.</li>
+            <li>En la fila <kbd>Tono real</kbd>, sube a <strong>+12</strong> con el <kbd>+</kbd> y toca <kbd>Aplicar</kbd>.</li>
+            <li>Toca <kbd>Escuchar</kbd>.</li>
+            <li>Baja a <strong>−12</strong> y aplica otra vez. Escucha.</li>
+            <li>Ahora abre <strong>Vinilo</strong> y mira la fila <kbd>Estirar</kbd>.</li>
+            <li>Si dice un tempo, toca <kbd>Aplicar</kbd> y escucha.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            En el paso 3 la voz sube <strong>una octava sin acortarse</strong>: dura exactamente lo que duraba. En el 4 vuelve más o menos a donde estaba. En el 6, el sonido pasa a durar lo que pide el tempo de la sesión <strong>sin cambiar de tono</strong>, y la onda dibujada se estira con él.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que suba de tono y encima se acorte: se está resampleando sin estirar, que es la cinta de siempre. Un temblor metálico muy marcado: las ventanas no están encajando y hay que tocar el tamaño de la ventana o la búsqueda. Que el recorte del sonido apunte a otro trozo después de estirar: el recorte no se escaló con el fichero.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ── BLOQUE 11 ── -->
+    <div class="bloque-pruebas rev">
+      <div class="bloque-head">
+        <h3>Lo que entra y lo que sale</h3><span class="cuenta">4 pruebas</span><span class="rule"></span>
+      </div>
+      <div class="pruebas">
+
+        <article class="prueba">
+          <div class="prueba-head">
+            <span class="n">39</span>
+            <h3>La primera vez que se abre</h3>
+            <span class="chip">Sin probar</span><span class="chip">1 min</span>
+          </div>
+          <p>Necesita una instalación limpia: desinstala la app y vuelve a instalarla, o borra sus datos. Es la única prueba que no se puede hacer dos veces seguidas.</p>
+          <ol class="pasos-num">
+            <li>Abre la app recién instalada.</li>
+            <li>Toca <kbd>Seq</kbd> y luego <kbd>Play</kbd>, sin escribir nada.</li>
+            <li>Pasa a <kbd>P2</kbd> con la flecha y escucha.</li>
+            <li>Vuelve a <kbd>P1</kbd>, mantén <strong>f1·c1</strong> y mira qué hay escrito.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Suena un compás <strong>ya escrito</strong>: bombo a negras, caja en el dos y el cuatro, hats a corcheas con los contratiempos más flojos. P2 es lo mismo con dos cosas cambiadas. Y en el paso 4 se ve la casilla con su nota, lista para quitarla y ver qué hacía.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que la rejilla suene pero el patrón esté vacío: la sesión de arranque se guardó antes de escribirle los patrones. Que suene algo que no está en el banco A: una nota apunta a un pad que no se ve.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">40</span>
+            <h3>Importar un MP3, y un WAV a 48 kHz</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">2 min</span>
+          </div>
+          <p>Las dos mitades de lo mismo: el importador ya no es solo WAV, y por esa vía se arregla el <strong>defecto 08</strong> — un WAV a 48 kHz entraba sonando grave y lento.</p>
+          <ol class="pasos-num">
+            <li>Ten a mano en el móvil un <strong>MP3</strong> corto y un <strong>WAV a 48 kHz</strong>.</li>
+            <li>Biblioteca → <kbd>Importar un sonido</kbd>.</li>
+            <li>Comprueba que el selector deja elegir MP3, FLAC y OGG, no solo WAV.</li>
+            <li>Elige el MP3. Cuando aparezca, tócalo y dale a <kbd>Escuchar</kbd>.</li>
+            <li>Repite con el WAV a 48 kHz.</li>
+            <li>Compara los dos con el original en otra app del móvil.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Los dos entran y <strong>suenan al tono y a la velocidad correctos</strong>. El de 48 kHz en particular: si sonara un 9 % más grave y más lento, el defecto 08 seguiría vivo.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            «No se pudo leer el audio» con un MP3 normal: el decodificador del motor no está entrando. Que el de 48 kHz suene grave: la lectura se está haciendo por bytes y no por duración. Que la app se congele unos segundos al importar: el trabajo no se está yendo a su isolate.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">41</span>
+            <h3>Looper mandando el tempo</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">3 min</span>
+          </div>
+          <p>Con el controlador enchufado, y mejor aún con algo que siga reloj MIDI —otra app de este móvil o una caja de ritmos—. Es la primera vez que sale algo por el cable.</p>
+          <ol class="pasos-num">
+            <li>Enchufa el controlador y conéctalo desde el icono del <kbd>piano</kbd>.</li>
+            <li>Baja hasta el interruptor <kbd>Enviar reloj y notas</kbd> y enciéndelo.</li>
+            <li>Vuelve, toca <kbd>Seq</kbd> y luego <kbd>Play</kbd>.</li>
+            <li>Cambia el tempo con <kbd>+</kbd> y <kbd>−</kbd> mientras suena.</li>
+            <li>Toca <kbd>Stop</kbd>.</li>
+            <li>Toca pads sueltos y mira los LED del controlador.</li>
+            <li>Mantén un pad para dejarlo en bucle, y luego tócalo para pararlo.</li>
+            <li>Apaga el interruptor y cierra la app.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Lo que siga el reloj <strong>arranca con el Play y sigue el tempo</strong>, también al cambiarlo en marcha. En el paso 7 el LED del pad se enciende al entrar el bucle y <strong>se apaga al pararlo</strong>. Y al cerrar la app no queda nada sonando fuera: las notas se sueltan solas.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que el aparato de fuera vaya a tirones o con swing raro: los pulsos están saliendo a ráfagas en vez de repartidos. Que se quede una nota colgada en un sintetizador externo: el note off de los 60 ms no está saliendo. Que el reloj siga después de apagar el interruptor: apagar tiene que parar, no solo dejar de mandar.
+          </div>
+        </article>
+
+        <article class="prueba clave">
+          <div class="prueba-head">
+            <span class="n">42</span>
+            <h3>Exportar cuatro pistas que encajen</h3>
+            <span class="chip urgente">Sin probar</span><span class="chip">3 min</span>
+          </div>
+          <p>Lo que se prueba no es que exporte: es que <strong>los cuatro ficheros empiezan en la misma línea de compás</strong>. Si no, no sirven para nada al otro lado.</p>
+          <ol class="pasos-num">
+            <li>Deja sonando el <strong>Bombo</strong> (percusión) y el <strong>Bajo</strong> (tono), los dos en bucle.</li>
+            <li><strong>Mantén pulsado</strong> <kbd>Exportar</kbd> en el transport.</li>
+            <li>Lee el aviso: dice cuántos segundos va a tardar.</li>
+            <li>Espera sin tocar nada. El botón pasa a decir <strong>Pistas</strong>.</li>
+            <li>Cuando acabe, toca <kbd>Compartir</kbd> y mándate los cuatro ficheros.</li>
+            <li>Ábrelos en cualquier editor y ponlos uno encima de otro.</li>
+          </ol>
+          <div class="esperado">
+            <b>Qué tiene que pasar</b>
+            Cuatro ficheros con la familia en el nombre. El de <strong>percusión</strong> lleva solo el bombo, el de <strong>tono</strong> solo el bajo, y los otros dos están en silencio. Puestos uno encima de otro, <strong>el primer golpe cae en el mismo sitio</strong> en todos. Y salen secos: la reverb baja con las demás familias.
+          </div>
+          <div class="ojo">
+            <b>Señales de que está roto</b>
+            Que los golpes no coincidan al superponerlos: alguna pasada no esperó a la línea de compás, y entonces la función no vale para nada. Que se cuele el bajo en la pista de percusión: las familias no están bajando. Que al acabar el instrumento se quede mudo: las familias no volvieron a subir.
+          </div>
+        </article>
+
+      </div>
+    </div>
+
     <div class="techo rev">
       <b>Ya probadas, y lo que enseñaron</b>
       <p>
@@ -2805,8 +3217,8 @@ ol.pasos-num kbd {
     </svg>
     <p>
       Investigación sobre siete apps y máquinas del oficio, contrastada línea a línea con
-      los 67 ficheros de <code>lib/</code>. Ninguna de estas funciones está decidida:
-      el documento existe para poder elegir.
+      el código de <code>lib/</code>. Empezó como una lista de lo que se podría elegir;
+      hoy es sobre todo la lista de lo que ya está, y el capítulo 07 es lo que falta.
     </p>
     <div class="fuentes">
       <a href="https://loopypro.com/manual/" target="_blank" rel="noopener">Manual de Loopy Pro</a>

@@ -44,6 +44,8 @@ El gesto decide cómo suena un pad; el pad no guarda ningún «modo».
 | AJUSTAR y luego un pad | Abre la hoja del pad: cambiar sonido, sincronía, largo y vaciar |
 | AJUSTAR y luego ROLL | Cambia la división del roll entre corchea y semicorchea |
 | AJUSTAR y luego una escena | La vacía |
+| AJUSTAR y luego SEQ | Abre el largo de cada pista del patrón |
+| Mantener EXPORTAR | Saca una pista por familia, en cuatro pasadas |
 
 **Deshacer** vive arriba, junto a la biblioteca, y solo aparece cuando hay algo
 que retirar. Guarda hasta veinte pasos atrás de lo que se puede perder de
@@ -67,6 +69,32 @@ pulsado lo pone en solo. El solo no escribe nada en los demás pads —manda
 mientras está puesto y al quitarlo vuelven exactamente los silencios que
 hubieras puesto a mano—. Con un solo activo el botón lo dice, aunque el pad esté
 en otro banco, y tocarlo lo levanta.
+
+## Qué le hace un pad a otro
+
+Dos ajustes en la hoja del pad, y entre los dos cubren lo que un groovebox
+llama modos de pista.
+
+**Golpes** decide qué le pasa al sonido anterior *del mismo pad*:
+
+| Modo | Qué hace |
+|------|----------|
+| Corte | El golpe nuevo mata al anterior. Teclear rápido suena a redoble, y por eso es el de fábrica |
+| Capas | Se apilan. Ocho toques en una campana dejan ocho campanas sonando |
+| Una vez | Entra entero y no se deja interrumpir, ni por sí mismo |
+
+Las voces apiladas dejan de ser la voz actual del pad, pero quedan aparcadas
+para que PARAR las alcance: una voz que nadie sujeta es una voz que el botón de
+pánico no puede parar.
+
+**Grupo** es la convención del MPC: dos pads del mismo grupo no pueden sonar a
+la vez, porque las cosas que representan tampoco —un charles abierto y uno
+cerrado son un solo trozo de metal—. El pad que entra calla a los demás de su
+grupo *antes* de sonar él. **Los bucles no se tocan:** un bucle es la decisión
+de dejar algo corriendo, y un toque en el pad de al lado no es la decisión de
+deshacerla. Y un pad nunca se corta a sí mismo por el grupo: eso lo decide su
+modo de golpe, y mezclar las dos reglas dejaría un pad de un grupo sin poder
+apilarse consigo mismo.
 
 ## El secuenciador de dieciséis pasos
 
@@ -148,6 +176,18 @@ retrasar solo las semicorcheas pares— y tiene una propiedad que conviene no
 romper: cada par sigue sumando lo mismo, así que las negras no se mueven y ni el
 metrónomo ni un bucle de una negra o más se enteran de que hay swing puesto. El
 swing viaja con la sesión, como el tempo.
+
+**Cada pista puede medir lo suyo.** AJUSTAR + SEQ abre el largo de cada pad del
+patrón: dieciséis es un compás y cualquier otra cosa es polimetría. Un hat de
+siete pasos contra un bombo de dieciséis coinciden en el uno y tardan siete
+compases en volver a coincidir, que es lo que hace que un patrón deje de sonar
+a bucle. No hubo que reestructurar `Pattern`: **las notas no se mueven, solo se
+mueve la vuelta**. El secuenciador lleva una cuenta absoluta desde el PLAY y
+cada pista toma su propio resto de ella. Solo se guardan las excepciones, así
+que un patrón donde nadie ha tocado esto no ocupa un byte más. Lo que sigue
+siendo del compás y no de la pista: el acento, la probabilidad, el
+micro-timing y el ratchet — un golpe suena donde suena, pero pega como pega el
+compás.
 
 El patrón corre sobre el mismo reloj de semicorcheas que los loops
 sincronizados, así que nunca se separa de ellos, y cambiar el tempo no lo corta.
@@ -280,6 +320,27 @@ primer roce de un mando físico salta al valor de ese mando en vez de esperar a
 cruzar el que tenía la app. Es la factura de no tener que mover un mando entero
 antes de que responda.
 
+### El cable, en la otra dirección
+
+Un interruptor en la pantalla del controlador, **apagado por defecto**: un reloj
+que nadie ha pedido arranca la caja de ritmos de otro en mitad de una toma. Con
+él encendido salen 24 pulsos por negra, el play, el stop y una nota por cada pad
+que suena. Los pads se reparten como ya se reparten al entrar —nota 36 en
+adelante— y **cada banco habla por su canal**, porque sesenta y cuatro pads no
+caben en uno sin pisarle el mapa de batería a alguien.
+
+El reloj corre en su propio temporizador y no a ráfagas de seis por
+dieciseisavo: seis pulsos de golpe llegan como un bulto y se leen como swing al
+otro lado. Las notas se sueltan a los 60 ms, porque un pad es un disparo y no
+una tecla, y una nota que se queda puesta deja un sintetizador zumbando al
+cerrar la app. Y los LED del controlador siguen a los bucles: un pad que entra
+en bucle enciende el suyo y uno que sale lo apaga. Lo que *no* vuelve por el
+cable es la posición de los mandos aprendidos — sin recogida suave no
+arreglaría nada.
+
+Lo que sale se lee con el mismo analizador que lee lo que entra, y hay un test
+que lo comprueba: si no, dos Loopers no podrían sincronizarse entre ellos.
+
 ## La rejilla como escala
 
 Elige un pad, abre la solapa **ESCALA** de la franja y enciende **TECLADO**: los
@@ -299,6 +360,70 @@ hace que suene a solo y no a ejercicio.
 Dos reglas que sostienen esto: **tocar una nota no cambia el pad elegido** —si
 no, la franja dejaría de apuntar al sonido que está sonando— y **el teclado se
 apaga al cambiar de banco**, porque la rejilla es siempre el banco que se ve.
+
+## Acordes y arpegio
+
+Dos mandos más en la solapa Escala, y los dos cuentan **en grados de la escala,
+nunca en semitonos**: apilar terceras sobre una menor da un acorde menor y
+sobre una mayor da uno mayor, sin que nadie lo decida. Es el mismo truco que la
+escala bloqueada, un piso más arriba.
+
+- **Acorde**: sola, tercera, tríada o séptima. Cada tecla del teclado suena a
+  tantas notas como diga el mando.
+- **Arpegio**: junto, sube, baja, o sube y baja. Reparte esas notas en el
+  tiempo — y reparte también **las de un paso del secuenciador**: un paso con
+  tres pads deja de ser un acorde y pasa a ser una figura. Sube y baja no
+  repite los extremos, así que tres notas son cuatro golpes y no seis, y la
+  figura sigue cayendo en el tiempo.
+
+## El pad XY
+
+Solapa **XY** de la franja: filtro a lo ancho, drive a lo alto, con un dedo. Es
+la mitad de lo que un móvil hace mejor que un ordenador, y la app no la usaba en
+ninguna pantalla. No mueve unos mandos paralelos: mueve **los mismos** que los
+diales, sobre lo que la solapa FX tenga apuntado —maestro o bus de familia—,
+porque dos mandos para un valor acaban contradiciéndose. Ancho y bajo a
+propósito: la altura de la franja es altura de la grilla, y la grilla no
+devuelve ni un píxel.
+
+## El sintetizador, con los mandos fuera
+
+`voices.dart` y `dsp.dart` llevaban desde el principio un instrumento completo
+—osciladores, envolvente AD, biquad, saturador— con todos sus números clavados
+dentro de las veinte voces de fábrica. **SINTETIZAR**, en la biblioteca, es ese
+mismo motor con seis mandos: tono, caída, largo, drive, ruido y color, más las
+cuatro ondas.
+
+Lo que sale cae en la biblioteca como una grabación más, y desde ese momento
+*lo es*: se recorta, se corta a los pads, se invierte y se transpone como
+cualquier otra. Los mandos se guardan como **posición** y no como hercios, así
+que el dial, el control MIDI y el patch hablan el mismo idioma, y el paso a
+unidades reales vive en un solo sitio — exponencial, porque todo lo que el oído
+oye en proporciones se recorre así. Cada movimiento suena al instante: un
+sintetizador que no se oye al girar un mando es una lista de números.
+
+## Tono real, y estirar al tempo
+
+Todo lo demás en esta app es cinta: subir el tono también acelera. La hoja del
+sonido tiene las dos operaciones que rompen esa atadura, y las dos **reescriben
+el fichero** —por eso están ahí y no en un mando, que arrastrado lo reescribiría
+sesenta veces por segundo—:
+
+- **Tono real**: ±12 semitonos sin cambiar el largo.
+- **Estirar**: al tempo de la sesión, sin cambiar el tono. La hoja lee el tempo
+  del sonido al abrirse y lo dice.
+
+Debajo hay WSOLA: se corta el sonido en ventanas solapadas y se vuelven a poner
+más juntas o más separadas, deslizando cada una hasta donde encaja mejor con lo
+que ya está puesto — esa última parte es lo que evita que suene a flanger. El
+tono es estirar por el intervalo y luego leerlo más deprisa por el mismo
+intervalo: los dos errores se anulan en el tiempo y se suman en el tono.
+
+El tempo se detecta sin una sola FFT: se mide cómo sube la energía —solo las
+subidas, porque una nota apagándose no es un evento— y se correlaciona esa curva
+consigo misma. **Contesta «no sé» en vez de adivinar** cuando el sonido no llega
+a dos golpes: un tempo equivocado es peor que ninguno, porque todo lo que venga
+detrás se estira a él.
 
 ## Puntos de guardado
 
@@ -372,6 +497,16 @@ reproducción: se acaba el sangrado del altavoz al micro y, de paso, los dos
 motores de audio no se pelean por la sesión de audio del sistema. Exportar sí
 convive con todo, porque no oye la habitación: oye el mezclador.
 
+### Una pista por familia
+
+Manteniendo pulsado EXPORTAR salen cuatro ficheros, uno por familia. En **cuatro
+pasadas y no en cuatro ficheros a la vez**: el motor entrega un solo grifo del
+mezclador —de ahí que exportar, resamplear y el rescate lo compartan—, así que
+se graban una detrás de otra con las demás familias bajadas. **Cada pasada
+empieza en una línea de compás**, porque cuatro ficheros que arrancaran en
+cuatro puntos distintos del compás no encajarían en nada. La reverb baja con
+ellas: una pista sale seca, que es para lo que sirve una pista.
+
 ## Los cuatro bancos
 
 | Banco | Contenido |
@@ -436,8 +571,10 @@ lib/
   core/         Paleta, tipografía de marca, familias de sonido y límites
   domain/       Modelos inmutables: Sound, PadConfig, Bank, Session, Pattern,
                 Song y Scene
-  data/         Almacenamiento local, biblioteca, sesiones, kit de fábrica
-  audio/        Síntesis, WAV, motor SoLoud, reloj, micrófono y mezcla
+  data/         Almacenamiento local, biblioteca, sesiones, kit de fábrica,
+                orden de actuación y espacio libre del dispositivo
+  audio/        Síntesis, WAV, motor SoLoud, reloj, micrófono y mezcla,
+                estiramiento WSOLA y detección de tempo
   state/        SessionController, Sequencer, el aprendizaje del controlador
                 y los destellos de la grilla
   ui/pads/      Grilla, bancos, tempo, franja de mando, barra del secuenciador,
@@ -534,6 +671,18 @@ Funcionando:
 - Puntos de guardado: ocho instantáneas con nombre por sesión
 - Panorama por pad
 - Invertir un sonido, con el recorte reflejado
+- Tono real y estiramiento al tempo, con detección de BPM
+- Modos de golpe y grupos de corte por pad
+- Acordes y arpegio sobre la escala
+- Pad XY, compresor y chorus en el maestro
+- Sintetizador con mandos: sonidos nuevos desde la biblioteca
+- MIDI de salida: reloj, transporte, notas y LED de vuelta
+- Exportar una pista por familia
+- Longitud distinta por pista dentro de un patrón
+- Plantilla de sesión y orden de actuación
+- Importar WAV, MP3, FLAC y OGG, a cualquier frecuencia
+- Aviso de espacio libre antes de una toma larga
+- Dos patrones ya escritos en la sesión que se crea sola
 - Destello del golpe en el pad, venga de un dedo, del secuenciador o del cable
 - La rejilla como escala: seis escalas, tónica y octava
 - Rescatar los últimos cuatro compases del máster a un pad
@@ -548,18 +697,20 @@ Funcionando:
 Pendiente:
 
 - Elegir licencia del repositorio
-- **Veintinueve pruebas en el móvil**, escritas paso a paso en el capítulo 07
+- **Cuarenta y dos pruebas en el móvil**, escritas paso a paso en el capítulo 07
   del artifact «Estado del arte». Es el cuello de botella real del proyecto: se
-  ha construido más de lo que se ha oído. Sin dedo delante siguen sin verificar
-  la cuenta atrás del REC, las divisiones del roll, los buses de familia con su
-  envío, el MIDI learn, las escenas, la canción y el reverse
+  ha construido muchísimo más de lo que se ha oído. Sin dedo delante sigue sin
+  verificar todo lo de los últimos meses: buses, MIDI learn, escenas, canción,
+  reverse, modos de golpe, acordes, XY, sintetizador, tono real, polimetría,
+  MIDI de salida y exportación por pistas
 - El jitter de 8 ms del reloj (defecto 04). `playClocked` existe en la 4.1.7,
   pero no acepta bucle ni pausa y cuesta unos dos búferes de latencia: hay que
   comprobar con la oreja que el recorte de los sonidos sobrevive al cambio
-- `kLowSpaceBytes` sigue sin usarse: avisar del espacio libre necesita una
-  llamada de plataforma que Flutter no trae, así que o entra un paquete —y hay
-  que compilar el APK para saber si sobrevive a las versiones fijadas— o se
-  borra la constante
+- Tres funciones del catálogo se quedan fuera por plataforma y no por tiempo:
+  **separación de stems** (necesita un modelo entrenado y un tiempo de
+  ejecución dentro del APK), **Ableton Link** (hay que envolver a mano la
+  librería de C++) y **la app como plugin** (AUv3 no existe fuera de Apple y el
+  proyecto AAP de Android sigue sin API estable)
 
 ## Fuera de alcance
 
@@ -569,6 +720,13 @@ mezclador multipista completo.
 *MIDI externo salió de esta lista el 2026-08-21: entra de verdad.*
 
 ## Notas de compilación
+
+El proyecto tiene **código de plataforma propio**, corto y en un solo sitio:
+`MainActivity.kt` y `AppDelegate.swift` responden al canal `looper/storage` con
+el espacio libre del dispositivo. Flutter no trae forma de preguntarlo, y
+cuarenta líneas de Kotlin y Swift son más baratas que una dependencia nueva
+teniendo las versiones que hay clavadas debajo. Si el canal no contesta, la app
+simplemente no avisa.
 
 Las versiones de Android están fijadas a propósito:
 

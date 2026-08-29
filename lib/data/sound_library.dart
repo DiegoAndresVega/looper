@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../audio/voices.dart';
 import '../audio/chopper.dart';
@@ -10,6 +11,8 @@ import '../core/constants.dart';
 import '../domain/sound.dart';
 import 'factory_kit.dart';
 import 'storage.dart';
+
+const _uuid = Uuid();
 
 /// Rendered bytes for one factory voice, produced off the UI isolate.
 class _RenderedVoice {
@@ -140,6 +143,48 @@ class SoundLibrary extends ChangeNotifier {
       debugPrint('No se pudo analizar ${sound.name}: $e');
       return Float32List(buckets);
     }
+  }
+
+  /// Writes the sound backwards into a file of its own and points it there.
+  ///
+  /// A new file, never the old one edited in place: a chop is several sounds
+  /// sharing one file with different trims, so reversing the bytes under them
+  /// would turn all sixteen pieces around at once. The old file goes only if
+  /// nothing else is still pointing at it — the same rule deleting follows.
+  ///
+  /// Returns null when the audio cannot be read, and leaves the sound alone.
+  Future<Sound?> reversedCopy(Sound sound) async {
+    final file = _storage.soundFile(sound.fileName);
+    if (!await file.exists()) return null;
+
+    final Uint8List bytes;
+    try {
+      final decoded = decodeWav(await file.readAsBytes());
+      bytes = encodeWav(
+        reversedSamples(decoded.samples),
+        sampleRate: decoded.sampleRate,
+      );
+    } on WavFormatException catch (e) {
+      debugPrint('No se pudo invertir ${sound.name}: $e');
+      return null;
+    }
+
+    final fileName = '${_uuid.v4()}.wav';
+    await _storage.soundFile(fileName).writeAsBytes(bytes);
+
+    final next = sound.reversedOnto(fileName: fileName, sizeBytes: bytes.length);
+    final previous = sound.fileName;
+    _byId[sound.id] = next;
+
+    if (isFileOrphaned(previous, _byId.values)) {
+      _peaks.remove(previous);
+      final old = _storage.soundFile(previous);
+      if (await old.exists()) await old.delete();
+    }
+    _sizeBytes = await _storage.librarySizeBytes();
+    await _persist();
+    notifyListeners();
+    return next;
   }
 
   Future<void> update(Sound sound) async {

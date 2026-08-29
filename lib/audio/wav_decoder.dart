@@ -168,6 +168,16 @@ Float32List peakEnvelope(Float32List samples, int buckets) {
 
 /// Lifts a quiet take up to [peak] so a recording sits at the same level as
 /// the factory kit. Silence is left alone instead of amplifying its noise.
+/// The same audio, back to front. A new buffer: the caller's samples are
+/// very often the ones a waveform is being drawn from.
+Float32List reversedSamples(Float32List samples) {
+  final out = Float32List(samples.length);
+  for (var i = 0; i < samples.length; i++) {
+    out[i] = samples[samples.length - 1 - i];
+  }
+  return out;
+}
+
 Float32List normalized(Float32List samples, {double peak = 0.9}) {
   var loudest = 0.0;
   for (final sample in samples) {

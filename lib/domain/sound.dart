@@ -29,7 +29,6 @@ class Sound {
     this.volume = 1.0,
     this.semitones = 0,
     this.reversed = false,
-    this.fadeMs = 0,
   });
 
   final String id;
@@ -45,8 +44,11 @@ class Sound {
   final int? trimEndMs;
   final double volume;
   final int semitones;
+  /// True when the file on disk is already back to front. Reversing writes a
+  /// new file rather than a flag the engine has to honour — a chop's pieces
+  /// share one file, and a flag would have turned all sixteen of them around
+  /// at once.
   final bool reversed;
-  final int fadeMs;
 
   int get effectiveEndMs => trimEndMs ?? durationMs;
   int get trimmedDurationMs => (effectiveEndMs - trimStartMs).clamp(1, durationMs);
@@ -63,7 +65,6 @@ class Sound {
     double? volume,
     int? semitones,
     bool? reversed,
-    int? fadeMs,
   }) {
     return Sound(
       id: id,
@@ -78,7 +79,35 @@ class Sound {
       volume: volume ?? this.volume,
       semitones: semitones ?? this.semitones,
       reversed: reversed ?? this.reversed,
-      fadeMs: fadeMs ?? this.fadeMs,
+    );
+  }
+
+  /// The same sound pointed at its reversed file: same identity, same volume
+  /// and pitch, and the trim seen from the other end.
+  ///
+  /// Reflecting the trim is the whole point. A window from 0.2 s to 0.8 s of
+  /// a one-second sound is, read backwards, the window from 0.2 s to 0.8 s;
+  /// one that ended at 0.3 s becomes one that starts at 0.7 s. Without this
+  /// the file turns around and the audible part does not, so reversing a
+  /// trimmed sound would play a different piece of it.
+  Sound reversedOnto({required String fileName, required int sizeBytes}) {
+    final start = durationMs - effectiveEndMs;
+    final end = durationMs - trimStartMs;
+    return Sound(
+      id: id,
+      name: name,
+      family: family,
+      fileName: fileName,
+      origin: origin,
+      durationMs: durationMs,
+      sizeBytes: sizeBytes,
+      // A sound with no trim at all keeps none: null means «to the end», and
+      // writing the length in would freeze it.
+      trimStartMs: trimEndMs == null ? 0 : start,
+      trimEndMs: trimStartMs == 0 && trimEndMs == null ? null : end,
+      volume: volume,
+      semitones: semitones,
+      reversed: !reversed,
     );
   }
 
@@ -95,7 +124,6 @@ class Sound {
         'volume': volume,
         'semitones': semitones,
         'reversed': reversed,
-        'fadeMs': fadeMs,
       };
 
   factory Sound.fromJson(Map<String, dynamic> json) {
@@ -111,8 +139,11 @@ class Sound {
       trimEndMs: json['trimEndMs'] as int?,
       volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
       semitones: json['semitones'] as int? ?? 0,
+      // 'fadeMs' was written by every version up to this one and read by
+      // none. It is not read here either: a field the app has never honoured
+      // is not data, and carrying it forward would keep promising a fade
+      // that does not exist.
       reversed: json['reversed'] as bool? ?? false,
-      fadeMs: json['fadeMs'] as int? ?? 0,
     );
   }
 }

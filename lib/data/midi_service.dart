@@ -99,6 +99,18 @@ class MidiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sends bytes to the connected device. Nothing is queued and nothing is
+  /// retried: MIDI is a wire, and a clock pulse that arrives late is worse
+  /// than one that never arrives.
+  void send(Uint8List data) {
+    if (_connected == null) return;
+    try {
+      _command.sendData(data, deviceId: _connected!.id);
+    } on Object catch (e) {
+      debugPrint('MIDI: no se pudo enviar: $e');
+    }
+  }
+
   void disconnect() {
     final device = _connected;
     if (device == null) return;

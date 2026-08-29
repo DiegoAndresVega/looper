@@ -16,10 +16,22 @@ import '../../state/midi_learn.dart';
 /// list of what got married — somewhere to check, and somewhere to undo it
 /// without hunting for the knob that learned it.
 class MidiScreen extends StatefulWidget {
-  const MidiScreen({super.key, required this.midi, required this.learn});
+  const MidiScreen({
+    super.key,
+    required this.midi,
+    required this.learn,
+    required this.isOutOn,
+    required this.onOutChanged,
+  });
 
   final MidiService midi;
   final MidiLearn learn;
+
+  /// Whether Looper sends its clock, its transport and its notes out of the
+  /// cable. It is a switch and not a default because a clock nobody asked for
+  /// starts somebody else's drum machine in the middle of a take.
+  final bool isOutOn;
+  final ValueChanged<bool> onOutChanged;
 
   @override
   State<MidiScreen> createState() => _MidiScreenState();
@@ -70,6 +82,8 @@ class _MidiScreenState extends State<MidiScreen> {
             if (m.devices.isEmpty) _empty(),
             const SizedBox(height: 16),
             _scanButton(),
+            const SizedBox(height: 22),
+            _outSwitch(),
             const SizedBox(height: 26),
             _mappings(),
           ],
@@ -217,6 +231,73 @@ class _MidiScreenState extends State<MidiScreen> {
 
   /// What the desk moves today. It is a list to *undo* from, not one to set up
   /// from: nothing here can create a mapping, only forget one.
+  /// The other direction: Looper as the thing that leads. The tempo, the
+  /// start and stop, and every pad it plays go out on the same cable that
+  /// brings the controller in.
+  Widget _outSwitch() {
+    final on = widget.isOutOn;
+    return GestureDetector(
+      onTap: () => widget.onOutChanged(!on),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: on ? Palette.panelHigh : Palette.panel,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: on ? Palette.accent : Palette.line),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              on ? Icons.podcasts : Icons.podcasts_outlined,
+              size: 18,
+              color: on ? Palette.accent : Palette.inkDim,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    on ? 'Looper manda el tempo' : 'Enviar reloj y notas',
+                    style: Brand.strong(13.5),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    on
+                        ? 'Salen 24 pulsos por negra, el play y el stop, y una '
+                            'nota por cada pad que suena.'
+                        : 'Apagado: nada sale por el cable, solo entra.',
+                    style: Brand.body(11, color: Palette.inkFaint),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 40,
+              height: 22,
+              alignment: on ? Alignment.centerRight : Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: on ? Palette.accent : Palette.well,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: on ? Palette.accent : Palette.line),
+              ),
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: on ? Palette.onAccent : Palette.inkFaint,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _mappings() {
     final bindings = learn.map.bindings;
     return Column(

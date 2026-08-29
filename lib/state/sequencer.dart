@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import '../core/constants.dart';
 import '../domain/pattern.dart';
+import '../domain/song.dart';
 
 /// One step leaving the sequencer, with everything the engine needs to place
 /// it: the notes, how hard, how far off the grid, and into how many hits.
@@ -70,6 +71,16 @@ class Sequencer extends ChangeNotifier {
       List.generate(kPatternCount, (_) => Pattern.empty());
   int _index = 0;
   int _chainLength = 1;
+
+  /// The order the patterns play in when the chain is not enough, and whether
+  /// it is switched on. An empty song never takes the wheel: switching the
+  /// mode on before writing anything would silently stop the chain.
+  Song _song = const Song.empty();
+  bool _songMode = false;
+
+  /// Which bar of the song is sounding. It counts up for ever and the song
+  /// wraps it, so a song does not have to know how long it has been running.
+  int _bar = 0;
   bool _on = false;
   bool _playing = false;
   bool _recording = false;
@@ -125,16 +136,58 @@ class Sequencer extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The song, and whether it is the one deciding what plays next.
+  Song get song => _song;
+  bool get songMode => _songMode;
+
+  /// True only when the song is both switched on and worth following.
+  bool get isFollowingSong => _songMode && _song.isNotEmpty;
+
+  /// Which bar of the song is playing, counted from the moment PLAY was hit.
+  int get songBar => _bar;
+
+  /// Which entry of the song is sounding, so the strip can light it.
+  int? get songIndex => isFollowingSong ? _song.indexForBar(_bar) : null;
+
+  void setSong(Song value) {
+    _song = value;
+    if (_playing && isFollowingSong) {
+      _index = _song.patternForBar(_bar);
+    }
+    onPatternsChanged();
+    notifyListeners();
+  }
+
+  set songMode(bool value) {
+    if (_songMode == value) return;
+    _songMode = value;
+    if (_playing && isFollowingSong) {
+      _bar = 0;
+      _index = _song.patternForBar(0);
+    }
+    onPatternsChanged();
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------------ state
 
   /// Replaces every pattern, as when a session opens.
-  void load(List<Pattern> patterns, int index, {int chainLength = 1}) {
+  void load(
+    List<Pattern> patterns,
+    int index, {
+    int chainLength = 1,
+    Song song = const Song.empty(),
+    bool songMode = false,
+  }) {
     _patterns = [
       for (var i = 0; i < kPatternCount; i++)
         i < patterns.length ? patterns[i] : Pattern.empty(),
     ];
     _index = _isValidPattern(index) ? index : 0;
     _chainLength = chainLength.clamp(1, kPatternCount);
+    _song = song;
+    _songMode = songMode;
+    _bar = 0;
     _step = 0;
     _editingStep = null;
     notifyListeners();
@@ -155,12 +208,18 @@ class Sequencer extends ChangeNotifier {
     if (_playing) {
       _playing = false;
       _step = 0;
+      _bar = 0;
     } else {
       _playing = true;
       _recording = false;
       _editingStep = null;
-      // A chain always tells its story from the first bar.
-      if (_chainLength > 1) _index = 0;
+      _bar = 0;
+      // A chain, and a song, always tell their story from the first bar.
+      if (isFollowingSong) {
+        _index = _song.patternForBar(0);
+      } else if (_chainLength > 1) {
+        _index = 0;
+      }
       // The first tick moves to zero, so step one is heard, not skipped.
       _step = -1;
     }
@@ -304,10 +363,17 @@ class Sequencer extends ChangeNotifier {
     }
     if (!_playing) return;
     final wrapped = _step == kPatternSteps - 1;
-    if (wrapped && _chainLength > 1) {
-      // End of the bar: the chain hands over to the next pattern, and the
-      // grid follows so the lights always show what is sounding.
-      _index = (_index + 1) % _chainLength;
+    if (wrapped) {
+      // End of the bar: whoever owns the running order hands over to the next
+      // pattern, and the grid follows so the lights always show what sounds.
+      // The song wins when it is on, because it is the more specific answer
+      // to the same question the chain answers.
+      if (isFollowingSong) {
+        _bar++;
+        _index = _song.patternForBar(_bar);
+      } else if (_chainLength > 1) {
+        _index = (_index + 1) % _chainLength;
+      }
     }
     _advance();
 
@@ -337,9 +403,9 @@ class Sequencer extends ChangeNotifier {
   (int, int) _positionAfter() {
     final wrapped = _step == kPatternSteps - 1;
     final nextStep = (_step + 1) % kPatternSteps;
-    final nextPattern =
-        wrapped && _chainLength > 1 ? (_index + 1) % _chainLength : _index;
-    return (nextPattern, nextStep);
+    if (!wrapped) return (_index, nextStep);
+    if (isFollowingSong) return (_song.patternForBar(_bar + 1), nextStep);
+    return (_chainLength > 1 ? (_index + 1) % _chainLength : _index, nextStep);
   }
 
   /// Sends one step out, rolling the dice only when the step asks for it.
@@ -367,6 +433,7 @@ class Sequencer extends ChangeNotifier {
     _recording = false;
     _editingStep = null;
     _step = 0;
+    _bar = 0;
   }
 
   void _cancelChord() {

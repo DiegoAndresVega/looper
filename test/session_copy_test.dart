@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:looper/domain/pad_config.dart';
 import 'package:looper/domain/pattern.dart';
+import 'package:looper/domain/scene.dart';
 import 'package:looper/domain/session.dart';
+import 'package:looper/domain/song.dart';
 
 /// Duplicar una sesión tiene que traerse *todo* lo que no es su identidad.
 /// El fallo original fue que `duplicate()` enumeraba campos a mano y se dejó
@@ -18,7 +20,12 @@ void main() {
           bpm: 128,
           activePattern: 7,
           chainLength: 8,
+          song: const Song.empty()
+              .appended(const SongStep(pattern: 7, repeats: 2))
+              .appended(const SongStep(pattern: 3)),
+          songMode: true,
         )
+        .withScene(1, Scene.capture(loops: {'0:3', '2:11'}, pattern: 7))
         .withPad(0, 3, const PadConfig(soundId: 'bombo', volume: 0.6))
         .withPad(2, 11, const PadConfig(soundId: 'voz', semitones: -5));
 

@@ -2,6 +2,8 @@ import '../core/constants.dart';
 import 'pad_config.dart';
 import 'scale.dart';
 import 'pattern.dart';
+import 'scene.dart';
+import 'song.dart';
 
 /// Everything a saved session remembers: which sound sits on each of the 64
 /// pads, their settings and the tempo. Active loops are not persisted — a
@@ -15,8 +17,11 @@ class Session {
     required this.createdAt,
     required this.updatedAt,
     required this.patterns,
+    required this.scenes,
     this.activePattern = 0,
     this.chainLength = 1,
+    this.song = const Song.empty(),
+    this.songMode = false,
     this.swing = kSwingDefault,
     this.scale = Scale.pentatonicMinor,
     this.root = 0,
@@ -37,6 +42,18 @@ class Session {
 
   /// How many patterns play back to back, 1..16 bars.
   final int chainLength;
+
+  /// The running order when the chain is not enough: any pattern, any number
+  /// of bars, in any order. It travels with the session because it *is* the
+  /// piece — the chain and the song are two answers to the same question, and
+  /// [songMode] says which one is being asked.
+  final Song song;
+  final bool songMode;
+
+  /// The eight scenes: what was looping and which pattern went with it. Part
+  /// of the session for the same reason the patterns are — a scene names pads
+  /// of this session and means nothing next to another one's.
+  final List<Scene> scenes;
 
   /// How much the off-beat sixteenths lag. It belongs to the session because
   /// it is part of how the pattern is meant to be felt, like the tempo.
@@ -62,6 +79,7 @@ class Session {
         Bank.blank('D', 'Libre'),
       ],
       patterns: List.generate(kPatternCount, (_) => Pattern.empty()),
+      scenes: emptyScenes(),
       createdAt: now,
       updatedAt: now,
     );
@@ -86,6 +104,16 @@ class Session {
     final next = List<Bank>.of(banks);
     next[bankIndex] = bank;
     return copyWith(banks: next);
+  }
+
+  /// Returns a new session with one scene replaced. An index outside the
+  /// eight is ignored rather than thrown: the strip is the only caller and it
+  /// cannot produce one, but a scene lost is better than a session lost.
+  Session withScene(int index, Scene scene) {
+    if (index < 0 || index >= kScenesPerSession) return this;
+    final next = List<Scene>.of(scenes);
+    next[index] = scene;
+    return copyWith(scenes: next);
   }
 
   /// First free slot across banks, searching C first because that is where
@@ -115,6 +143,9 @@ class Session {
       patterns: patterns,
       activePattern: activePattern,
       chainLength: chainLength,
+      song: song,
+      songMode: songMode,
+      scenes: scenes,
       swing: swing,
       scale: scale,
       root: root,
@@ -131,6 +162,9 @@ class Session {
     List<Pattern>? patterns,
     int? activePattern,
     int? chainLength,
+    Song? song,
+    bool? songMode,
+    List<Scene>? scenes,
     double? swing,
     Scale? scale,
     int? root,
@@ -145,6 +179,9 @@ class Session {
       patterns: patterns ?? this.patterns,
       activePattern: activePattern ?? this.activePattern,
       chainLength: chainLength ?? this.chainLength,
+      song: song ?? this.song,
+      songMode: songMode ?? this.songMode,
+      scenes: scenes ?? this.scenes,
       swing: swing ?? this.swing,
       scale: scale ?? this.scale,
       root: root ?? this.root,
@@ -162,6 +199,9 @@ class Session {
         'patterns': patterns.map((p) => p.toJson()).toList(),
         'activePattern': activePattern,
         'chainLength': chainLength,
+        'song': song.toJson(),
+        'songMode': songMode,
+        'scenes': scenes.map((s) => s.toJson()).toList(),
         'swing': swing,
         'scale': scale.name,
         'root': root,
@@ -182,6 +222,11 @@ class Session {
         patterns: _patternsFrom(json['patterns'] as List<dynamic>?),
         activePattern: json['activePattern'] as int? ?? 0,
         chainLength: json['chainLength'] as int? ?? 1,
+        // A session written before songs and scenes existed opens with
+        // neither, which is exactly what it was saved with.
+        song: Song.fromJson(json['song']),
+        songMode: json['songMode'] as bool? ?? false,
+        scenes: _scenesFrom(json['scenes'] as List<dynamic>?),
         // A session written before swing existed was played straight.
         swing: (json['swing'] as num?)?.toDouble() ?? kSwingDefault,
         // A session written before the grid could play a scale opens on the
@@ -192,6 +237,15 @@ class Session {
         octave: json['octave'] as int? ?? 0,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
+      );
+
+  /// Always eight, however many the file carries: the strip asks for scene
+  /// six without checking, the same way the grid asks for pattern six.
+  static List<Scene> _scenesFrom(List<dynamic>? raw) => List.generate(
+        kScenesPerSession,
+        (i) => raw != null && i < raw.length
+            ? Scene.fromJson(raw[i])
+            : const Scene.empty(),
       );
 
   /// No cast on the way in: a pattern is a bare list in sessions written

@@ -26,9 +26,25 @@ const int kDefaultBpm = 92;
 const int kPatternSteps = 16;
 const int kPatternCount = 16;
 
+/// A song is the patterns in the order they actually play, which is the way
+/// past the chain's «P1 to PN, one bar each». Thirty-two entries of up to
+/// sixteen bars is over eight minutes of music — long past what this
+/// instrument is for.
+const int kSongStepsMax = 32;
+const int kSongRepeatMax = 16;
+
+/// How many scenes a session keeps. A scene is a column of Live Loops: what
+/// is looping and which pattern is on, recalled with one finger.
+const int kScenesPerSession = 8;
+
 /// Identifies the sequencer on the tempo clock. Underscored so it can never
 /// collide with a pad key.
 const String kSequencerKey = '_sequencer';
+
+/// Identifies the scene waiting for the bar line, same rule as above: a scene
+/// change is queued on the clock so it lands on a downbeat, never under the
+/// finger that asked for it.
+const String kSceneKey = '_scene';
 
 /// While recording steps by hand, notes played inside this window land on the
 /// same step. It is what makes a chord a chord instead of four steps.
@@ -48,8 +64,15 @@ const Duration kStepperRepeatInterval = Duration(milliseconds: 250);
 const Duration kStepperFastThreshold = Duration(milliseconds: 1500);
 const int kStepperFastAmount = 3;
 
-/// A long press on a pad opens its sheet.
+/// A long press on a pad opens its sheet. Shorter than the platform's own
+/// half second: this is an instrument, and a pad that takes half a second to
+/// answer feels broken under the thumb.
 const Duration kPadLongPress = Duration(milliseconds: 320);
+
+/// How long a pad stays lit after it sounds. Long enough to catch out of the
+/// corner of an eye, short enough that sixteenths at 180 BPM — 83 ms apart —
+/// still read as separate hits.
+const Duration kPadFlashDuration = Duration(milliseconds: 70);
 
 /// How far the pitch knob reaches, in semitones either way. An octave up and
 /// an octave down is as far as a sample survives being stretched like tape.

@@ -1,4 +1,5 @@
 import '../core/constants.dart';
+import 'chord.dart';
 import 'pad_config.dart';
 import 'scale.dart';
 import 'pattern.dart';
@@ -22,10 +23,13 @@ class Session {
     this.chainLength = 1,
     this.song = const Song.empty(),
     this.songMode = false,
+    this.isTemplate = false,
     this.swing = kSwingDefault,
     this.scale = Scale.pentatonicMinor,
     this.root = 0,
     this.octave = 0,
+    this.chord = ChordVoicing.single,
+    this.arp = ArpMode.off,
   });
 
   final String id;
@@ -50,6 +54,13 @@ class Session {
   final Song song;
   final bool songMode;
 
+  /// Whether this session is a starting point rather than a piece: a kit and
+  /// a tempo you want every new session to begin from. It travels with the
+  /// session because it *is* a property of this one, and duplicating a
+  /// template gives another template — starting *from* one is a different
+  /// action, and that one clears the flag.
+  final bool isTemplate;
+
   /// The eight scenes: what was looping and which pattern went with it. Part
   /// of the session for the same reason the patterns are — a scene names pads
   /// of this session and means nothing next to another one's.
@@ -65,6 +76,13 @@ class Session {
   final Scale scale;
   final int root;
   final int octave;
+
+  /// How many notes a key plays, and whether they arrive together or one
+  /// after another. They belong next to the scale for the same reason the
+  /// scale belongs to the session: they are part of the key of the piece,
+  /// not a knob position that resets.
+  final ChordVoicing chord;
+  final ArpMode arp;
 
   factory Session.blank({required String id, required String name}) {
     final now = DateTime.now();
@@ -146,10 +164,13 @@ class Session {
       song: song,
       songMode: songMode,
       scenes: scenes,
+      isTemplate: isTemplate,
       swing: swing,
       scale: scale,
       root: root,
       octave: octave,
+      chord: chord,
+      arp: arp,
       createdAt: now,
       updatedAt: now,
     );
@@ -165,10 +186,13 @@ class Session {
     Song? song,
     bool? songMode,
     List<Scene>? scenes,
+    bool? isTemplate,
     double? swing,
     Scale? scale,
     int? root,
     int? octave,
+    ChordVoicing? chord,
+    ArpMode? arp,
     DateTime? updatedAt,
   }) {
     return Session(
@@ -182,10 +206,13 @@ class Session {
       song: song ?? this.song,
       songMode: songMode ?? this.songMode,
       scenes: scenes ?? this.scenes,
+      isTemplate: isTemplate ?? this.isTemplate,
       swing: swing ?? this.swing,
       scale: scale ?? this.scale,
       root: root ?? this.root,
       octave: octave ?? this.octave,
+      chord: chord ?? this.chord,
+      arp: arp ?? this.arp,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -202,10 +229,13 @@ class Session {
         'song': song.toJson(),
         'songMode': songMode,
         'scenes': scenes.map((s) => s.toJson()).toList(),
+        'isTemplate': isTemplate,
         'swing': swing,
         'scale': scale.name,
         'root': root,
         'octave': octave,
+        'chord': chord.name,
+        'arp': arp.name,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -227,6 +257,7 @@ class Session {
         song: Song.fromJson(json['song']),
         songMode: json['songMode'] as bool? ?? false,
         scenes: _scenesFrom(json['scenes'] as List<dynamic>?),
+        isTemplate: json['isTemplate'] as bool? ?? false,
         // A session written before swing existed was played straight.
         swing: (json['swing'] as num?)?.toDouble() ?? kSwingDefault,
         // A session written before the grid could play a scale opens on the
@@ -235,6 +266,9 @@ class Session {
             Scale.pentatonicMinor,
         root: json['root'] as int? ?? 0,
         octave: json['octave'] as int? ?? 0,
+        chord: ChordVoicing.values.asNameMap()[json['chord'] as String?] ??
+            ChordVoicing.single,
+        arp: ArpMode.values.asNameMap()[json['arp'] as String?] ?? ArpMode.off,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );

@@ -4,6 +4,7 @@ import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../data/save_point_store.dart';
 import '../../data/session_store.dart';
+import '../../data/set_list_store.dart';
 import '../../data/sound_library.dart';
 import '../../domain/save_point.dart';
 import '../../domain/session.dart';
@@ -18,6 +19,7 @@ class SessionsScreen extends StatefulWidget {
     required this.currentId,
     required this.savePoints,
     required this.onRestore,
+    required this.setList,
     required this.currentSession,
   });
 
@@ -29,6 +31,10 @@ class SessionsScreen extends StatefulWidget {
   /// instrument can do with them: put one back.
   final SavePointStore savePoints;
   final Future<void> Function(SavePoint point) onRestore;
+
+  /// Tonight's running order. It lives outside the sessions, so it is handed
+  /// in rather than read off them.
+  final SetListStore setList;
 
   /// The session as it stands right now, which is what a new point captures.
   final Session currentSession;
@@ -51,6 +57,10 @@ class _SessionsScreenState extends State<SessionsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _header(),
+              if (widget.setList.list.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _setListLine(),
+              ],
               const SizedBox(height: 8),
               Expanded(
                 child: ListView.builder(
@@ -116,8 +126,63 @@ class _SessionsScreenState extends State<SessionsScreen> {
     );
   }
 
+  /// What is being played and what comes after it. One line, because in the
+  /// middle of a set that is the only question worth answering.
+  Widget _setListLine() {
+    final list = widget.setList.list;
+    final position = list.positionOf(widget.currentId);
+    final nextId = list.nextAfter(widget.currentId);
+    final next = nextId == null ? null : _sessionById(nextId);
+
+    final String text;
+    if (position == null) {
+      text = 'La sesión abierta no está en la actuación';
+    } else if (next == null) {
+      text = 'Tema $position de ${list.length} · el último';
+    } else {
+      text = 'Tema $position de ${list.length} · después, ${next.name}';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: Palette.line),
+        color: Palette.panel,
+      ),
+      child: Row(
+        children: [
+          Text('ACTUACIÓN', style: Brand.label(8.5, weight: 700)),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              overflow: TextOverflow.ellipsis,
+              style: Brand.readout(10.5, color: Palette.inkDim),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Session? _sessionById(String id) {
+    for (final session in widget.store.sessions) {
+      if (session.id == id) return session;
+    }
+    return null;
+  }
+
+  Session? get _template {
+    for (final session in widget.store.sessions) {
+      if (session.isTemplate) return session;
+    }
+    return null;
+  }
+
   Widget _row(Session session) {
     final isCurrent = session.id == widget.currentId;
+    final position = widget.setList.list.positionOf(session.id);
 
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(session),
@@ -132,6 +197,22 @@ class _SessionsScreenState extends State<SessionsScreen> {
         ),
         child: Row(
           children: [
+            if (position != null) ...[
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(color: Palette.lineLive),
+                ),
+                child: Text(
+                  '$position',
+                  style: Brand.readout(10, weight: 700, color: Palette.inkDim),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,6 +234,14 @@ class _SessionsScreenState extends State<SessionsScreen> {
                 ],
               ),
             ),
+            if (session.isTemplate)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  'PLANTILLA',
+                  style: Brand.label(8, weight: 700, color: Palette.inkFaint),
+                ),
+              ),
             if (isCurrent)
               Text(
                 'ABIERTA',
@@ -165,6 +254,35 @@ class _SessionsScreenState extends State<SessionsScreen> {
   }
 
   Widget _newButton() {
+    final template = _template;
+    if (template == null) return _newSessionButton();
+
+    return Row(
+      children: [
+        Expanded(child: _newSessionButton()),
+        const SizedBox(width: 8),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _createFromTemplate(template),
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Palette.accent),
+              ),
+              child: Text(
+                'DESDE PLANTILLA',
+                style: Brand.label(10, weight: 700, color: Palette.accent),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _newSessionButton() {
     return GestureDetector(
       onTap: _createSession,
       child: Container(
@@ -192,9 +310,22 @@ class _SessionsScreenState extends State<SessionsScreen> {
     Navigator.of(context).pop(session);
   }
 
+  /// A new session that starts where the template left off: its kit, tempo,
+  /// patterns and scenes, under a new name. The flag does not travel — one
+  /// template is a starting point, two are a fork in the road.
+  Future<void> _createFromTemplate(Session template) async {
+    final session = widget.store
+        .newFrom(template, name: 'Sesión ${widget.store.sessions.length + 1}');
+    await widget.store.save(session);
+    if (!mounted) return;
+    Navigator.of(context).pop(session);
+  }
+
   Future<void> _openActions(Session session) async {
     final isCurrent = session.id == widget.currentId;
     final isLast = widget.store.sessions.length == 1;
+    final inSet = widget.setList.list.contains(session.id);
+    final at = widget.setList.list.sessionIds.indexOf(session.id);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -216,6 +347,41 @@ class _SessionsScreenState extends State<SessionsScreen> {
               Icons.bookmark_border,
               _savePointsLabel(session),
               () => _openSavePoints(session),
+            ),
+            _action(
+              sheetContext,
+              inSet ? Icons.playlist_remove : Icons.playlist_add,
+              inSet ? 'Quitar de la actuación' : 'Añadir a la actuación',
+              () => inSet
+                  ? widget.setList.remove(session.id)
+                  : widget.setList.add(session.id),
+            ),
+            if (inSet)
+              Row(
+                children: [
+                  Expanded(
+                    child: _action(sheetContext, Icons.arrow_upward, 'Antes',
+                        at == 0 ? null : () => widget.setList.move(at, -1)),
+                  ),
+                  Expanded(
+                    child: _action(
+                      sheetContext,
+                      Icons.arrow_downward,
+                      'Después',
+                      at == widget.setList.list.length - 1
+                          ? null
+                          : () => widget.setList.move(at, 1),
+                    ),
+                  ),
+                ],
+              ),
+            _action(
+              sheetContext,
+              session.isTemplate ? Icons.star : Icons.star_border,
+              session.isTemplate
+                  ? 'Ya no es la plantilla'
+                  : 'Usar como plantilla',
+              () => _setTemplate(session, !session.isTemplate),
             ),
             _action(
               sheetContext,
@@ -299,10 +465,28 @@ class _SessionsScreenState extends State<SessionsScreen> {
     if (mounted) setState(() {});
   }
 
+  /// Only one session can be the starting point, so marking a new one
+  /// unmarks the old. Two templates would turn «desde plantilla» into a
+  /// question, and the whole point is that it is a button.
+  Future<void> _setTemplate(Session session, bool value) async {
+    if (value) {
+      for (final other in widget.store.sessions) {
+        if (other.isTemplate && other.id != session.id) {
+          await widget.store.save(other.copyWith(isTemplate: false));
+        }
+      }
+    }
+    await widget.store.save(session.copyWith(isTemplate: value));
+  }
+
   Future<void> _delete(Session session) async {
     await widget.store.remove(session.id);
     // Snapshots of something deleted have nothing left to restore onto.
     await widget.savePoints.removeForSession(session.id);
+    // And neither has tonight's running order: an order pointing at a
+    // session that is gone cannot answer «what comes next».
+    await widget.setList
+        .prune(widget.store.sessions.map((s) => s.id).toSet());
     if (mounted) setState(() {});
   }
 

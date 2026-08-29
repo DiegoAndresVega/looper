@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:looper/domain/pad_config.dart';
 import 'package:looper/domain/pattern.dart';
+import 'package:looper/domain/chord.dart';
 import 'package:looper/domain/scene.dart';
 import 'package:looper/domain/session.dart';
 import 'package:looper/domain/song.dart';
@@ -24,6 +25,9 @@ void main() {
               .appended(const SongStep(pattern: 7, repeats: 2))
               .appended(const SongStep(pattern: 3)),
           songMode: true,
+          isTemplate: true,
+          chord: ChordVoicing.triad,
+          arp: ArpMode.upDown,
         )
         .withScene(1, Scene.capture(loops: {'0:3', '2:11'}, pattern: 7))
         .withPad(0, 3, const PadConfig(soundId: 'bombo', volume: 0.6))

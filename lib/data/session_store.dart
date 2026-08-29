@@ -5,10 +5,12 @@ import 'package:uuid/uuid.dart';
 
 import '../core/palette.dart';
 import '../domain/pad_config.dart';
+import '../domain/pattern.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
 import 'factory_kit.dart';
 import 'sound_library.dart';
+import 'starter_pattern.dart';
 import 'storage.dart';
 
 const _uuid = Uuid();
@@ -70,6 +72,14 @@ class SessionStore extends ChangeNotifier {
     return copy;
   }
 
+  /// A session that starts where [template] left off. Everything travels
+  /// except the identity and the flag itself: one template is a starting
+  /// point, two are a fork in the road.
+  Session newFrom(Session template, {required String name}) =>
+      template.duplicateAs(id: _uuid.v4(), name: name).copyWith(
+            isTemplate: false,
+          );
+
   Future<void> rename(Session session, String name) =>
       save(session.copyWith(name: name));
 
@@ -87,6 +97,11 @@ class SessionStore extends ChangeNotifier {
 
 /// Builds a session with banks A and B loaded from the factory kit, and C and
 /// D left empty on purpose: C fills with your recordings, D is yours.
+///
+/// It also opens with two patterns already written. «Cero onboarding» does
+/// not mean an empty grid: it means the first thing that happens is a sound,
+/// and something already playing that can be taken apart teaches more than
+/// any tour of coach marks would.
 Session buildStarterSession(SoundLibrary library, {String name = 'Sesión 1'}) {
   final base = Session.blank(id: _uuid.v4(), name: name);
   var session = base;
@@ -104,7 +119,13 @@ Session buildStarterSession(SoundLibrary library, {String name = 'Sesión 1'}) {
     }
   });
 
-  return session;
+  final written = starterPatterns();
+  final patterns = List<Pattern>.of(session.patterns);
+  for (var i = 0; i < written.length && i < patterns.length; i++) {
+    patterns[i] = written[i];
+  }
+
+  return session.copyWith(patterns: patterns);
 }
 
 /// Registers a freshly captured file in the library.

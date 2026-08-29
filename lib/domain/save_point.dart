@@ -64,6 +64,8 @@ class SavePoint {
       scale: session.scale,
       root: session.root,
       octave: session.octave,
+      chord: session.chord,
+      arp: session.arp,
       updatedAt: DateTime.now(),
     );
   }

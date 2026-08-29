@@ -41,6 +41,11 @@ class Storage {
   /// not to a piece, so it lives beside the sessions instead of inside one.
   File get midiMapIndex => File('${root.path}/midimap.json');
 
+  /// Tonight's running order: which sessions get played, and in what order.
+  /// Beside the sessions and not inside one, like the controller map — a set
+  /// list belongs to the gig, not to any of the pieces in it.
+  File get setListIndex => File('${root.path}/setlist.json');
+
   Future<void> _ensureLayout() async {
     for (final dir in [root, sounds, mixdowns]) {
       if (!await dir.exists()) {
@@ -54,6 +59,10 @@ class Storage {
   /// Where the microphone writes while recording, before the take is trimmed,
   /// normalised and saved into the library. Overwritten on every take.
   File get captureScratch => File('${root.path}/capture.wav');
+
+  /// Where an auditioned patch is written before anybody decides to keep it.
+  /// Overwritten on every turn of a knob, like the microphone's scratch file.
+  File get synthScratch => File('${root.path}/synth.wav');
 
   /// Total bytes taken by recorded, imported and factory sounds.
   Future<int> librarySizeBytes() async {

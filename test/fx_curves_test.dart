@@ -91,4 +91,47 @@ void main() {
       }
     });
   });
+
+  group('el compresor', () {
+    test('en reposo no aprieta nada', () {
+      expect(compThresholdDb(0), 0);
+      expect(compRatio(0), kCompRatioMin);
+    });
+
+    test('el umbral solo baja, nunca sube', () {
+      expect(compThresholdDb(0.5), lessThan(0));
+      expect(compThresholdDb(1), lessThan(compThresholdDb(0.5)));
+    });
+
+    test('no llega al fondo del plugin: eso ya no es comprimir', () {
+      expect(compThresholdDb(1), greaterThan(-40));
+    });
+
+    test('la relación sube con el mando y se queda en rango', () {
+      expect(compRatio(1), lessThanOrEqualTo(kCompRatioMax));
+      expect(compRatio(1), greaterThan(compRatio(0.5)));
+    });
+
+    test('devuelve el volumen que quita', () {
+      expect(compMakeupDb(0), 0);
+      expect(compMakeupDb(1), greaterThan(0));
+    });
+
+    test('un mando fuera de rango no saca los números de rango', () {
+      expect(compThresholdDb(9), greaterThanOrEqualTo(kCompThresholdMin));
+      expect(compRatio(-4), greaterThanOrEqualTo(kCompRatioMin));
+    });
+  });
+
+  group('el chorus', () {
+    test('barre despacio, que es lo que lo hace un chorus', () {
+      expect(chorusFreq(0), kChorusMinFreq);
+      expect(chorusFreq(1), kChorusMaxFreq);
+    });
+
+    test('la profundidad se queda dentro de lo que acepta el plugin', () {
+      expect(chorusDelay(0), greaterThan(0));
+      expect(chorusDelay(1), lessThanOrEqualTo(3.0));
+    });
+  });
 }

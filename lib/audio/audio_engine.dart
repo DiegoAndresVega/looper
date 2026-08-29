@@ -72,6 +72,38 @@ class AudioEngine {
 
   bool isLoaded(String soundId) => _sources.containsKey(soundId);
 
+  /// Decodes any file the engine can read into mono samples at the app's own
+  /// rate, or null when it cannot be read.
+  ///
+  /// This is how MP3, FLAC and OGG get in: the app's own decoder only speaks
+  /// WAV, and the engine already carries a decoder for everything it can
+  /// play. It also fixes the WAV that arrives at 48 kHz — the read is asked
+  /// for a number of samples spread over the file's *duration*, so what comes
+  /// back is at this app's rate whatever the file's was.
+  ///
+  /// It runs off an isolate inside the plugin, so a sixty-second import does
+  /// not freeze the grid.
+  Future<Float32List?> decodeToSamples(String path) async {
+    if (!_ready) return null;
+    AudioSource? source;
+    try {
+      source = await _soloud.loadFile(path, mode: LoadMode.disk);
+      final length = _soloud.getLength(source);
+      if (length <= Duration.zero) return null;
+      final wanted = (length.inMicroseconds / 1e6 * kSampleRate).round();
+      if (wanted <= 0) return null;
+      final samples = await _soloud.readSamplesFromFile(path, wanted);
+      return samples.isEmpty ? null : samples;
+    } on Object catch (e) {
+      debugPrint('No se pudo decodificar $path: $e');
+      return null;
+    } finally {
+      if (source != null) {
+        await _soloud.disposeSource(source);
+      }
+    }
+  }
+
   Future<void> unload(String soundId) async {
     final source = _sources.remove(soundId);
     if (source != null) {
@@ -193,6 +225,11 @@ class AudioEngine {
     }
     return handle;
   }
+
+  /// Whether a voice is still playing. A one-shot ends on its own and nobody
+  /// is told, so anything holding a handle has to ask.
+  bool isVoiceAlive(SoundHandle handle) =>
+      _ready && _soloud.getIsValidVoiceHandle(handle);
 
   /// Drops the pairs whose dry voice has already finished. One-shots end on
   /// their own and nobody tells us, so the map is swept when it grows past

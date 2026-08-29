@@ -92,6 +92,12 @@ class Sequencer extends ChangeNotifier {
 
   /// Where the head is. Starts at -1 on play so the first tick lands on 0.
   int _step = 0;
+
+  /// Steps since PLAY, counting up and never wrapping. With tracks of
+  /// different lengths there is no point where everything starts over — that
+  /// is what polymeter *is* — so the sequencer keeps an absolute count and
+  /// lets each track take its own remainder of it.
+  int _globalStep = 0;
   int? _editingStep;
   Timer? _chordTimer;
 
@@ -209,11 +215,13 @@ class Sequencer extends ChangeNotifier {
       _playing = false;
       _step = 0;
       _bar = 0;
+      _globalStep = 0;
     } else {
       _playing = true;
       _recording = false;
       _editingStep = null;
       _bar = 0;
+      _globalStep = -1;
       // A chain, and a song, always tell their story from the first bar.
       if (isFollowingSong) {
         _index = _song.patternForBar(0);
@@ -331,6 +339,16 @@ class Sequencer extends ChangeNotifier {
     if (step != null) _write(pattern.withRatchet(step, value));
   }
 
+  /// How long the track of [note] runs inside the pattern on screen, and how
+  /// to change it. A whole bar unless somebody says otherwise.
+  int trackLength(String note) => pattern.lengthFor(note);
+
+  void setTrackLength(String note, int steps) =>
+      _write(pattern.withLength(note, steps));
+
+  /// Which pads the pattern on screen uses, in pad order.
+  List<String> get tracks => pattern.tracks.toList()..sort();
+
   /// Swaps the whole pattern on screen — how a copied pattern is pasted.
   void replacePattern(Pattern next) => _write(next);
 
@@ -376,6 +394,7 @@ class Sequencer extends ChangeNotifier {
       }
     }
     _advance();
+    _globalStep++;
 
     // This step — unless the previous tick already sent it out early.
     final firedEarly = _firedEarly == (_index, _step);
@@ -384,7 +403,7 @@ class Sequencer extends ChangeNotifier {
       // A late step keeps its lag; an early one whose preview never happened
       // (playback just started here) sounds on time rather than never.
       final nudge = pattern.nudgeAt(_step);
-      _emit(pattern, _step, offsetSteps: nudge > 0 ? nudge : 0);
+      _emit(pattern, _step, _globalStep, offsetSteps: nudge > 0 ? nudge : 0);
     }
 
     // One step of lookahead: a step pushed *early* has to leave on this tick,
@@ -393,7 +412,12 @@ class Sequencer extends ChangeNotifier {
     final (nextPattern, nextStep) = _positionAfter();
     final nextNudge = _patterns[nextPattern].nudgeAt(nextStep);
     if (nextNudge < 0) {
-      _emit(_patterns[nextPattern], nextStep, offsetSteps: 1 + nextNudge);
+      _emit(
+        _patterns[nextPattern],
+        nextStep,
+        _globalStep + 1,
+        offsetSteps: 1 + nextNudge,
+      );
       _firedEarly = (nextPattern, nextStep);
     }
     notifyListeners();
@@ -410,13 +434,24 @@ class Sequencer extends ChangeNotifier {
 
   /// Sends one step out, rolling the dice only when the step asks for it.
   /// A lost roll goes out as a rest, so the listener still hears every tick.
-  void _emit(Pattern source, int step, {double offsetSteps = 0}) {
+  ///
+  /// [step] is where the bar is and [globalStep] is where the sequence is.
+  /// The notes come from the second — each track takes its own remainder of
+  /// it — and the layers from the first: an accent, a nudge and a ratchet
+  /// belong to a place in the bar, which is what a player is listening to
+  /// even when a track underneath is running to its own length.
+  void _emit(
+    Pattern source,
+    int step,
+    int globalStep, {
+    double offsetSteps = 0,
+  }) {
+    final notes = source.soundingAt(globalStep);
     final probability = source.probabilityAt(step);
-    final silenced = source.at(step).isNotEmpty &&
-        probability < 1.0 &&
-        _random() > probability;
+    final silenced =
+        notes.isNotEmpty && probability < 1.0 && _random() > probability;
     onNotes(StepPlay(
-      notes: silenced ? const {} : source.at(step),
+      notes: silenced ? const {} : notes,
       velocity: source.velocityAt(step),
       offsetSteps: offsetSteps,
       ratchet: source.ratchetAt(step),
@@ -434,6 +469,7 @@ class Sequencer extends ChangeNotifier {
     _editingStep = null;
     _step = 0;
     _bar = 0;
+    _globalStep = 0;
   }
 
   void _cancelChord() {

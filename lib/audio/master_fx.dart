@@ -29,12 +29,19 @@ class MasterFx {
   double _resonance = 0.0;
   double _echo = 0.0;
   double _drive = 0.0;
+  double _compressor = 0.0;
+  double _chorus = 0.0;
 
   double get volume => _volume;
   double get cutoff => _cutoff;
   double get resonance => _resonance;
   double get echo => _echo;
   double get drive => _drive;
+
+  /// The two that came last: one to hold the mix together and one to make it
+  /// move. Both rest at zero, and at zero both are bypassed.
+  double get compressor => _compressor;
+  double get chorus => _chorus;
 
   /// Fixed echo character: a slapback that works at most tempos. The knob only
   /// rides how much of it is heard.
@@ -73,6 +80,16 @@ class MasterFx {
     _applyLofi();
   }
 
+  set compressor(double value) {
+    _compressor = value.clamp(0.0, 1.0);
+    _applyCompressor();
+  }
+
+  set chorus(double value) {
+    _chorus = value.clamp(0.0, 1.0);
+    _applyChorus();
+  }
+
   /// Pushes every remembered value into a freshly initialised engine, filters
   /// included. Called on every [AudioEngine.init], not just the first.
   void apply() {
@@ -82,6 +99,8 @@ class MasterFx {
     _applyBiquad();
     _applyEcho();
     _applyLofi();
+    _applyCompressor();
+    _applyChorus();
   }
 
   void _activate() {
@@ -89,6 +108,8 @@ class MasterFx {
       _soloud.filters.biquadResonantFilter,
       _soloud.filters.echoFilter,
       _soloud.filters.lofiFilter,
+      _soloud.filters.compressorFilter,
+      _soloud.filters.flangerFilter,
     ]) {
       if (!filter.isActive) filter.activate();
     }
@@ -134,5 +155,37 @@ class MasterFx {
       filter.bitdepth.value = crushBitdepth(_drive);
     }
     filter.wet.value = resting ? 0 : _drive;
+  }
+
+  /// One knob, three numbers. A compressor with six controls is a studio
+  /// tool; this one has to be usable with a thumb while the music runs, so
+  /// the threshold comes down, the ratio goes up and the makeup follows.
+  void _applyCompressor() {
+    if (!_soloud.isInitialized) return;
+    final filter = _soloud.filters.compressorFilter;
+    if (!filter.isActive) return;
+
+    final resting = _compressor <= kFxEpsilon;
+    if (!resting) {
+      filter.threshold.value = compThresholdDb(_compressor);
+      filter.ratio.value = compRatio(_compressor);
+      filter.makeupGain.value = compMakeupDb(_compressor);
+    }
+    filter.wet.value = resting ? 0 : 1;
+  }
+
+  /// The flanger, driven slowly enough to read as a chorus. Wet rides the
+  /// knob so the first sliver of travel is a widening rather than a swoosh.
+  void _applyChorus() {
+    if (!_soloud.isInitialized) return;
+    final filter = _soloud.filters.flangerFilter;
+    if (!filter.isActive) return;
+
+    final resting = _chorus <= kFxEpsilon;
+    if (!resting) {
+      filter.freq.value = chorusFreq(_chorus);
+      filter.delay.value = chorusDelay(_chorus);
+    }
+    filter.wet.value = resting ? 0 : _chorus * 0.8;
   }
 }

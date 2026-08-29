@@ -13,7 +13,14 @@ class Pattern {
     List<double>? probabilities,
     List<double>? nudges,
     List<int>? ratchets,
-  })  : steps = List.unmodifiable([
+    Map<String, int>? lengths,
+  })  : lengths = Map.unmodifiable({
+          if (lengths != null)
+            for (final entry in lengths.entries)
+              if (entry.value >= 1 && entry.value < kPatternSteps)
+                entry.key: entry.value,
+        }),
+        steps = List.unmodifiable([
           for (var i = 0; i < kPatternSteps; i++)
             Set<String>.unmodifiable(i < steps.length ? steps[i] : const {}),
         ]),
@@ -51,6 +58,58 @@ class Pattern {
   /// How many hits each step packs, 1..[kRatchetMax]. One is a normal step;
   /// more subdivides it into a roll.
   final List<int> ratchets;
+
+  /// How long each track is, in steps, for the tracks that are not a whole
+  /// bar. Only the exceptions are kept: a pattern where nobody has touched
+  /// this is an empty map, and every track is sixteen.
+  ///
+  /// This is polymeter, and it is the cheapest way to get it: the notes stay
+  /// where they are and only the wrap moves. A hat set to seven plays its
+  /// first seven steps over and over while the kick keeps to the bar, and the
+  /// two of them take seven bars to line up again.
+  final Map<String, int> lengths;
+
+  /// How long the track of [note] is. A whole bar unless it was changed.
+  int lengthFor(String note) => lengths[note] ?? kPatternSteps;
+
+  bool get isPolymetric => lengths.isNotEmpty;
+
+  /// Every pad that appears anywhere in the pattern.
+  Set<String> get tracks => {
+        for (final step in steps) ...step,
+      };
+
+  /// What sounds on step [globalStep] of a running sequence.
+  ///
+  /// It counts from the start of playback and never wraps, because with
+  /// tracks of different lengths there is no single point where everything
+  /// starts over — that is the whole idea. Each track is asked about its own
+  /// step, so a seven-step hat is on its fourth step while the bar is on its
+  /// eleventh.
+  Set<String> soundingAt(int globalStep) {
+    if (lengths.isEmpty) return at(globalStep % kPatternSteps);
+    final out = <String>{};
+    for (final note in tracks) {
+      final length = lengthFor(note);
+      var step = globalStep % length;
+      if (step < 0) step += length;
+      if (steps[step].contains(note)) out.add(note);
+    }
+    return out;
+  }
+
+  /// Sets how long one track runs. A whole bar takes it out of the map: the
+  /// exceptions are what is worth storing.
+  Pattern withLength(String note, int steps) {
+    final clamped = steps.clamp(1, kPatternSteps);
+    final next = Map<String, int>.of(lengths);
+    if (clamped >= kPatternSteps) {
+      next.remove(note);
+    } else {
+      next[note] = clamped;
+    }
+    return _withLayers(lengths: next);
+  }
 
   Set<String> at(int step) =>
       _isValid(step) ? steps[step] : const <String>{};
@@ -103,6 +162,7 @@ class Pattern {
     List<double>? probabilities,
     List<double>? nudges,
     List<int>? ratchets,
+    Map<String, int>? lengths,
   }) {
     return Pattern(
       steps,
@@ -110,6 +170,7 @@ class Pattern {
       probabilities: probabilities ?? this.probabilities,
       nudges: nudges ?? this.nudges,
       ratchets: ratchets ?? this.ratchets,
+      lengths: lengths ?? this.lengths,
     );
   }
 
@@ -138,6 +199,7 @@ class Pattern {
       probabilities: _put(probabilities, step, 1.0),
       nudges: _put(nudges, step, 0.0),
       ratchets: _put(ratchets, step, 1),
+      lengths: lengths,
     );
   }
 
@@ -152,6 +214,7 @@ class Pattern {
       probabilities: probabilities,
       nudges: nudges,
       ratchets: ratchets,
+      lengths: lengths,
     );
   }
 
@@ -163,7 +226,17 @@ class Pattern {
         'probabilities': probabilities,
         'nudges': nudges,
         'ratchets': ratchets,
+        if (lengths.isNotEmpty) 'lengths': lengths,
       };
+
+  static Map<String, int>? _lengthsFrom(dynamic raw) {
+    if (raw is! Map) return null;
+    return {
+      for (final entry in raw.entries)
+        if (entry.key is String && entry.value is num)
+          entry.key as String: (entry.value as num).toInt(),
+    };
+  }
 
   /// Reads both shapes. Patterns written before accents existed are a bare
   /// list of steps; they come back at full strength, which is exactly how
@@ -202,6 +275,9 @@ class Pattern {
               ?.map((v) => (v as num).toInt())
               .toList()
           : null,
+      // A pattern written before polymeter has no exceptions, and every one
+      // of its tracks is a whole bar — which is exactly how it sounded.
+      lengths: json is Map ? _lengthsFrom(json['lengths']) : null,
     );
   }
 }

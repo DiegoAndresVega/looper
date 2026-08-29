@@ -67,6 +67,55 @@ double crushBitdepth(double knob) {
   return bits.clamp(kCrushMinBitdepth, kCrushMaxBitdepth);
 }
 
+// ------------------------------------------------------- Comp y chorus
+
+/// What the compressor accepts, straight from the plugin's own table. The
+/// knob is a single position and these are the two numbers it moves.
+const double kCompThresholdMax = 0;
+const double kCompThresholdMin = -80;
+const double kCompRatioMin = 1;
+const double kCompRatioMax = 10;
+
+/// Where the compressor starts working, in decibels. One knob rather than
+/// six: this is a performance control, not a mastering chain, and a threshold
+/// on its own is the one that is heard.
+double compThresholdDb(double knob) {
+  final position = knob.clamp(0.0, 1.0);
+  // Down to −32 dB and no further. The plugin allows −80, which on a mix that
+  // is already normalised is not compression, it is a fader.
+  final db = -position * 32;
+  return db.clamp(kCompThresholdMin, kCompThresholdMax);
+}
+
+/// How hard it squeezes once it is working. It walks up with the same knob:
+/// past halfway the compressor stops evening things out and starts pumping,
+/// which is exactly what this kind of music wants from it.
+double compRatio(double knob) {
+  final position = knob.clamp(0.0, 1.0);
+  final ratio = kCompRatioMin + position * 5;
+  return ratio.clamp(kCompRatioMin, kCompRatioMax);
+}
+
+/// Makeup gain, in decibels. Compression takes level away and a knob that
+/// only makes things quieter reads as broken, so it is given back.
+double compMakeupDb(double knob) => (knob.clamp(0.0, 1.0) * 6).clamp(-40, 40);
+
+/// The flanger's sweep, in hertz. Slow: at the fast end it stops being a
+/// chorus and becomes a jet, and there is already a lofi knob for damage.
+const double kChorusMinFreq = 0.1;
+const double kChorusMaxFreq = 1.2;
+
+double chorusFreq(double knob) {
+  final position = knob.clamp(0.0, 1.0);
+  return (kChorusMinFreq + position * (kChorusMaxFreq - kChorusMinFreq))
+      .clamp(kChorusMinFreq, kChorusMaxFreq);
+}
+
+/// How deep the sweep goes, in milliseconds of delay. The plugin's own range
+/// tops out at three; a chorus lives in the first third of it.
+double chorusDelay(double knob) =>
+    (0.2 + knob.clamp(0.0, 1.0) * 0.8).clamp(0.0, 3.0);
+
 // ------------------------------------------------------------------ Buses
 
 /// What the plugin accepts on the shared send bus's reverb. Freeverb's five

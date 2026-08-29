@@ -82,6 +82,51 @@ class Sound {
     );
   }
 
+  /// The same sound pointed at a new file of the same length: a rendering
+  /// that changed the audio without changing how long it lasts, like a real
+  /// transposition. The trim is untouched, because the window it describes
+  /// has not moved.
+  Sound rewrittenOnto({required String fileName, required int sizeBytes}) =>
+      Sound(
+        id: id,
+        name: name,
+        family: family,
+        fileName: fileName,
+        origin: origin,
+        durationMs: durationMs,
+        sizeBytes: sizeBytes,
+        trimStartMs: trimStartMs,
+        trimEndMs: trimEndMs,
+        volume: volume,
+        semitones: semitones,
+        reversed: reversed,
+      );
+
+  /// And one pointed at a file of a different length. The trim scales with
+  /// it: a sound stretched to half the tempo keeps the same *musical* window,
+  /// not the same number of milliseconds.
+  Sound stretchedOnto({
+    required String fileName,
+    required int sizeBytes,
+    required int durationMs,
+  }) {
+    final ratio = this.durationMs == 0 ? 1.0 : durationMs / this.durationMs;
+    return Sound(
+      id: id,
+      name: name,
+      family: family,
+      fileName: fileName,
+      origin: origin,
+      durationMs: durationMs,
+      sizeBytes: sizeBytes,
+      trimStartMs: (trimStartMs * ratio).round(),
+      trimEndMs: trimEndMs == null ? null : (trimEndMs! * ratio).round(),
+      volume: volume,
+      semitones: semitones,
+      reversed: reversed,
+    );
+  }
+
   /// The same sound pointed at its reversed file: same identity, same volume
   /// and pitch, and the trim seen from the other end.
   ///

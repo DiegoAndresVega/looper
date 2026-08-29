@@ -24,6 +24,11 @@ class SoundSheet extends StatefulWidget {
     required this.peaks,
     required this.onChanged,
     required this.onReverse,
+    required this.onPitch,
+    required this.onStretch,
+    required this.onDetectTempo,
+    required this.onPeaks,
+    required this.sessionBpm,
     required this.onPreview,
     required this.onDelete,
     required this.onChop,
@@ -37,6 +42,21 @@ class SoundSheet extends StatefulWidget {
   /// the audio could not be read. It is the one edit in this sheet that
   /// touches a file, which is why it is the only one that is asynchronous.
   final Future<Sound?> Function(Sound sound) onReverse;
+
+  /// Transposes for real: the pitch moves and the length does not.
+  final Future<Sound?> Function(Sound sound, int semitones) onPitch;
+
+  /// Stretches to the session's tempo, given the tempo it is at now.
+  final Future<Sound?> Function(Sound sound, double fromBpm) onStretch;
+
+  /// What tempo the sound seems to be at. Read once, when the sheet opens.
+  final Future<double?> Function(Sound sound) onDetectTempo;
+
+  /// The shape of a sound, for redrawing after a rendering.
+  final Future<Float32List> Function(Sound sound) onPeaks;
+
+  /// The tempo of the session, which is what stretching aims at.
+  final int sessionBpm;
   final ValueChanged<Sound> onPreview;
   final VoidCallback onDelete;
 
@@ -57,6 +77,30 @@ class _SoundSheetState extends State<SoundSheet> {
 
   /// True while a file is being rewritten. It is the only slow edit here.
   bool _busy = false;
+
+  /// How far the real transposition would move it, in semitones. It is armed
+  /// and then applied, not applied on every tap: each one rewrites the file.
+  int _semitones = 0;
+
+  /// The tempo read out of the sound, or null while it is being read or when
+  /// it could not be read at all.
+  double? _tempo;
+  bool _readingTempo = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _readTempo();
+  }
+
+  Future<void> _readTempo() async {
+    final tempo = await widget.onDetectTempo(_sound);
+    if (!mounted) return;
+    setState(() {
+      _tempo = tempo;
+      _readingTempo = false;
+    });
+  }
   late final TextEditingController _name =
       TextEditingController(text: widget.sound.name);
 
@@ -133,6 +177,10 @@ class _SoundSheetState extends State<SoundSheet> {
                     _apply(_sound.copyWith(semitones: (v * 24 - 12).round())),
               ),
               const SizedBox(height: 14),
+              _pitchRow(),
+              const SizedBox(height: 10),
+              _tempoRow(),
+              const SizedBox(height: 10),
               _reverseRow(),
               const SizedBox(height: 16),
               _actions(),
@@ -327,6 +375,163 @@ class _SoundSheetState extends State<SoundSheet> {
       // envelope read the other way is exactly the new one.
       if (next != null) _peaks = reversedSamples(_peaks);
     });
+  }
+
+  /// Real transposition, as opposed to the tape kind the Tono slider does.
+  /// It is here and not on a knob because it rewrites the file: a knob you
+  /// can drag would rewrite it sixty times a second.
+  Widget _pitchRow() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Palette.line),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TONO REAL', style: Brand.label(8.5, weight: 700)),
+                const SizedBox(height: 3),
+                Text(
+                  'Mueve el tono sin cambiar el largo',
+                  style: Brand.body(10.5, color: Palette.inkFaint),
+                ),
+              ],
+            ),
+          ),
+          _round(Icons.remove, _semitones > -12,
+              () => setState(() => _semitones--)),
+          SizedBox(
+            width: 34,
+            child: Text(
+              _semitones > 0 ? '+$_semitones' : '$_semitones',
+              textAlign: TextAlign.center,
+              style: Brand.readout(13, weight: 700),
+            ),
+          ),
+          _round(Icons.add, _semitones < 12,
+              () => setState(() => _semitones++)),
+          const SizedBox(width: 8),
+          _applyButton(
+            enabled: _semitones != 0,
+            onTap: () => _render(() => widget.onPitch(_sound, _semitones)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The other half of the same coin: the length moves and the pitch does
+  /// not, so an imported loop can be made to fit the session's tempo.
+  Widget _tempoRow() {
+    final tempo = _tempo;
+    final label = _readingTempo
+        ? 'Leyendo el tempo…'
+        : tempo == null
+            ? 'No se le encuentra un tempo claro'
+            : 'Va a ${tempo.round()} · la sesión, a ${widget.sessionBpm}';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Palette.line),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ESTIRAR', style: Brand.label(8.5, weight: 700)),
+                const SizedBox(height: 3),
+                Text(label, style: Brand.body(10.5, color: Palette.inkFaint)),
+              ],
+            ),
+          ),
+          _applyButton(
+            enabled: tempo != null &&
+                (tempo - widget.sessionBpm).abs() > 0.5,
+            onTap: () => _render(() => widget.onStretch(_sound, tempo!)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _applyButton({required bool enabled, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: enabled && !_busy ? onTap : null,
+      child: Container(
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(9),
+          color: enabled && !_busy ? Palette.accent : Colors.transparent,
+          border: Border.all(
+            color: enabled && !_busy ? Palette.accent : Palette.line,
+          ),
+        ),
+        child: Text(
+          'APLICAR',
+          style: Brand.label(
+            8.5,
+            weight: 700,
+            color: enabled && !_busy ? Palette.onAccent : Palette.inkFaint,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _round(IconData icon, bool enabled, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Palette.line),
+        ),
+        child: Icon(
+          icon,
+          size: 15,
+          color: enabled ? Palette.ink : Palette.inkFaint,
+        ),
+      ),
+    );
+  }
+
+  /// Every rendering follows the same three steps: say it is working, swap
+  /// the sound for what came back, and read the new shape and tempo.
+  Future<void> _render(Future<Sound?> Function() run) async {
+    setState(() => _busy = true);
+    final next = await run();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (next != null) {
+        _sound = next;
+        _semitones = 0;
+        _readingTempo = true;
+      }
+    });
+    if (next != null) {
+      _peaksFor(next);
+      _readTempo();
+    }
+  }
+
+  /// The drawn shape comes from the file, and the file is a different one now.
+  Future<void> _peaksFor(Sound sound) async {
+    final peaks = await widget.onPeaks(sound);
+    if (!mounted) return;
+    setState(() => _peaks = peaks);
   }
 
   Widget _actions() {

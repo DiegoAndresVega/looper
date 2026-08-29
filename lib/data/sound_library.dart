@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 
 import '../audio/voices.dart';
 import '../audio/chopper.dart';
+import '../audio/bpm_detect.dart';
+import '../audio/stretch.dart';
 import '../audio/wav_decoder.dart';
 import '../audio/wav_encoder.dart';
 import '../core/constants.dart';
@@ -173,9 +175,86 @@ class SoundLibrary extends ChangeNotifier {
     await _storage.soundFile(fileName).writeAsBytes(bytes);
 
     final next = sound.reversedOnto(fileName: fileName, sizeBytes: bytes.length);
+    await _replaceFile(sound, next);
+    return next;
+  }
+
+  /// What tempo the sound seems to be at, or null when it cannot be read.
+  /// Asked once, when a sheet opens: it walks the whole file.
+  Future<double?> tempoOf(Sound sound) async {
+    final file = _storage.soundFile(sound.fileName);
+    if (!await file.exists()) return null;
+    try {
+      final decoded = decodeWav(await file.readAsBytes());
+      return detectBpm(decoded.samples, decoded.sampleRate);
+    } on WavFormatException {
+      return null;
+    }
+  }
+
+  /// Transposes the sound for real: the pitch moves and the length does not.
+  /// Everything else in this app is tape — pitch and speed welded together —
+  /// and this is the one way out of it.
+  Future<Sound?> pitchedCopy(Sound sound, int semitones) => _rendered(
+        sound,
+        (samples) => pitchShift(samples, semitones),
+        sameLength: true,
+      );
+
+  /// Stretches the sound to another tempo: the length moves and the pitch
+  /// does not.
+  Future<Sound?> stretchedCopy(Sound sound, double ratio) => _rendered(
+        sound,
+        (samples) => timeStretch(samples, ratio),
+        sameLength: false,
+      );
+
+  /// The shared half of every rendering: read the file, run the audio through
+  /// [transform], write a new file, point the sound at it, and let the old
+  /// one go only if nothing else is still using it.
+  ///
+  /// A new file every time, never the old one edited in place — a chop is
+  /// several sounds sharing one file, and rewriting the bytes underneath
+  /// would transpose all sixteen pieces at once.
+  Future<Sound?> _rendered(
+    Sound sound,
+    Float32List Function(Float32List samples) transform, {
+    required bool sameLength,
+  }) async {
+    final file = _storage.soundFile(sound.fileName);
+    if (!await file.exists()) return null;
+
+    final Uint8List bytes;
+    final int durationMs;
+    try {
+      final decoded = decodeWav(await file.readAsBytes());
+      final samples = transform(decoded.samples);
+      if (samples.isEmpty) return null;
+      bytes = encodeWav(samples, sampleRate: decoded.sampleRate);
+      durationMs = (samples.length / decoded.sampleRate * 1000).round();
+    } on WavFormatException catch (e) {
+      debugPrint('No se pudo renderizar ${sound.name}: $e');
+      return null;
+    }
+
+    final fileName = '${_uuid.v4()}.wav';
+    await _storage.soundFile(fileName).writeAsBytes(bytes);
+
+    final next = sameLength
+        ? sound.rewrittenOnto(fileName: fileName, sizeBytes: bytes.length)
+        : sound.stretchedOnto(
+            fileName: fileName,
+            sizeBytes: bytes.length,
+            durationMs: durationMs,
+          );
+    await _replaceFile(sound, next);
+    return next;
+  }
+
+  /// Swaps a sound's file for another, cleaning up behind it.
+  Future<void> _replaceFile(Sound sound, Sound next) async {
     final previous = sound.fileName;
     _byId[sound.id] = next;
-
     if (isFileOrphaned(previous, _byId.values)) {
       _peaks.remove(previous);
       final old = _storage.soundFile(previous);
@@ -184,7 +263,6 @@ class SoundLibrary extends ChangeNotifier {
     _sizeBytes = await _storage.librarySizeBytes();
     await _persist();
     notifyListeners();
-    return next;
   }
 
   Future<void> update(Sound sound) async {

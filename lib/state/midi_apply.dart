@@ -1,4 +1,5 @@
 import '../core/palette.dart';
+import '../domain/chord.dart';
 import '../domain/knob_scale.dart';
 import '../domain/loop_length.dart';
 import '../domain/midi_target.dart';
@@ -41,6 +42,10 @@ extension MidiControlSurface on SessionController {
         fx.resonance = position;
       case MidiParam.masterEcho:
         fx.echo = position;
+      case MidiParam.masterCompressor:
+        fx.compressor = position;
+      case MidiParam.masterChorus:
+        fx.chorus = position;
       case MidiParam.masterDrive:
         fx.drive = position;
       default:
@@ -111,6 +116,11 @@ extension MidiControlSurface on SessionController {
       case MidiParam.scaleOctave:
         setScaleOctave(kScaleOctaves[
             knobAsIndex(position, kScaleOctaves.length)]);
+      case MidiParam.chordVoicing:
+        setChord(ChordVoicing
+            .values[knobAsIndex(position, ChordVoicing.values.length)]);
+      case MidiParam.arpMode:
+        setArp(ArpMode.values[knobAsIndex(position, ArpMode.values.length)]);
       default:
         break;
     }

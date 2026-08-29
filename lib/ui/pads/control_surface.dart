@@ -6,7 +6,7 @@ import '../../domain/midi_target.dart';
 import '../../state/midi_learn.dart';
 
 /// Which set of four knobs the surface is showing.
-enum SurfaceTab { sound, fx, loop, scale }
+enum SurfaceTab { sound, fx, loop, scale, xy }
 
 /// One knob's live value and label.
 class KnobSpec {
@@ -45,12 +45,17 @@ class ControlSurface extends StatelessWidget {
     required this.knobs,
     required this.onTabChanged,
     required this.learn,
+    this.wide,
   });
 
   final String targetLabel;
   final Color targetColor;
   final SurfaceTab tab;
   final List<KnobSpec> knobs;
+
+  /// A control that takes the whole row instead of the dials — the XY pad.
+  /// The strip keeps its height either way, so the grid never moves.
+  final Widget? wide;
   final ValueChanged<SurfaceTab> onTabChanged;
 
   /// Which control of the desk moves what. The strip owns this gesture because
@@ -74,18 +79,19 @@ class ControlSurface extends StatelessWidget {
           // changing tab now would be changing what you are about to marry.
           learn.armed == null ? _targetRow() : _learningRow(learn.armed!),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              for (var i = 0; i < knobs.length; i++)
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                        right: i == knobs.length - 1 ? 0 : 6),
-                    child: _Knob(spec: knobs[i], learn: learn),
-                  ),
-                ),
-            ],
-          ),
+          wide ??
+              Row(
+                children: [
+                  for (var i = 0; i < knobs.length; i++)
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            right: i == knobs.length - 1 ? 0 : 6),
+                        child: _Knob(spec: knobs[i], learn: learn),
+                      ),
+                    ),
+                ],
+              ),
         ],
       ),
     );
@@ -180,6 +186,7 @@ class ControlSurface extends StatelessWidget {
       SurfaceTab.fx: 'FX',
       SurfaceTab.loop: 'Loop',
       SurfaceTab.scale: 'Escala',
+      SurfaceTab.xy: 'XY',
     };
     final on = t == tab;
     return Padding(

@@ -42,6 +42,8 @@ enum MidiParam {
   masterResonance('Reso', MidiScope.master),
   masterEcho('Eco', MidiScope.master),
   masterDrive('Drive', MidiScope.master),
+  masterCompressor('Comp', MidiScope.master),
+  masterChorus('Chorus', MidiScope.master),
   busCutoff('Filtro', MidiScope.bus),
   busResonance('Reso', MidiScope.bus),
   busSend('Envío', MidiScope.bus),
@@ -57,7 +59,9 @@ enum MidiParam {
   scaleOn('Teclado', MidiScope.scale),
   scaleRoot('Tónica', MidiScope.scale),
   scaleKind('Escala', MidiScope.scale),
-  scaleOctave('Octava', MidiScope.scale);
+  scaleOctave('Octava', MidiScope.scale),
+  chordVoicing('Acorde', MidiScope.scale),
+  arpMode('Arpegio', MidiScope.scale);
 
   const MidiParam(this.label, this.scope);
 

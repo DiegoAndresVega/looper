@@ -334,6 +334,7 @@ class _BootState extends State<Boot> {
             await library.remove(sound.id);
           },
           slicesFor: controller.previewChop,
+          onReverse: controller.reverseSound,
           onChop: controller.chop,
         ),
       ),

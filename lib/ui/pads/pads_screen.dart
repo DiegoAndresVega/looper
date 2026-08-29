@@ -19,7 +19,9 @@ import 'bank_tabs.dart';
 import 'control_surface.dart';
 import 'pad_sheet.dart';
 import 'pad_tile.dart';
+import 'scene_strip.dart';
 import 'sequencer_bar.dart';
+import 'song_sheet.dart';
 import 'tempo_stepper.dart';
 import 'transport_bar.dart';
 
@@ -69,6 +71,11 @@ class _PadsScreenState extends State<PadsScreen> {
   /// sounding. Same bargain as AJUSTAR: one modal state, one tap long.
   bool _pasteArmed = false;
 
+  /// Whether the scenes have the strip. The strip under the grid holds one
+  /// thing at a time — knobs, the sequencer, or the scenes — because the grid
+  /// is what the screen is for and it never gives up height for a panel.
+  bool _scenesOpen = false;
+
   SessionController get c => widget.controller;
 
   @override
@@ -86,8 +93,12 @@ class _PadsScreenState extends State<PadsScreen> {
     // The loop rings need a steady repaint; the controller only notifies on
     // real state changes, which is not often enough for a moving ring.
     _ringTicker = Timer.periodic(const Duration(milliseconds: 33), (_) {
-      final moving =
-          c.loops.isNotEmpty || c.mixdown.isRecording || c.sequencer.isPlaying;
+      final moving = c.loops.isNotEmpty ||
+          c.mixdown.isRecording ||
+          c.sequencer.isPlaying ||
+          // A hit fades out on its own, so the frame that turns it off has to
+          // come from here: nothing else is going to notify anybody.
+          c.hasFlashes;
       if (mounted && moving) setState(() {});
     });
   }
@@ -142,7 +153,10 @@ class _PadsScreenState extends State<PadsScreen> {
               // wasted — on a tall phone the pads simply get taller.
               Expanded(child: _grid()),
               const SizedBox(height: 10),
-              if (c.sequencer.isOn) ...[
+              if (_scenesOpen) ...[
+                _scenes(),
+                const SizedBox(height: 8),
+              ] else if (c.sequencer.isOn) ...[
                 _sequencer(),
                 const SizedBox(height: 8),
               ] else ...[
@@ -382,7 +396,13 @@ class _PadsScreenState extends State<PadsScreen> {
   PadVisualState _stateFor(int slot, PadConfig pad) {
     if (_editArmed || _pasteArmed) return PadVisualState.target;
     if (pad.isEmpty) return PadVisualState.empty;
-    if (!c.isLooping(c.activeBank, slot)) return PadVisualState.loaded;
+    if (!c.isLooping(c.activeBank, slot)) {
+      // A hit outranks «loaded» for as long as it lasts: it is the only
+      // moment the pad has anything to say.
+      return c.isFlashing(c.activeBank, slot)
+          ? PadVisualState.firing
+          : PadVisualState.loaded;
+    }
     return c.isQueued(c.activeBank, slot)
         ? PadVisualState.queued
         : PadVisualState.looping;
@@ -691,6 +711,13 @@ class _PadsScreenState extends State<PadsScreen> {
       patternIndex: seq.patternIndex,
       filledSteps: seq.pattern.filledSteps,
       chainLength: seq.chainLength,
+      songMode: seq.songMode,
+      songBars: c.song.bars,
+      songBar: seq.songBar,
+      onSongMode: (on) => setState(() {
+        if (on != seq.songMode) c.toggleSongMode();
+      }),
+      onOpenSong: _openSongSheet,
       swing: c.swing,
       editingVelocity: seq.editingVelocity,
       editingProbability: seq.editingProbability,
@@ -717,6 +744,47 @@ class _PadsScreenState extends State<PadsScreen> {
       onPattern: (index) => setState(() => c.selectPattern(index)),
       onChain: (bars) => setState(() => c.setChainLength(bars)),
     );
+  }
+
+  Widget _scenes() {
+    return SceneStrip(
+      scenes: c.scenes,
+      activeScene: c.activeScene,
+      pendingScene: c.pendingScene,
+      armed: _editArmed,
+      onLaunch: (i) => setState(() => c.launchScene(i)),
+      onCapture: (i) {
+        HapticFeedback.mediumImpact();
+        setState(() => c.captureScene(i));
+      },
+      onClear: (i) {
+        setState(() {
+          c.clearScene(i);
+          _editArmed = false;
+        });
+        _offerUndo('Escena ${i + 1} vaciada');
+      },
+    );
+  }
+
+  /// The running order, opened by holding the chain pill. Edits land on the
+  /// session as they are made, like every other sheet in this app.
+  Future<void> _openSongSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => SongSheet(
+        song: c.song,
+        songMode: c.isSongMode,
+        currentPattern: c.sequencer.patternIndex,
+        onChanged: (song) => setState(() => c.setSong(song)),
+        onModeChanged: (on) => setState(() {
+          if (on != c.isSongMode) c.toggleSongMode();
+        }),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _transport() {
@@ -756,7 +824,20 @@ class _PadsScreenState extends State<PadsScreen> {
           icon: Icons.grid_view,
           label: 'Seq',
           active: c.sequencer.isOn,
-          onTap: () => setState(c.toggleSequencer),
+          onTap: () => setState(() {
+            // The strip holds one thing at a time, so asking for the
+            // sequencer is also asking the scenes to step aside.
+            _scenesOpen = false;
+            c.toggleSequencer();
+          }),
+        ),
+        // Scenes share the strip with the sequencer, so they share its
+        // neighbourhood on the transport too.
+        TransportAction(
+          icon: Icons.view_week_outlined,
+          label: 'Escenas',
+          active: _scenesOpen,
+          onTap: () => setState(() => _scenesOpen = !_scenesOpen),
         ),
         TransportAction(
           icon: Icons.tune,

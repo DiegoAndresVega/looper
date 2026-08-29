@@ -2,21 +2,28 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../audio/wav_decoder.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 import '../../domain/sound.dart';
 import '../common/waveform_view.dart';
 import 'family_picker.dart';
 
-/// The sound editor. Everything here is non-destructive: trimming, pitch and
-/// volume are remembered next to the file, never burnt into it, so a sound can
-/// always be opened back up to its full length.
+/// The sound editor. Trimming, pitch and volume are non-destructive: they are
+/// remembered next to the file, never burnt into it, so a sound can always be
+/// opened back up to its full length.
+///
+/// Reverse is the exception, and it says so by being the only slow control in
+/// here: it writes a new file backwards. It cannot be a flag like the others
+/// because a chop's sixteen pieces share one file, and a flag would have
+/// turned all of them around at once.
 class SoundSheet extends StatefulWidget {
   const SoundSheet({
     super.key,
     required this.sound,
     required this.peaks,
     required this.onChanged,
+    required this.onReverse,
     required this.onPreview,
     required this.onDelete,
     required this.onChop,
@@ -25,6 +32,11 @@ class SoundSheet extends StatefulWidget {
   final Sound sound;
   final Float32List peaks;
   final ValueChanged<Sound> onChanged;
+
+  /// Writes the sound backwards and hands back what it became, or null when
+  /// the audio could not be read. It is the one edit in this sheet that
+  /// touches a file, which is why it is the only one that is asynchronous.
+  final Future<Sound?> Function(Sound sound) onReverse;
   final ValueChanged<Sound> onPreview;
   final VoidCallback onDelete;
 
@@ -38,6 +50,13 @@ class SoundSheet extends StatefulWidget {
 
 class _SoundSheetState extends State<SoundSheet> {
   late Sound _sound = widget.sound;
+
+  /// The drawn shape. It is state rather than the widget's own field because
+  /// reversing changes it: the same envelope read the other way round.
+  late Float32List _peaks = widget.peaks;
+
+  /// True while a file is being rewritten. It is the only slow edit here.
+  bool _busy = false;
   late final TextEditingController _name =
       TextEditingController(text: widget.sound.name);
 
@@ -113,6 +132,8 @@ class _SoundSheetState extends State<SoundSheet> {
                 onChanged: (v) =>
                     _apply(_sound.copyWith(semitones: (v * 24 - 12).round())),
               ),
+              const SizedBox(height: 14),
+              _reverseRow(),
               const SizedBox(height: 16),
               _actions(),
             ],
@@ -131,7 +152,7 @@ class _SoundSheetState extends State<SoundSheet> {
         border: Border.all(color: Palette.line),
       ),
       child: WaveformView(
-        peaks: widget.peaks,
+        peaks: _peaks,
         color: _sound.family.color,
         trimStart: _sound.trimStartMs / _sound.durationMs,
         trimEnd: _sound.effectiveEndMs / _sound.durationMs,
@@ -251,6 +272,61 @@ class _SoundSheetState extends State<SoundSheet> {
         ),
       ],
     );
+  }
+
+  /// Reverse, out loud. It rewrites the file, so it says what state the
+  /// sound is in rather than offering a switch that could be read either way:
+  /// «AL REVÉS» while the audio is backwards, and pressing it undoes it.
+  Widget _reverseRow() {
+    final on = _sound.reversed;
+    return GestureDetector(
+      onTap: _busy ? null : _reverse,
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: on ? _sound.family.color : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: on ? _sound.family.color : Palette.line),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.swap_horiz,
+              size: 16,
+              color: on ? Palette.onAccent : Palette.ink,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _busy
+                  ? 'DÁNDOLE LA VUELTA…'
+                  : on
+                      ? 'AL REVÉS'
+                      : 'DEL REVÉS',
+              style: Brand.label(
+                10,
+                weight: 700,
+                color: on ? Palette.onAccent : Palette.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reverse() async {
+    setState(() => _busy = true);
+    final next = await widget.onReverse(_sound);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (next != null) _sound = next;
+      // The shape is the file's, and the file has turned around: the same
+      // envelope read the other way is exactly the new one.
+      if (next != null) _peaks = reversedSamples(_peaks);
+    });
   }
 
   Widget _actions() {

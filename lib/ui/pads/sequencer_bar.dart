@@ -4,6 +4,32 @@ import '../../core/constants.dart';
 import '../../core/palette.dart';
 import '../../core/type.dart';
 
+/// The lengths the chain pill walks through, and where a tap lands next.
+///
+/// The song joins the ring as one more position rather than getting a switch
+/// of its own: the chain and the song answer the same question — what plays
+/// after this bar — and two controls for one question can disagree.
+const List<int> kChainChoices = [1, 2, 4, 8, 16];
+
+/// Where one tap on the chain pill leaves things: a chain of [bars], or the
+/// song taking over. A song that has not been written is not offered, so the
+/// ring never lands on a running order that does not exist.
+({int bars, bool song}) nextChainStop({
+  required int chainLength,
+  required bool songMode,
+  required bool hasSong,
+}) {
+  // Coming out of the song, the ring starts over rather than carrying on
+  // from where it was: one bar is the position everyone knows.
+  if (songMode) return (bars: kChainChoices.first, song: false);
+
+  final at = kChainChoices.indexOf(chainLength);
+  if (at == kChainChoices.length - 1 && hasSong) {
+    return (bars: chainLength, song: true);
+  }
+  return (bars: kChainChoices[(at + 1) % kChainChoices.length], song: false);
+}
+
 /// The four things a selected step can say about itself. One slider serves
 /// them all — tapping its label cycles through — so editing a step never
 /// costs the screen more than one row.
@@ -22,6 +48,11 @@ class SequencerBar extends StatefulWidget {
     required this.patternIndex,
     required this.filledSteps,
     required this.chainLength,
+    required this.songMode,
+    required this.songBars,
+    required this.songBar,
+    required this.onSongMode,
+    required this.onOpenSong,
     required this.swing,
     required this.editingVelocity,
     required this.editingProbability,
@@ -52,6 +83,20 @@ class SequencerBar extends StatefulWidget {
 
   /// Bars in the chain: 1 loops one pattern, N plays P1..PN back to back.
   final int chainLength;
+
+  /// The song: whether it is the one in charge, how long it is, and which of
+  /// its bars is sounding. Zero bars means nothing has been written yet, and
+  /// then the chain pill never offers it.
+  final bool songMode;
+  final int songBars;
+  final int songBar;
+
+  final ValueChanged<bool> onSongMode;
+
+  /// A long press on the chain pill opens the running order. It is the same
+  /// gesture the pattern label already uses to lift a pattern: hold the thing
+  /// you want to work on.
+  final VoidCallback onOpenSong;
 
   /// How much the off-beat sixteenths lag, 0.5..0.75.
   final double swing;
@@ -84,9 +129,6 @@ class SequencerBar extends StatefulWidget {
   final VoidCallback onClear;
   final ValueChanged<int> onPattern;
   final ValueChanged<int> onChain;
-
-  /// The chain lengths a tap cycles through: the musical ones.
-  static const List<int> _chainChoices = [1, 2, 4, 8, 16];
 
   @override
   State<SequencerBar> createState() => _SequencerBarState();
@@ -141,7 +183,7 @@ class _SequencerBarState extends State<SequencerBar> {
               // pattern. Nothing else wears them.
               Expanded(
                 child: _button(
-                  label: widget.isCountingIn ? '$widget.countInBeat…' : 'Rec',
+                  label: widget.isCountingIn ? '${widget.countInBeat}…' : 'Rec',
                   icon: Icons.fiber_manual_record,
                   active: widget.isRecording || widget.isCountingIn,
                   danger: true,
@@ -201,16 +243,31 @@ class _SequencerBarState extends State<SequencerBar> {
   }
 
   /// One tap moves to the next musical length: 1, 2, 4, 8, 16 bars and back
-  /// to 1. Lit while a real chain is on.
+  /// to 1. Once a song is written it joins the ring as one more position, so
+  /// the chain and the song are the same choice rather than two switches that
+  /// can disagree. Holding the pill opens the song itself.
   Widget _chainPill() {
-    final active = widget.chainLength > 1;
+    final hasSong = widget.songBars > 0;
+    final active = widget.songMode || widget.chainLength > 1;
+    final label = widget.songMode
+        ? 'Canción ${widget.songBars}'
+        : '${widget.chainLength} ${widget.chainLength == 1 ? 'compás' : 'compases'}';
+
     return GestureDetector(
       onTap: () {
-        final at = SequencerBar._chainChoices.indexOf(widget.chainLength);
-        final next =
-            SequencerBar._chainChoices[(at + 1) % SequencerBar._chainChoices.length];
-        widget.onChain(next);
+        final next = nextChainStop(
+          chainLength: widget.chainLength,
+          songMode: widget.songMode,
+          hasSong: hasSong,
+        );
+        if (next.song) {
+          widget.onSongMode(true);
+          return;
+        }
+        if (widget.songMode) widget.onSongMode(false);
+        if (next.bars != widget.chainLength) widget.onChain(next.bars);
       },
+      onLongPress: widget.onOpenSong,
       child: Container(
         height: 26,
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -221,8 +278,7 @@ class _SequencerBarState extends State<SequencerBar> {
           border: Border.all(color: active ? Palette.accent : Palette.line),
         ),
         child: Text(
-          '$widget.chainLength ${widget.chainLength == 1 ? 'compás' : 'compases'}'
-              .toUpperCase(),
+          label.toUpperCase(),
           style: Brand.label(
             8,
             width: 75,
@@ -268,8 +324,8 @@ class _SequencerBarState extends State<SequencerBar> {
     );
   }
 
-  /// Which named feel the session's widget.swing is sitting on. Stored as a number,
-  /// so it is matched rather than looked up.
+  /// Which named feel the session's swing is sitting on. It is stored as a
+  /// number, so it is matched rather than looked up.
   int _nearestSwing() {
     var best = 0;
     for (var i = 1; i < kSwingMarks.length; i++) {
@@ -401,7 +457,7 @@ class _SequencerBarState extends State<SequencerBar> {
     final String text;
     final Color color;
     if (widget.isCountingIn) {
-      text = 'Preparado… entra en $widget.countInBeat de $kStepsPerBeat';
+      text = 'Preparado… entra en ${widget.countInBeat} de $kStepsPerBeat';
       color = Palette.rec;
     } else if (widget.editingStep != null) {
       text = 'Editando el paso ${widget.editingStep! + 1} · toca pads para ponerlos';
@@ -409,15 +465,19 @@ class _SequencerBarState extends State<SequencerBar> {
     } else if (widget.isRecording) {
       text = 'Escribiendo el paso ${widget.currentStep + 1} de $kPatternSteps';
       color = Palette.rec;
+    } else if (widget.isPlaying && widget.songMode && widget.songBars > 0) {
+      text = 'P${widget.patternIndex + 1} · compás '
+          '${widget.songBar % widget.songBars + 1} de ${widget.songBars}';
+      color = Palette.accent;
     } else if (widget.isPlaying) {
       text = widget.chainLength > 1
-          ? 'P${widget.patternIndex + 1} de $widget.chainLength · paso ${widget.currentStep + 1}'
-          : 'Paso ${widget.currentStep + 1} · $widget.filledSteps con notas';
+          ? 'P${widget.patternIndex + 1} de ${widget.chainLength} · paso ${widget.currentStep + 1}'
+          : 'Paso ${widget.currentStep + 1} · ${widget.filledSteps} con notas';
       color = Palette.accent;
     } else {
       text = widget.filledSteps == 0
           ? 'Patrón vacío · mantén un pad para escribir en su paso'
-          : '$widget.filledSteps pasos con notas';
+          : '${widget.filledSteps} pasos con notas';
       color = Palette.inkDim;
     }
 

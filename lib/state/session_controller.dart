@@ -23,6 +23,7 @@ import '../data/session_store.dart';
 import '../data/sound_library.dart';
 import '../data/storage.dart';
 import 'midi_apply.dart';
+import 'pad_flashes.dart';
 import 'midi_learn.dart';
 import 'sequencer.dart';
 import 'undo_stack.dart';
@@ -31,6 +32,8 @@ import '../domain/pattern.dart';
 import '../domain/midi.dart';
 import '../domain/save_point.dart';
 import '../domain/scale.dart';
+import '../domain/scene.dart';
+import '../domain/song.dart';
 import '../domain/session.dart';
 import '../domain/sound.dart';
 
@@ -116,6 +119,10 @@ class SessionController extends ChangeNotifier {
   /// The last one-shot fired by each pad, kept so the next tap can cut it.
   final Map<String, SoundHandle> _hits = {};
 
+  /// Which pads are mid-hit, for the grid to light. The pads could always
+  /// draw this and nothing produced it.
+  final PadFlashes _flashes = PadFlashes();
+
   /// One step back for each destructive edit. Only the session goes in here:
   /// deleting a sound from the library takes its file with it, and an undo
   /// that restored a pad pointing at a file that no longer exists would be
@@ -166,6 +173,13 @@ class SessionController extends ChangeNotifier {
 
   bool isLooping(int bank, int slot) => _loops.containsKey(padKey(bank, slot));
 
+  /// True while this pad is mid-hit, whoever hit it: a finger, the
+  /// sequencer, a scene or a controller.
+  bool isFlashing(int bank, int slot) => _flashes.isLit(padKey(bank, slot));
+
+  /// Whether any pad is still lit, so the screen knows to keep repainting.
+  bool get hasFlashes => _flashes.any;
+
   /// True when a bank other than the visible one has loops running, so its
   /// tab can light up.
   bool bankHasLoops(int bank) =>
@@ -193,10 +207,15 @@ class SessionController extends ChangeNotifier {
     _clock.swing = session.swing;
     _activeBank = 0;
     _selectedSlot = null;
+    _activeScene = null;
+    _pendingScene = null;
+    _flashes.clear();
     sequencer.load(
       session.patterns,
       session.activePattern,
       chainLength: session.chainLength,
+      song: session.song,
+      songMode: session.songMode,
     );
     await _preloadSession();
     notifyListeners();
@@ -236,6 +255,8 @@ class SessionController extends ChangeNotifier {
       entry.state.patterns,
       entry.state.activePattern,
       chainLength: entry.state.chainLength,
+      song: entry.state.song,
+      songMode: entry.state.songMode,
     );
     _clock.setBpm(entry.state.bpm);
     _clock.swing = entry.state.swing;
@@ -507,6 +528,11 @@ class SessionController extends ChangeNotifier {
     final sound = _library.byId(pad.soundId);
     if (sound == null || _isSilenced(bank, slot, pad)) return;
 
+    // The flash belongs to the pad, not to the note: playing the grid as a
+    // keyboard lights the pad the sound came from, which is where the eye
+    // already is.
+    _flashes.fire(padKey(bank, slot));
+
     // The transposition is part of the voice's identity: without it, playing
     // a C and then an E on the same source sound would cut the C off, and the
     // grid-as-keyboard would come out monophonic. Repeating the *same* note
@@ -666,7 +692,11 @@ class SessionController extends ChangeNotifier {
   bool _isSilenced(int bank, int slot, PadConfig pad) =>
       isPadSilenced(pad: pad, key: padKey(bank, slot), soloKey: _soloKey);
 
-  void _startLoop(int bank, int slot) {
+  /// Starts a pad looping. [fireNow] is for the one caller that is already
+  /// standing on the downbeat — a scene coming in on the bar line. The clock
+  /// fires the entries it had when the step began, so one added *during* that
+  /// step would sit silent until the next boundary, a whole bar of nothing.
+  void _startLoop(int bank, int slot, {bool fireNow = false}) {
     final key = padKey(bank, slot);
     if (_loops.containsKey(key)) return;
     final pad = _session!.banks[bank].pads[slot];
@@ -679,6 +709,7 @@ class SessionController extends ChangeNotifier {
       // waits for the downbeat instead of starting under the finger.
       _loops[key] = ActiveLoop(bank: bank, slot: slot, synced: true);
       _clock.add(key, pad.loopSteps, alignTo: _launchOn(pad.loopSteps));
+      if (fireNow) _fireOnce(bank, slot);
     } else {
       // Free loop: SoLoud repeats it natively at its own natural length.
       final handle = _engine.fire(
@@ -700,6 +731,10 @@ class SessionController extends ChangeNotifier {
   void _onSyncedStep(String key) {
     if (key == kMetronomeId) {
       _fireClick(accent: isDownbeat(_clock.stepIndex));
+      return;
+    }
+    if (key == kSceneKey) {
+      _applyScene();
       return;
     }
     if (key == kSequencerKey) {
@@ -784,6 +819,8 @@ class SessionController extends ChangeNotifier {
       patterns: sequencer.patterns,
       activePattern: sequencer.patternIndex,
       chainLength: sequencer.chainLength,
+      song: sequencer.song,
+      songMode: sequencer.songMode,
     );
     _touch();
   }
@@ -880,12 +917,138 @@ class SessionController extends ChangeNotifier {
       _session!.patterns,
       _session!.activePattern,
       chainLength: _session!.chainLength,
+      song: _session!.song,
+      songMode: _session!.songMode,
     );
     _clock.setBpm(_session!.bpm);
     _clock.swing = _session!.swing;
     _scaleSource = null;
     await _preloadSession();
     _touch();
+    notifyListeners();
+  }
+
+
+  // ---------------------------------------------------------------- scenes
+
+  /// The scene that is up, and the one waiting for the bar line. A scene
+  /// never lands under the finger: it comes in on the downbeat like every
+  /// other synced thing in this instrument, which is what lets it be fired
+  /// mid-bar without breaking the groove.
+  int? _activeScene;
+  int? _pendingScene;
+
+  int? get activeScene => _activeScene;
+  int? get pendingScene => _pendingScene;
+
+  List<Scene> get scenes => _session?.scenes ?? emptyScenes();
+
+  Scene sceneAt(int index) => scenes[index];
+
+  /// Remembers what is looping right now, and which pattern went with it.
+  /// Overwrites without asking: the strip shows how full each scene is, so
+  /// there is no such thing as capturing over something you could not see.
+  void captureScene(int index) {
+    final session = _session;
+    if (session == null) return;
+    _remember('guardar la escena ${index + 1}');
+    _session = session.withScene(
+      index,
+      Scene.capture(loops: _loops.keys.toSet(), pattern: sequencer.patternIndex),
+    );
+    // A captured scene is the one that is playing, by definition.
+    _activeScene = index;
+    _touch();
+    notifyListeners();
+  }
+
+  void clearScene(int index) {
+    final session = _session;
+    if (session == null) return;
+    if (session.scenes[index].isEmpty) return;
+    _remember('vaciar la escena ${index + 1}');
+    _session = session.withScene(index, const Scene.empty());
+    if (_activeScene == index) _activeScene = null;
+    if (_pendingScene == index) _pendingScene = null;
+    _touch();
+    notifyListeners();
+  }
+
+  /// Queues a scene. It goes in on the next bar line — or at once when
+  /// nothing is running, because then this launch *is* the downbeat.
+  ///
+  /// It rides the clock like a loop does rather than a timer of its own: one
+  /// grid decides when things happen in this app, and a scene that came in on
+  /// its own schedule would arrive between two beats of the one that matters.
+  void launchScene(int index) {
+    if (_session == null) return;
+    if (sceneAt(index).isEmpty) return;
+    _pendingScene = index;
+    // Already queued: the last press wins, so a change of mind costs one tap
+    // instead of a wait.
+    if (!_clock.contains(kSceneKey)) {
+      _clock.add(kSceneKey, kStepsPerBar, alignTo: kStepsPerBar);
+    }
+    notifyListeners();
+  }
+
+  /// The bar line arrived. What starts, what stops and what is left alone is
+  /// worked out in the domain; this is only the wiring.
+  void _applyScene() {
+    final index = _pendingScene;
+    _pendingScene = null;
+    if (index == null) {
+      _clock.remove(kSceneKey);
+      return;
+    }
+    final scene = sceneAt(index);
+    final change = sceneTransition(playing: _loops.keys.toSet(), scene: scene);
+
+    // Starting before stopping, always: emptying the clock would stop it, and
+    // the loops coming in would then define a new downbeat of their own
+    // instead of landing on the one the music is already on.
+    for (final key in change.start) {
+      final target = parsePadKey(key);
+      if (target != null) _startLoop(target.bank, target.slot, fireNow: true);
+    }
+    for (final key in change.stop) {
+      _stopLoop(key);
+    }
+
+    // The pattern travels with the scene only when nobody else owns the
+    // running order. With a chain or a song up, they do — and a scene that
+    // yanked the pattern out from under a song would be two things fighting
+    // over the same bar.
+    if (!sequencer.isFollowingSong && sequencer.chainLength == 1) {
+      sequencer.selectPattern(scene.pattern);
+    }
+
+    _activeScene = index;
+    _clock.remove(kSceneKey);
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------------------ song
+
+  /// The running order, and whether it is the one in charge.
+  Song get song => sequencer.song;
+  bool get isSongMode => sequencer.songMode;
+
+  void setSong(Song value) {
+    sequencer.setSong(value);
+    notifyListeners();
+  }
+
+  /// Adds the pattern on screen to the end of the song — the way a song gets
+  /// written, one bar at a time, from the bar you are looking at.
+  void appendToSong({int repeats = 1}) {
+    setSong(song.appended(
+      SongStep(pattern: sequencer.patternIndex, repeats: repeats),
+    ));
+  }
+
+  void toggleSongMode() {
+    sequencer.songMode = !sequencer.songMode;
     notifyListeners();
   }
 
@@ -1077,6 +1240,10 @@ class SessionController extends ChangeNotifier {
   /// The panic button: every loop off and every hit still ringing cut short.
   Future<void> stopAllLoops() async {
     stopRoll();
+    // Silence is not a scene. Leaving one lit would say something is playing
+    // when the instrument has just been emptied.
+    _activeScene = null;
+    _pendingScene = null;
     for (final handle in _hits.values) {
       await _engine.stopHandle(handle);
     }
@@ -1158,6 +1325,34 @@ class SessionController extends ChangeNotifier {
     _undo.clear();
     _touch();
     notifyListeners();
+  }
+
+  /// Turns a sound around: a new file written backwards, and every pad
+  /// holding it now playing that one.
+  ///
+  /// Loops of that sound are stopped first. The source is disposed and loaded
+  /// again underneath, and a voice still running on the old one would be
+  /// playing memory that has just been handed back.
+  Future<Sound?> reverseSound(Sound sound) async {
+    final session = _session;
+    if (session == null) return null;
+
+    for (var bank = 0; bank < session.banks.length; bank++) {
+      final pads = session.banks[bank].pads;
+      for (var slot = 0; slot < pads.length; slot++) {
+        if (pads[slot].soundId == sound.id) {
+          await _stopLoop(padKey(bank, slot));
+        }
+      }
+    }
+
+    final next = await _library.reversedCopy(sound);
+    if (next == null) return null;
+
+    await _engine.unload(next.id);
+    await _engine.preload(next, _library.pathFor(next));
+    notifyListeners();
+    return next;
   }
 
   void toggleMute(int slot) {

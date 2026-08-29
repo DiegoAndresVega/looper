@@ -24,6 +24,7 @@ class LibraryScreen extends StatefulWidget {
     required this.onPreview,
     required this.onDelete,
     required this.slicesFor,
+    required this.onReverse,
     required this.onChop,
   });
 
@@ -38,6 +39,10 @@ class LibraryScreen extends StatefulWidget {
 
   /// Where the cuts would fall, for the sheet to draw before committing.
   final Future<List<Slice>> Function(Sound sound, ChopMode mode) slicesFor;
+
+  /// Writes the sound backwards into a file of its own, and hands back what
+  /// it became. Null when the audio could not be read.
+  final Future<Sound?> Function(Sound sound) onReverse;
 
   /// Cuts the sound across the grid. Null when no bank has room.
   final Future<({int bank, int slot, int count})?> Function(
@@ -171,6 +176,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         sound: sound,
         peaks: peaks,
         onChanged: _library.update,
+        onReverse: widget.onReverse,
         onPreview: widget.onPreview,
         onDelete: () => _delete(sound),
         onChop: () {
